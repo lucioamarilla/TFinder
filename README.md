@@ -14,25 +14,49 @@ incremento (CRUD de la entidad Mesa).
 - Servidor ASGI: Uvicorn
 
 ## Estructura del proyecto
-(pegar el árbol de carpetas de arriba, con una línea explicando qué hace cada capa)
+```bash
+tfinder-mesas-ae1/
+├── .env                        # (NO se sube, va en .gitignore)
+├── .env.example                # sí se sube, con claves sin valores sensibles
+├── .gitignore
+├── requirements.txt
+├── README.md
+├── schema.sql                  # DDL de la tabla mesas (opcional tenerlo aparte)
+├── main.py                     # punto de entrada, instancia FastAPI, arranca Uvicorn
+└── app/
+    ├── __init__.py
+    ├── db.py                   # conexión SQLite + init_db()
+    ├── routes/
+    │   ├── __init__.py
+    │   └── mesas.routes.py     # define los endpoints /api/v1/mesas
+    ├── controllers/
+    │   ├── __init__.py
+    │   └── mesas.controller.py # lógica intermedia entre rutas y modelo
+    ├── models/
+    │   ├── __init__.py
+    │   └── mesas.model.py      # esquemas Pydantic (MesaCreate, MesaUpdate, MesaOut) + acceso a datos
+    └── middleware/
+        ├── __init__.py
+        └── error_handler.py    # manejador centralizado de excepciones (400/404/500)
+```
 
 ## Instalación
 
-\`\`\`bash
+```bash
 git clone https://github.com/usuario/tfinder-mesas-ae1.git
 cd tfinder-mesas-ae1
 python -m venv venv
 source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-\`\`\`
+```
 
 ## Configuración
 
 Copiar `.env.example` a `.env` y completar los valores:
 
-\`\`\`bash
+```bash
 cp .env.example .env
-\`\`\`
+```
 
 Variables:
 | Variable | Descripción | Ejemplo |
@@ -43,9 +67,9 @@ Variables:
 
 ## Ejecución
 
-\`\`\`bash
+```bash
 uvicorn main:app --reload --port 8000
-\`\`\`
+```
 
 Documentación interactiva (Swagger): http://localhost:8000/docs
 
@@ -77,9 +101,9 @@ Elimina una mesa existente.
 
 ## Estructura de errores
 
-\`\`\`json
+```json
 {"error": {"codigo": 404, "mensaje": "Mesa no encontrada"}}
-\`\`\`
+```
 
 ## Testing manual
 Se probó cada endpoint con Postman (ver capturas en el informe técnico, Anexo).
