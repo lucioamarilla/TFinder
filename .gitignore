@@ -1,0 +1,23 @@
+# Entorno virtual
+venv/
+
+# Variables de entorno (contienen configuración local/sensible)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Base de datos local
+*.db
+*.sqlite3
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Sistema operativo
+.DS_Store
