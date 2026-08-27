@@ -21,3 +21,4 @@ __pycache__/
 
 # Sistema operativo
 .DS_Store
+context/
