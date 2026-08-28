@@ -9,7 +9,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _db_path():
-    url = os.getenv("DATABASE_URL", "sqlite:///./forge.db")
+    url = os.getenv("DATABASE_URL", "sqlite:///./tfinder.db")
     return url.replace("sqlite:///", "", 1)
 
 
