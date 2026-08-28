@@ -62,7 +62,6 @@ Variables:
 | Variable | Descripción | Ejemplo |
 |---|---|---|
 | PORT | Puerto del servidor | 8000 |
-| ENV_MODE | Modo de ejecución | development |
 | DATABASE_URL | Ruta al archivo SQLite | ./tfinder.db |
 
 ## Ejecución
