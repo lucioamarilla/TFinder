@@ -8,7 +8,11 @@ from fastapi.exceptions import RequestValidationError
 
 from app.controllers.mesas_controller import MesaNotFoundError
 from app.db import init_db
-from app.middleware.error_handler import manejar_no_encontrado, manejar_validacion
+from app.middleware.error_handler import (
+    manejar_error_interno,
+    manejar_no_encontrado,
+    manejar_validacion,
+)
 from app.routes.mesas_routes import router as mesas_router
 
 load_dotenv()
@@ -23,6 +27,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="TFinder", version="0.1.0", lifespan=lifespan)
 app.add_exception_handler(MesaNotFoundError, manejar_no_encontrado)
 app.add_exception_handler(RequestValidationError, manejar_validacion)
+app.add_exception_handler(Exception, manejar_error_interno)
 app.include_router(mesas_router)
 
 
