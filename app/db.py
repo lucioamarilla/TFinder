@@ -27,5 +27,17 @@ def init_db():
     conn = get_db_connection()
     try:
         conn.executescript(ddl)
+        _aplicar_migraciones(conn)
+        conn.commit()
     finally:
         conn.close()
+
+
+def _aplicar_migraciones(conn):
+    version = conn.execute("PRAGMA user_version").fetchone()[0]
+
+    if version < 1:
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_mesas_estado ON mesas (estado)"
+        )
+        conn.execute("PRAGMA user_version = 1")
