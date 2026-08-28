@@ -27,8 +27,8 @@ class MesaCreate(BaseModel):
     tono: Optional[str] = None
     horario: Optional[str] = None
     estado: EstadoMesa = "abierta"
-    nivel_inicial: Optional[int] = Field(default=None, ge=0)
-    jugadores_max: Optional[int] = Field(default=None, gt=0)
+    nivel_inicial: Optional[int] = Field(default=None, ge=0, strict=True)
+    jugadores_max: Optional[int] = Field(default=None, gt=0, strict=True)
 
 
 class MesaUpdate(BaseModel):
@@ -40,8 +40,8 @@ class MesaUpdate(BaseModel):
     tono: Optional[str] = None
     horario: Optional[str] = None
     estado: Optional[EstadoMesa] = None
-    nivel_inicial: Optional[int] = Field(default=None, ge=0)
-    jugadores_max: Optional[int] = Field(default=None, gt=0)
+    nivel_inicial: Optional[int] = Field(default=None, ge=0, strict=True)
+    jugadores_max: Optional[int] = Field(default=None, gt=0, strict=True)
 
 
 class MesaOut(BaseModel):
