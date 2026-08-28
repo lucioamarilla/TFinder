@@ -33,7 +33,7 @@ app.include_router(mesas_router)
 
 if __name__ == "__main__":
     uvicorn.run(
-        "main:app",
+        app,
         host="127.0.0.1",
         port=int(os.getenv("PORT", "8000")),
         reload=True,
