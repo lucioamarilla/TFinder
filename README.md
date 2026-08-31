@@ -173,7 +173,6 @@ curl -X POST http://localhost:8000/api/v1/mesas \
 **Respuesta — `201 Created`:**
 ```json
 {
-  "id": 1,
   "nombre": "Mesa Alpha",
   "sistema": "Pathfinder",
   "descripcion": null,
@@ -181,8 +180,7 @@ curl -X POST http://localhost:8000/api/v1/mesas \
   "horario": null,
   "estado": "abierta",
   "nivel_inicial": null,
-  "jugadores_max": 5,
-  "fecha_creacion": "2026-08-28 19:28:30"
+  "jugadores_max": 5
 }
 ```
 
@@ -206,7 +204,6 @@ curl -X PUT http://localhost:8000/api/v1/mesas/1 \
 **Respuesta — `200 OK`:**
 ```json
 {
-  "id": 1,
   "nombre": "Mesa Alpha",
   "sistema": "Pathfinder",
   "descripcion": null,
@@ -214,8 +211,7 @@ curl -X PUT http://localhost:8000/api/v1/mesas/1 \
   "horario": null,
   "estado": "cerrada",
   "nivel_inicial": null,
-  "jugadores_max": 4,
-  "fecha_creacion": "2026-08-28 19:28:30"
+  "jugadores_max": 4
 }
 ```
 
