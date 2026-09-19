@@ -1,0 +1,9 @@
+{
+  "capacidades": [
+    { "capacidad": "Despliegue", "asIs": "1 release semanal · full redeploy", "toBe": "Independiente por servicio" },
+    { "capacidad": "Escalado", "asIs": "Manual · todo o nada", "toBe": "Auto-scaling por carga" },
+    { "capacidad": "Fallos", "asIs": "Caída total (SPOF)", "toBe": "Aislamiento por bounded context" },
+    { "capacidad": "Observabilidad", "asIs": "Logs dispersos", "toBe": "Trazas + métricas + DLQ" }
+  ],
+  "ordenMigracion": "1. notif-api (mayor aluvión) · 2. mesas-api (acuerdos de rastreo) · 3. builds-api (reintentos ya activos)."
+}

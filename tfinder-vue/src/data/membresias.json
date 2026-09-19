@@ -1,0 +1,39 @@
+{
+  "membresias": [
+    {
+      "mesaId": "la-corona-de-carrona",
+      "rol": "gm",
+      "estado": "Abierta",
+      "capitulo": "Cap. II: El Juicio de la Bestia",
+      "ultimaSesion": "14 Calistril, 4712 (Hace 3 días)"
+    },
+    {
+      "mesaId": "maldicion-trono-carmesi",
+      "rol": "gm",
+      "estado": "En Pausa",
+      "capitulo": "Cap. III: Escape de Vieja Korvosa",
+      "ultimaSesion": "02 Desnus, 4708 (Hace 2 semanas)"
+    },
+    {
+      "mesaId": "auge-senores-runas",
+      "rol": "jugador",
+      "estado": "Abierta",
+      "personaje": "Kaelen Valeros - Guerrero Nvl 3",
+      "ultimaSesion": "18 Neth, 4707 (Hace 5 horas)"
+    },
+    {
+      "mesaId": "la-ira-de-los-justos",
+      "rol": "jugador",
+      "estado": "Abierta",
+      "personaje": "Lini - Druida Nvl 5",
+      "ultimaSesion": "05 Abadius, 4712 (Hace 1 semana)"
+    },
+    {
+      "mesaId": "calaveras-y-grilletes",
+      "rol": "jugador",
+      "estado": "Abierta",
+      "personaje": "Pirata Arcanista Nvl 5",
+      "ultimaSesion": "28 Lamashan, 4711"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "mensajes": [
+    {
+      "id": "dlq-1",
+      "nombre": "build.publicado.v1",
+      "cola": "builds-notif",
+      "reintentos": 3,
+      "payload": "{\"buildId\":\"pf1-bld-09302\",\"autor\":\"@ezren_mago\",\"version\":\"7.2\"}"
+    },
+    {
+      "id": "dlq-2",
+      "nombre": "mesa.actualizada.v2",
+      "cola": "mesas-sync",
+      "reintentos": 7,
+      "payload": "{\"mesaId\":\"mesa-corona\",\"campo\":\"horario\",\"valor\":\"Sábados 20:00\"}"
+    },
+    {
+      "id": "dlq-3",
+      "nombre": "notif.entregar.v1",
+      "cola": "notif-outbox",
+      "reintentos": 1,
+      "payload": "{\"destino\":\"@kyra_cleric\",\"plantilla\":\"convocatoria\",\"sesionId\":\"ses-15\"}"
+    }
+  ]
+}

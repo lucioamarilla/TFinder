@@ -1,0 +1,69 @@
+{
+  "stats": [
+    { "label": "Total Cuentas", "valor": 1482, "tono": "tinta" },
+    { "label": "Activos", "valor": 1458, "tono": "verde" },
+    { "label": "Suspendidos", "valor": 24, "tono": "rojo" }
+  ],
+  "usuarios": [
+    {
+      "id": "u-seelah",
+      "iniciales": "SC",
+      "nombre": "Seelah Corazón de Oro",
+      "handle": "@seelah_paladin",
+      "rol": "Paladín Nvl 6",
+      "email": "seelah.iomedae@gremiogolarion.net",
+      "fecha": "14 OCT 4712 • 18:32",
+      "estado": "activo"
+    },
+    {
+      "id": "u-kragor",
+      "iniciales": "KE",
+      "nombre": "Kragor El Gris",
+      "handle": "@kragor_elgris",
+      "rol": "Reincidencia difamación",
+      "email": "kragor.shadows@netgrave.org",
+      "fecha": "12 OCT 4712 • 22:15",
+      "estado": "suspendido"
+    },
+    {
+      "id": "u-kyra",
+      "iniciales": "KS",
+      "nombre": "Kyra Sarenrae",
+      "handle": "@kyra_cleric",
+      "rol": "Clériga Nvl 5",
+      "email": "kyra.dawnflower@sarenrae-temple.org",
+      "fecha": "09 OCT 4712 • 14:08",
+      "estado": "activo"
+    },
+    {
+      "id": "u-dados",
+      "iniciales": "DG",
+      "nombre": "DadosGolarionShop",
+      "handle": "@dadosgolarionshop",
+      "rol": "Cuenta de spam",
+      "email": "promotions@golariondicebot.com",
+      "fecha": "05 OCT 4712 • 09:41",
+      "estado": "suspendido"
+    },
+    {
+      "id": "u-ezren",
+      "iniciales": "ES",
+      "nombre": "Ezren el Sabio",
+      "handle": "@ezren_mago",
+      "rol": "Mago Nvl 7",
+      "email": "ezren.arcane@absalom-academy.edu",
+      "fecha": "01 OCT 4712 • 16:50",
+      "estado": "activo"
+    },
+    {
+      "id": "u-mago",
+      "iniciales": "MO",
+      "nombre": "MagoOscuro_99",
+      "handle": "@magooscuro99",
+      "rol": "Conjurador Nvl 3",
+      "email": "magooscuro.invocador@ustalavmail.com",
+      "fecha": "28 SEP 4712 • 11:20",
+      "estado": "activo"
+    }
+  ]
+}

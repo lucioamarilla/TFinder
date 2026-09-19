@@ -1,0 +1,37 @@
+{
+  "candidatos": [
+    {
+      "id": "mm-seelah",
+      "iniciales": "SC",
+      "nombre": "Seelah Corazón de Oro",
+      "rol": "Jugador",
+      "modalidad": "Presencial",
+      "disponibilidad": "Fines de semana",
+      "meta": "Paladín · apoyo táctico · Sábados",
+      "bio": "Busco campaña gótica con enfoque narrativo y combate táctico por turnos.",
+      "toast": "Solicitud de camaradería enviada a Seelah."
+    },
+    {
+      "id": "mm-ezren",
+      "iniciales": "EZ",
+      "nombre": "Ezren de Absalom",
+      "rol": "Director de Juego",
+      "modalidad": "En línea (VTT)",
+      "disponibilidad": "Flexible",
+      "meta": "Conjurador · arcanista · flexible",
+      "bio": "Director de juego ocasional, jugador experimentado. Tono serio con humor de mesa.",
+      "toast": "Solicitud de camaradería enviada a Ezren."
+    },
+    {
+      "id": "mm-harsk",
+      "iniciales": "HA",
+      "nombre": "Harsk el Explorador",
+      "rol": "Jugador",
+      "modalidad": "En línea (VTT)",
+      "disponibilidad": "Entre semana",
+      "meta": "Explorador · remoto · nights",
+      "bio": "Juego en línea con Foundry. Me gustan las mesas con wiki viva y crónica al detalle.",
+      "toast": "Solicitud de camaradería enviada a Harsk."
+    }
+  ]
+}

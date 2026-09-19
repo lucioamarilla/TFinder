@@ -1,0 +1,85 @@
+{
+  "servicios": [
+    {
+      "id": "svc-mesas",
+      "nombre": "mesas-api",
+      "estado": "OPERATIVO",
+      "tono": "verde",
+      "salud": 96,
+      "latencia": "Latencia p95 · 240ms",
+      "uptime": "Uptime 99.98%"
+    },
+    {
+      "id": "svc-builds",
+      "nombre": "builds-api",
+      "estado": "DEGRADADO",
+      "tono": "ocre",
+      "salud": 58,
+      "latencia": "Latencia p95 · 1.2s",
+      "uptime": "Uptime 99.2%"
+    },
+    {
+      "id": "svc-feed",
+      "nombre": "feed-api",
+      "estado": "OPERATIVO",
+      "tono": "verde",
+      "salud": 99,
+      "latencia": "Latencia p95 · 90ms",
+      "uptime": "Uptime 99.99%"
+    }
+  ],
+  "alertas": [
+    "20:58 · p95 de builds-api superó 1s durante 5 min",
+    "19:12 · reintento por expiración en notif-api (resuelto)"
+  ],
+  "logs": [
+    {
+      "id": "o-1",
+      "timestamp": "20:58:12",
+      "nivel": "WARN",
+      "servicio": "builds-api",
+      "mensaje": "p95 de latencia superó el umbral de 1s durante 5 min.",
+      "correlationId": "cid-7b1e09aa"
+    },
+    {
+      "id": "o-2",
+      "timestamp": "20:47:55",
+      "nivel": "INFO",
+      "servicio": "notif-api",
+      "mensaje": "Mensaje entregado al outbox tras reintento programado.",
+      "correlationId": "cid-a55f2b90"
+    },
+    {
+      "id": "o-3",
+      "timestamp": "20:31:08",
+      "nivel": "ERROR",
+      "servicio": "builds-api",
+      "mensaje": "Timeout al persistir snapshot; redirigido a DLQ.",
+      "correlationId": "cid-7b1e09aa"
+    },
+    {
+      "id": "o-4",
+      "timestamp": "20:22:41",
+      "nivel": "INFO",
+      "servicio": "mesas-api",
+      "mensaje": "Solicitud de ingreso validada y registrada.",
+      "correlationId": "cid-9f2a41c7"
+    },
+    {
+      "id": "o-5",
+      "timestamp": "20:11:19",
+      "nivel": "WARN",
+      "servicio": "notif-api",
+      "mensaje": "Expiración de lock de entrega; reintento en 3 min.",
+      "correlationId": "cid-a55f2b90"
+    },
+    {
+      "id": "o-6",
+      "timestamp": "19:58:03",
+      "nivel": "INFO",
+      "servicio": "feed-api",
+      "mensaje": "Publicación moderada ocultada por el filtro del Tribunal.",
+      "correlationId": "cid-3c88d410"
+    }
+  ]
+}

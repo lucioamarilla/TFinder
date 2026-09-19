@@ -1,0 +1,15 @@
+{
+  "kpis": [
+    { "valor": "4,892", "label": "Logs procesados hoy", "tono": "oro" },
+    { "valor": "68", "label": "Mesas nuevas · 7 días", "tono": "oro" },
+    { "valor": "0", "label": "Alertas de moderación activas", "tono": "verde" }
+  ],
+  "accesos": [
+    { "titulo": "Trazabilidad de solicitudes", "subtitulo": "Auditar cada transacción", "to": "/admin/trazabilidad", "icono": "traza" },
+    { "titulo": "Observabilidad", "subtitulo": "Servicios y latencia", "to": "/admin/observabilidad", "icono": "pulso" },
+    { "titulo": "Gestor de DLQ", "subtitulo": "Mensajes fallidos", "to": "/admin/dlq", "icono": "cola" },
+    { "titulo": "Resiliencia", "subtitulo": "Circuit breakers y retries", "to": "/admin/resiliencia", "icono": "escudo" },
+    { "titulo": "Comparador as-is / to-be", "subtitulo": "Estado del sistema", "to": "/admin/comparador", "icono": "balanza" },
+    { "titulo": "Prometheus & Grafana", "subtitulo": "Métricas de producción", "to": "/admin/prometheus", "icono": "grafico" }
+  ]
+}

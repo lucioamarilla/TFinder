@@ -1,0 +1,96 @@
+{
+  "cadenas": [
+    {
+      "id": "TRAZ-001",
+      "problema": {
+        "id": "PB-01",
+        "titulo": "La coordinación de partidas vive en canales dispersos",
+        "detalle": "Los grupos pierden convocatorias, horarios y fichas entre foros, mensajería y planillas sueltas."
+      },
+      "necesidad": {
+        "id": "NC-01",
+        "titulo": "Centralizar la organización de mesas y campañas",
+        "detalle": "Un único nexus para explorar, unirse y gestionar partidas de Pathfinder 1e."
+      },
+      "requisitos": [
+        { "id": "RF-01", "titulo": "Listado y creación de mesas", "estado": "OK" },
+        { "id": "RF-02", "titulo": "Gestión de jugadores y solicitudes por mesa", "estado": "OK" },
+        { "id": "RNF-01", "titulo": "Trazabilidad de cada operación con correlation ID", "estado": "DLQ" }
+      ],
+      "historias": [
+        { "id": "HU-01", "titulo": "Como jugador quiero explorar mesas abiertas y postularme", "estado": "OK", "requisitos": ["RF-01", "RF-02"] },
+        { "id": "HU-02", "titulo": "Como GM quiero aprobar solicitudes y gestionar mi mesa", "estado": "OK", "requisitos": ["RF-02"] }
+      ],
+      "casosUso": [
+        { "id": "CU-01", "titulo": "Explorar mesas y enviar solicitud de ingreso", "estado": "OK", "historias": ["HU-01"] },
+        { "id": "CU-02", "titulo": "Administrar jugadores de una campaña activa", "estado": "OK", "historias": ["HU-02"] }
+      ]
+    },
+    {
+      "id": "TRAZ-002",
+      "problema": {
+        "id": "PB-02",
+        "titulo": "Las builds se comparten sin control de versiones",
+        "detalle": "Las fichas evolucionan sin registro de cambios y es imposible auditar una reversión."
+      },
+      "necesidad": {
+        "id": "NC-02",
+        "titulo": "Versionar y auditar fichas OGL",
+        "detalle": "Guardar cada cambio de build con autor, fecha y snapshot comparable."
+      },
+      "requisitos": [
+        { "id": "RF-03", "titulo": "Historial de versiones por build", "estado": "OK" },
+        { "id": "RF-04", "titulo": "Comparador de versiones con diff", "estado": "OK" },
+        { "id": "RNF-02", "titulo": "Aislamiento de fallos por bounded context", "estado": "DEGRADADO" }
+      ],
+      "historias": [
+        { "id": "HU-03", "titulo": "Como autor quiero ver y restaurar versiones de mi build", "estado": "OK", "requisitos": ["RF-03", "RF-04"] }
+      ],
+      "casosUso": [
+        { "id": "CU-03", "titulo": "Comparar y restaurar una versión anterior", "estado": "OK", "historias": ["HU-03"] }
+      ]
+    }
+  ],
+  "traza": [
+    {
+      "id": "req-traz-10924",
+      "servicio": "mesas-api",
+      "fecha": "4712-10-08 21:04:11",
+      "estado": "OK",
+      "metodo": "POST",
+      "ruta": "/mesas/{id}/jugadores",
+      "duracionMs": 184,
+      "correlationId": "cid-9f2a41c7"
+    },
+    {
+      "id": "req-traz-10923",
+      "servicio": "builds-api",
+      "fecha": "4712-10-08 20:59:02",
+      "estado": "DLQ",
+      "metodo": "PUT",
+      "ruta": "/builds/{id}",
+      "duracionMs": 5002,
+      "correlationId": "cid-7b1e09aa"
+    },
+    {
+      "id": "req-traz-10922",
+      "servicio": "feed-api",
+      "fecha": "4712-10-08 20:51:37",
+      "estado": "OK",
+      "metodo": "POST",
+      "ruta": "/feed/posts",
+      "duracionMs": 96,
+      "correlationId": "cid-3c88d410"
+    },
+    {
+      "id": "req-traz-10921",
+      "servicio": "notif-api",
+      "fecha": "4712-10-08 20:47:55",
+      "estado": "OK",
+      "metodo": "POST",
+      "ruta": "/notif/enviar",
+      "duracionMs": 240,
+      "correlationId": "cid-a55f2b90"
+    }
+  ]
+}

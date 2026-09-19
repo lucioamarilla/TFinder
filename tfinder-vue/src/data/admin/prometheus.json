@@ -1,0 +1,45 @@
+{
+  "consulta": "rate(mesas_requests_total[5m])",
+  "resultado": "Consulta ejecutada · 1.24 req/s.",
+  "paneles": [
+    {
+      "id": "panel-cpu",
+      "titulo": "CPU · builds-api",
+      "footer": "p95 · 82% · ALERTA > 80%",
+      "bars": [
+        { "altura": 48, "tono": "cobre" },
+        { "altura": 64, "tono": "cobre" },
+        { "altura": 56, "tono": "cobre" },
+        { "altura": 72, "tono": "oro" },
+        { "altura": 80, "tono": "oro" },
+        { "altura": 64, "tono": "cobre" }
+      ]
+    },
+    {
+      "id": "panel-mem",
+      "titulo": "Memoria · mesas-api",
+      "footer": "p95 · 1.1 GB · estable",
+      "bars": [
+        { "altura": 40, "tono": "verde" },
+        { "altura": 48, "tono": "verde" },
+        { "altura": 44, "tono": "verde" },
+        { "altura": 52, "tono": "verde" },
+        { "altura": 48, "tono": "verde" },
+        { "altura": 56, "tono": "verde" }
+      ]
+    },
+    {
+      "id": "panel-lat",
+      "titulo": "Latencia · notif-api",
+      "footer": "p95 · 90ms · OK",
+      "bars": [
+        { "altura": 24, "tono": "verde" },
+        { "altura": 32, "tono": "verde" },
+        { "altura": 28, "tono": "verde" },
+        { "altura": 36, "tono": "verde" },
+        { "altura": 32, "tono": "verde" },
+        { "altura": 40, "tono": "verde" }
+      ]
+    }
+  ]
+}

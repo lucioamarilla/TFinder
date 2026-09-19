@@ -1,0 +1,118 @@
+{
+  "resumen": [
+    { "label": "Total Logs Hoy", "valor": "4,892", "tono": "cobre" },
+    { "label": "Nuevas Mesas (7D)", "valor": "68", "tono": "oro" },
+    { "label": "Alertas de IP", "valor": "0", "tono": "verde" }
+  ],
+  "usuariosSemana": {
+    "titulo": "Usuarios Nuevos por Semana",
+    "subtitulo": "Últimas 8 semanas del calendario de Golarion",
+    "media": "Media semanal: 73 aventureros",
+    "delta": "▲ +18.7% respecto al mes anterior",
+    "series": [
+      { "label": "Sem 32", "valor": 42, "altura": 35 },
+      { "label": "Sem 33", "valor": 58, "altura": 48 },
+      { "label": "Sem 34", "valor": 51, "altura": 42 },
+      { "label": "Sem 35", "valor": 74, "altura": 62 },
+      { "label": "Sem 36", "valor": 65, "altura": 54 },
+      { "label": "Sem 37", "valor": 88, "altura": 73 },
+      { "label": "Sem 38", "valor": 96, "altura": 80 },
+      { "label": "Sem 39", "valor": 114, "altura": 95, "actual": true }
+    ]
+  },
+  "mesasDia": {
+    "titulo": "Mesas Creadas por Día",
+    "subtitulo": "Registro de los últimos 7 días de campaña",
+    "total": "Total semanal: 78 mesas abiertas",
+    "pico": "Pico de actividad: Sábados noche",
+    "series": [
+      { "label": "Lun (08)", "valor": 6, "altura": 30 },
+      { "label": "Mar (09)", "valor": 8, "altura": 40 },
+      { "label": "Mié (10)", "valor": 11, "altura": 55 },
+      { "label": "Jue (11)", "valor": 9, "altura": 45 },
+      { "label": "Vie (12)", "valor": 14, "altura": 70 },
+      { "label": "Sáb (13)", "valor": 18, "altura": 90, "pico": true },
+      { "label": "Dom (14)", "valor": 12, "altura": 60 }
+    ]
+  },
+  "logs": [
+    {
+      "id": "log-1",
+      "timestamp": "14 OCT 4712 • 19:42:15",
+      "iniciales": "AV",
+      "usuario": "Aldren Valeros",
+      "rol": "Alguacil / GM",
+      "rolSuspendido": false,
+      "accion": "Suspensión temporal aplicada a la cuenta @kragor_elgris por reincidencia en difamación.",
+      "badge": { "texto": "DECRETO DE MODERACIÓN ARCHIVADO", "tono": "verde" },
+      "ip": "192.168.4.112",
+      "origen": "Absalom Nexus",
+      "ipAlerta": false
+    },
+    {
+      "id": "log-2",
+      "timestamp": "14 OCT 4712 • 15:10:21",
+      "iniciales": "MO",
+      "usuario": "MagoOscuro_99",
+      "rol": "Conjurador Nvl 3",
+      "rolSuspendido": false,
+      "accion": "Publicación en Feed Social ocultada por el filtro del Tribunal tras acumular 4 reportes por spoiler sin etiqueta.",
+      "badge": { "texto": "ACCIÓN AUTOMATIZADA DE MODERACIÓN", "tono": "rojo" },
+      "ip": "198.51.100.23",
+      "origen": "Ustalav Mail Proxy",
+      "ipAlerta": false
+    },
+    {
+      "id": "log-3",
+      "timestamp": "14 OCT 4712 • 18:30:02",
+      "iniciales": "SC",
+      "usuario": "Seelah Corazón de Oro",
+      "rol": "Paladín Nvl 6",
+      "rolSuspendido": false,
+      "accion": "Publicó la mesa «La Corona de Carroña: Reclutamiento de Fe».",
+      "badge": { "texto": "MESA ABIERTA • 4 PLAZAS DISPONIBLES", "tono": "oro" },
+      "ip": "172.16.89.44",
+      "origen": "Lastwall Gateway",
+      "ipAlerta": false
+    },
+    {
+      "id": "log-4",
+      "timestamp": "14 OCT 4712 • 17:15:48",
+      "iniciales": "ES",
+      "usuario": "Ezren el Sabio",
+      "rol": "Mago Nvl 7",
+      "rolSuspendido": false,
+      "accion": "Actualizó su build «Erudito de las Runas» a la versión 7.2.",
+      "badge": null,
+      "ip": "10.0.12.87",
+      "origen": "Absalom Academy",
+      "ipAlerta": false
+    },
+    {
+      "id": "log-5",
+      "timestamp": "14 OCT 4712 • 14:08:50",
+      "iniciales": "KS",
+      "usuario": "Kyra Sarenrae",
+      "rol": "Clériga Nvl 5",
+      "rolSuspendido": false,
+      "accion": "Inició sesión con verificación en dos pasos.",
+      "badge": null,
+      "ip": "203.0.113.19",
+      "origen": "Qadira Sanctum",
+      "ipAlerta": false
+    },
+    {
+      "id": "log-6",
+      "timestamp": "14 OCT 4712 • 12:44:11",
+      "iniciales": "DG",
+      "usuario": "DadosGolarionShop",
+      "rol": "Cuenta Bloqueada",
+      "rolSuspendido": true,
+      "accion": "Intento de acceso a la plataforma bloqueado por el guardián de credenciales.",
+      "badge": { "texto": "ACCESO DENEGADO [HTTP 403]", "tono": "rojo" },
+      "ip": "185.220.101.5",
+      "origen": "Tor Exit Node",
+      "ipAlerta": true
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "breakerEstado": "CERRADO",
+  "ajustes": [
+    {
+      "id": "cb-umbral",
+      "label": "Circuit breaker · mesas-api",
+      "helper": "fallos consecutivos antes de abrir el circuito",
+      "valor": 5,
+      "min": 1,
+      "max": 20,
+      "unidad": "fallos",
+      "badge": { "texto": "OPERATIVO", "tono": "verde" }
+    },
+    {
+      "id": "retries-max",
+      "label": "Retries con backoff",
+      "helper": "reintentos · backoff 250ms/1s/4s",
+      "valor": 3,
+      "min": 0,
+      "max": 10,
+      "unidad": "reintentos",
+      "badge": { "texto": "ACTIVO", "tono": "cobre" }
+    },
+    {
+      "id": "timeout-cola",
+      "label": "Timeout de cola",
+      "helper": "redirige a DLQ automáticamente",
+      "valor": 5,
+      "min": 1,
+      "max": 60,
+      "unidad": "s",
+      "badge": { "texto": "ACTIVO", "tono": "cobre" }
+    },
+    {
+      "id": "ventana-observacion",
+      "label": "Ventana de observación",
+      "helper": "evaluación de fallos",
+      "valor": 60,
+      "min": 10,
+      "max": 600,
+      "unidad": "s",
+      "badge": { "texto": "PENDIENTE", "tono": "bronce" }
+    }
+  ]
+}

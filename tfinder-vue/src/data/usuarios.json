@@ -1,0 +1,80 @@
+{
+  "usuarios": [
+    {
+      "id": "seelah",
+      "autorId": "seelah",
+      "nombre": "Seelah Corazón de Oro",
+      "iniciales": "SC",
+      "online": true,
+      "overline": "Hermandad de la Herencia Sagrada",
+      "subline": "Paladín Humana Nvl 6 • Campeona de la Justicia (Iomedae)",
+      "bio": "«Mi espada y mi escudo pertenecen a los inocentes de las Tierras Sombrías. Siempre dispuesta a unirme a mesas de campaña que busquen erradicar la herejía o debatir la eficacia de dotes sagradas en Pathfinder 1e.»",
+      "miembroDesde": "Pharast 4710 AR",
+      "siguiendo": true,
+      "stats": [
+        { "valor": 4, "label": "Mesas en Juego" },
+        { "valor": 8, "label": "Builds Públicos" },
+        { "valor": 520, "label": "Seguidores" },
+        { "valor": 114, "label": "Seguidos" }
+      ],
+      "builds": [
+        {
+          "id": "pf1-bld-09251",
+          "nombre": "Seelah de la Luz Eterna",
+          "publico": true,
+          "clase": "Paladín",
+          "raza": "Humana",
+          "nivel": 6,
+          "arquetipo": "Voto Sagrado",
+          "atributos": "FUE 16 (+3) • DES 12 (+1) • CON 14 (+2) • INT 10 • SAB 13 (+1) • CAR 16 (+3)",
+          "dotes": "Gracia Divina, Imposición de Manos, Salud Divina, Castigar el Mal 2/día, Ataque Poderoso, Soltura con Arma (Espada Larga)",
+          "actualizado": "Actualizado hace 3 días"
+        },
+        {
+          "id": "pf1-bld-09266",
+          "nombre": "Valeria de la Corona",
+          "publico": true,
+          "clase": "Clériga",
+          "raza": "Humana",
+          "nivel": 5,
+          "arquetipo": "Dominio del Sol",
+          "atributos": "FUE 14 (+2) • DES 10 • CON 14 (+2) • INT 10 • SAB 17 (+3) • CAR 14 (+2)",
+          "dotes": "Canalizar Energía Positiva 5/día (3d6), Bendición Solar, Expulsión Aumentada, Conjurar en Combate, Escudo Sagrado",
+          "actualizado": "Actualizado hace 1 semana"
+        }
+      ]
+    },
+    {
+      "id": "ezren",
+      "autorId": "ezren",
+      "nombre": "Ezren el Sabio",
+      "iniciales": "ES",
+      "online": true,
+      "overline": "Academia de Absalom",
+      "subline": "Mago Humano Nvl 7 • Erudito de las Runas",
+      "bio": "«El conocimiento es la única llama que ninguna cripta puede apagar.» Compilador de conjuros, debatiente de reglas OGL y cronista de expediciones arcanas.",
+      "miembroDesde": "Rova 4709 AR",
+      "siguiendo": false,
+      "stats": [
+        { "valor": 6, "label": "Mesas en Juego" },
+        { "valor": 15, "label": "Builds Públicos" },
+        { "valor": 410, "label": "Seguidores" },
+        { "valor": 203, "label": "Seguidos" }
+      ],
+      "builds": [
+        {
+          "id": "pf1-bld-09302",
+          "nombre": "Ezren de Absalom",
+          "publico": true,
+          "clase": "Mago",
+          "raza": "Humano",
+          "nivel": 7,
+          "arquetipo": "Erudito de las Runas",
+          "atributos": "FUE 10 • DES 14 (+2) • CON 12 (+1) • INT 20 (+5) • SAB 12 (+1) • CAR 10",
+          "dotes": "Conjurar en Combate, Escuela Focalizada (Evocación), Pericia en Conjuros, Soltura con Conjuros, Vara del Mago",
+          "actualizado": "Actualizado hace 2 días"
+        }
+      ]
+    }
+  ]
+}

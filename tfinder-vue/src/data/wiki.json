@@ -1,0 +1,179 @@
+{
+  "arboles": {
+    "la-corona-de-carrona": {
+      "carpetas": [
+        { "id": "personajes", "nombre": "Personajes & NPCs", "icono": "user", "abierta": true },
+        { "id": "lugares", "nombre": "Lugares & Escenarios", "icono": "map", "abierta": true },
+        { "id": "criaturas", "nombre": "Criaturas & Enemigos", "icono": "claw", "abierta": false },
+        { "id": "notas", "nombre": "Notas de Trama & Secretos", "icono": "scroll", "abierta": false }
+      ],
+      "paginas": [
+        {
+          "id": "kendra-lorrimor",
+          "carpeta": "personajes",
+          "titulo": "Kendra Lorrimor (Heredera del Códice)",
+          "tipo": "NPC",
+          "fecha": "14 Calistril, 4712",
+          "resumen": "Hija del profesor fallecido; guardiana del testamento y del Códice Nerótico.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Kendra Lorrimor heredó de su padre Petros una biblioteca repleta de tratados prohibidos y la custodia de los Manuscritos del Profesor. Aceptó entregar al grupo el testamento póstumo que los convoca a Ravengro con la primera nota sobre la ruta del Códice." },
+            { "tipo": "parrafo", "texto": "Es suspicaz con los forasteros, pero leal a quien demuestre intenciones genuinas. Teme que los herederos de la Vía Susurrante la hayan marcado por poseer los documentos." },
+            { "tipo": "lista", "titulo": "Habilidades destacadas", "items": ["Umbral: sabio contacto con el Gremio de Libreros de Caliphas.", "Conocimientos arcanos rudimentarios copiados de los apuntes de su padre.", "Influencia civil en Ravengro tras el juicio de Herveio."] }
+          ]
+        },
+        {
+          "id": "petros-lorrimor",
+          "carpeta": "personajes",
+          "titulo": "Petros Lorrimor (El Profesor Difunto)",
+          "tipo": "NPC",
+          "fecha": "03 Calistril, 4712",
+          "resumen": "Autor del Códice Nerótico y mentor caído; su funeral desató la maldición.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Profesor de la Universidad de Lepidstadt, coleccionista de textos nigrománticos y cronista secreto de la Vía Susurrante. Mantuvo el peligroso libro —el Códice Nerótico— cohesionado y bajo sello durante dos décadas." },
+            { "tipo": "parrafo", "texto": "Su muerte en las escalinatas del cementerio de Ravengro no fue accidental. El círculo de los Viaminos lo eliminó para recuperar el Códice." }
+          ]
+        },
+        {
+          "id": "la-bestia-de-lepidstadt",
+          "carpeta": "personajes",
+          "titulo": "La Bestia de Lepidstadt",
+          "tipo": "NPC",
+          "fecha": "02 Calistril, 4712",
+          "resumen": "Entidad encadenada en los sótanos del tribunal; centro del juicio canónico.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Construcción alquímica sin nombre propio, despierta cuando la luna oculta la constelación de La Bestia. Su juicio en Lepidstadt dividirá a la academia entre quienes la condenan y quienes la estudian." },
+            { "tipo": "lista", "titulo": "Motivo de la crónica", "items": ["El profesor Duchy invoca su liberación como prueba suprema.", "La Bestia conoce el paradero de la Cámara del Viamino en la ciudad."] }
+          ]
+        },
+        {
+          "id": "la-via-susurrante",
+          "carpeta": "personajes",
+          "titulo": "Culto de la Vía Susurrante",
+          "tipo": "NPC",
+          "fecha": "10 Calistril, 4712",
+          "resumen": "Secta necrófila que venera a Tar-Baphon y busca desmembrar el Códice Nerótico.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Los Viaminos creen que el ciclo de la muerte está vacío y que la única trascendencia es la mano del Rey de los Reyes Difuntos. Operan en criptas, universidades y cortes corruptas de Ustalav." },
+            { "tipo": "parrafo", "texto": "Portan sellos de cera negra y hablan en susurros; rara vez actúan en solitario." }
+          ]
+        },
+        {
+          "id": "ravengro",
+          "carpeta": "lugares",
+          "titulo": "Ravengro (Aldea de Canterwall)",
+          "tipo": "LUGAR",
+          "fecha": "14 Calistril, 4712",
+          "resumen": "Pueblo de partida donde comenzó el funeral del Profesor Lorrimor.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Asentamiento silencioso asentado junto al río Vhatys, célebre por el Canto de los Cedros y por la ficción de la carroña que nunca contamina sus aguas." },
+            { "tipo": "lista", "titulo": "Establecimientos", "items": ["El Cuchillo y la Hoz (taberna de Baltor Tabbard).", "El Colegio Títulos: jurado de la noche de la vigilia."] }
+          ]
+        },
+        {
+          "id": "prision-piedra-hendida",
+          "carpeta": "lugares",
+          "titulo": "Prisión de Piedra Hendida (Harrowstone)",
+          "tipo": "LUGAR",
+          "fecha": "10 Calistril, 4712",
+          "resumen": "Antigua penitenciaría calcinada infestada por los espíritus de los 5 condenados.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Alzada sobre la colina de Harrowstone, ardió en 4661 con su guardamayor y sus presos dentro. Los espectros de los Cinco Condenados aún gobiernan sus pasillos." },
+            { "tipo": "parrafo", "texto": "Es la primera gran mazmorra de la campaña; albergaba la cabeza embalsamada del vampiro Hartjes, clave para los primeros ritos." }
+          ]
+        },
+        {
+          "id": "ciudad-lepidstadt",
+          "carpeta": "lugares",
+          "titulo": "Ciudad de Lepidstadt (Vieland)",
+          "tipo": "LUGAR",
+          "fecha": "08 Calistril, 4712",
+          "resumen": "Metrópoli ilustrada a orillas del río Menador; sede del juicio actual.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Capital de Vieland, ciudad de universidad, ferias y anfiteatros. El escrutinio académico la hace el escenario perfecto del juicio de la Bestia." },
+            { "tipo": "parrafo", "texto": "El gremio de escribanos y la catedral de San Gudja mantienen archivos que rastrean a la Vía Susurrante." }
+          ]
+        },
+        {
+          "id": "universidad-lepidstadt",
+          "carpeta": "lugares",
+          "titulo": "Universidad de Lepidstadt",
+          "tipo": "LUGAR",
+          "fecha": "07 Calistril, 4712",
+          "resumen": "Recinto académico corrupto por la ambición; alberga la Cámara de los Códice.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Sus aulas resguardan la biblioteca más grande de Ustalav y el laboratorio donde se forjó a la Bestia. Allí enseñó Lorrimor y conspiran los Viaminos." }
+          ]
+        },
+        {
+          "id": "pantano-diabolico",
+          "carpeta": "lugares",
+          "titulo": "Pantano Diabólico",
+          "tipo": "LUGAR",
+          "fecha": "20 Calistril, 4712",
+          "resumen": "Lodazal técnico entre Vieland y Amaans; madriguera de trogloditas y susurros.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Terreno pantanoso de aguas sulfurosas y nieblas venenosas. Los trogloditas hostigan a las caravanas que cruzan hacia el norte." },
+            { "tipo": "cita", "texto": "«Huele a azufre y las antorchas se apagan solas cuando cruzas el vado.» — Kendra Lorrimor" }
+          ]
+        },
+        {
+          "id": "espectros-de-harrowstone",
+          "carpeta": "criaturas",
+          "titulo": "Espectros de los Cinco Condenados",
+          "tipo": "CRIATURA",
+          "fecha": "11 Calistril, 4712",
+          "resumen": "Los cinco presos ahorcados en la vieja prisión acechan en sus celdas.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "El Guardamayor, el Blasfemo, el Ladrón de Esperanzas, el Escribano y la Decapitada. Cada uno custodia una llave del calabozo de Hartjes." }
+          ]
+        },
+        {
+          "id": "siervos-via-susurrante",
+          "carpeta": "criaturas",
+          "titulo": "Siervos de la Vía Susurrante",
+          "tipo": "CRIATURA",
+          "fecha": "12 Calistril, 4712",
+          "resumen": "Vampiros de linaje y ghouls que ejecutan los ritos del Códice.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "A diferencia de los nigromantes mortales, estos siervos han trascendido la muerte y solo temen al clero de la Corriente de Eterna Luz." }
+          ]
+        },
+        {
+          "id": "gritos-de-las-salinas",
+          "carpeta": "criaturas",
+          "titulo": "Cosechadores del Grito",
+          "tipo": "CRIATURA",
+          "fecha": "15 Calistril, 4712",
+          "resumen": "Depredadores alados que responden al campanario durante la niebla.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Bestias parecidas a gaviotas espectrales que arrastran a los viajeros solitarios hacia el campanario en noches de luna velada." }
+          ]
+        },
+        {
+          "id": "el-juicio-de-la-bestia",
+          "carpeta": "notas",
+          "titulo": "El Juicio de la Bestia",
+          "tipo": "NOTA",
+          "fecha": "18 Calistril, 4712",
+          "resumen": "Plan del GM: el rol doc de la corte decide el destino de la Bestia en 3 actos.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Secreto para el GM. La defensora es Duchy, el fiscal es Vournemark, y el jurado decide entre 5 finales posibles que afectan el acceso a la Cámara del Viamino." },
+            { "tipo": "lista", "titulo": "Gatillos", "items": ["Si el jurado condena: cambio de escenario a la Universidad.", "Si la bestia huye: cacería por el Pantano Diabólico.", "Si alguien muere en la sala: rito secundario abierto."] }
+          ]
+        },
+        {
+          "id": "la-carta-del-viamino",
+          "carpeta": "notas",
+          "titulo": "La Carta del Viamino",
+          "tipo": "NOTA",
+          "fecha": "19 Calistril, 4712",
+          "resumen": "Comunicación cifrada interceptada en la imprenta de Lekkdin.",
+          "contenido": [
+            { "tipo": "parrafo", "texto": "Desencriptada con el sello del profesor: 'El Códice es la llave. Harrowstone custodia la primera hoja. El tribunal no debe liberar a la Bestia. — L.'" },
+            { "tipo": "parrafo", "texto": "Permite dirigir al grupo hacia la prisión sin revelar la identidad del remitente." }
+          ]
+        }
+      ]
+    }
+  }
+}

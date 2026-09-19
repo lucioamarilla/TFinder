@@ -1,0 +1,106 @@
+{
+  "capacidad": 5,
+  "mesas": {
+    "la-corona-de-carrona": {
+      "miembros": [
+        {
+          "id": "krv-kaelen",
+          "nombre": "Kaelen Valeros",
+          "avatar": "KV",
+          "personaje": "Kaelen Alvarés",
+          "clase": "Guerrero",
+          "nivel": 3,
+          "estado": "Activo",
+          "rol": "Jugador",
+          "buildVinculado": true,
+          "fecha": "Ingresó 05 Neth, 4712"
+        },
+        {
+          "id": "krv-seelah",
+          "nombre": "Seelah La Radiante",
+          "avatar": "SR",
+          "personaje": "Seelah de Ustalav",
+          "clase": "Paladín",
+          "nivel": 4,
+          "estado": "Activo",
+          "rol": "Jugador",
+          "buildVinculado": true,
+          "fecha": "Ingresó 05 Neth, 4712"
+        },
+        {
+          "id": "krv-ezren",
+          "nombre": "Ezren Fox",
+          "avatar": "EF",
+          "personaje": "Ezren, el Erudito",
+          "clase": "Mago",
+          "nivel": 4,
+          "estado": "En pausa",
+          "rol": "Jugador",
+          "buildVinculado": true,
+          "fecha": "Ingresó 05 Neth, 4712"
+        },
+        {
+          "id": "krv-harsk",
+          "nombre": "Harsk Ironfoot",
+          "avatar": "HI",
+          "personaje": "Harsk Vigía",
+          "clase": "Explorador",
+          "nivel": 4,
+          "estado": "Activo",
+          "rol": "Jugador",
+          "buildVinculado": false,
+          "fecha": "Ingresó 05 Neth, 4712"
+        }
+      ],
+      "solicitudes": [
+        {
+          "id": "sol-01",
+          "nombre": "Amiri del Norte",
+          "avatar": "AM",
+          "personaje": "Amiri Rompefilos",
+          "clase": "Bárbara",
+          "nivel": 3,
+          "nota": "Busca jugar una campaña gótica; leyó la sinopsis y acepta el tono grim.",
+          "fecha": "Solicitó hace 2 días"
+        },
+        {
+          "id": "sol-02",
+          "nombre": "Merisiel Vergan",
+          "avatar": "MV",
+          "personaje": "Merisiel, la Sombra",
+          "clase": "Pícara",
+          "nivel": 4,
+          "nota": "Experiencia previa con PF1e; su build es evasista y orientado a exploración urbana.",
+          "fecha": "Solicitó hace 5 días"
+        },
+        {
+          "id": "sol-03",
+          "nombre": "Sajan Madriguera",
+          "avatar": "SM",
+          "personaje": "Sajan, el Vientre de la Bestia",
+          "clase": "Monje",
+          "nivel": 2,
+          "nota": "Sin partidas previas en mesa; recomendado por Kaelen.",
+          "fecha": "Solicitó hace 1 semana"
+        }
+      ]
+    },
+    "auge-senores-runas": {
+      "miembros": [
+        {
+          "id": "asr-aldren",
+          "nombre": "Aldren Valeros",
+          "avatar": "AV",
+          "personaje": "Valeros, el Espejo",
+          "clase": "Guerrero",
+          "nivel": 3,
+          "estado": "Activo",
+          "rol": "Jugador",
+          "buildVinculado": true,
+          "fecha": "Ingresó 20 Erastus, 4712"
+        }
+      ],
+      "solicitudes": []
+    }
+  }
+}

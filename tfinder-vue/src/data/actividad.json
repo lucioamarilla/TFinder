@@ -1,0 +1,44 @@
+{
+  "actividad": [
+    {
+      "id": "act-diario",
+      "icono": "diario",
+      "fuerte": "Aldren van Richten",
+      "cuerpo": "actualizó el diario de campaña en La Corona de Carroña:",
+      "citado": "Capítulo II: El Juicio de la Bestia.",
+      "tiempo": "Hace 15 min"
+    },
+    {
+      "id": "act-nueva",
+      "icono": "espadas",
+      "fuerte": "Seelah Radiante",
+      "cuerpo": "se unió a la expedición con su Paladín de Iomedae.",
+      "citado": "",
+      "tiempo": "Hace 2 horas"
+    },
+    {
+      "id": "act-foro",
+      "icono": "foro",
+      "fuerte": "",
+      "cuerpo": "Nuevo mensaje en el foro táctico de El Auge de los Señores de las Runas.",
+      "citado": "",
+      "tiempo": "Hace 5 horas"
+    },
+    {
+      "id": "act-nivel",
+      "icono": "estrella",
+      "fuerte": "Valeros",
+      "cuerpo": "subió a nivel 4 (Puntos de golpe y dotes actualizados).",
+      "citado": "",
+      "tiempo": "Ayer, 21:40"
+    },
+    {
+      "id": "act-convocatoria",
+      "icono": "reloj",
+      "fuerte": "Convocatoria fijada",
+      "cuerpo": "para la próxima sesión: Sábado 18:00 GMT+1.",
+      "citado": "",
+      "tiempo": "Hace 2 días"
+    }
+  ]
+}

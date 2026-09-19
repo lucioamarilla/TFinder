@@ -1,0 +1,204 @@
+/* ============================================================
+   TFinder · Design tokens y componentes base (capa canónica)
+   Portado 1:1 desde tfinder-prototipo-nuevo/_sistema/tokens.css
+   ============================================================ */
+:root{
+  --tf-coal:#1A1A1A;
+  --tf-ink:#2B1D11;
+  --tf-copper:#8B5A2B;
+  --tf-gold:#D4AF37;
+  --tf-gold-deep:#B8860B;
+  --tf-olive:#556B2F;
+  --tf-olive-bright:#6B8E23;
+  --tf-garnet:#8B1A1A;
+  --tf-vellum:#FDF8EE;
+  --tf-parchment:#C2A980;
+  --tf-bronze:#8B7D6B;
+  --tf-canvas:#e5d3b3;
+  --tf-serif:'EB Garamond',Garamond,Georgia,serif;
+  --tf-mason:'IM Fell English','Cinzel',Georgia,serif;
+  --tf-logo:'Cinzel Decorative','Cinzel',Georgia,serif;
+  --tf-labels:'Barlow Condensed','Fira Sans Condensed',sans-serif;
+  --tf-radius:2px;
+
+  /* variables usadas por algunas pantallas originales (p14/p20/p21) */
+  --font-mason:var(--tf-mason);
+  --font-minion:var(--tf-serif);
+  --font-tarzana:var(--tf-labels);
+}
+
+/* ---------- Tipografía canónica (4 familias) ---------- */
+.font-logo{ font-family:var(--tf-logo); }
+.font-mason{ font-family:var(--tf-mason); letter-spacing:.03em; }
+.font-minion{ font-family:var(--tf-serif); }
+.font-tarzana{ font-family:var(--tf-labels); letter-spacing:.04em; }
+.font-narrative{ font-family:var(--tf-serif); }
+body{ font-family:var(--tf-serif); color:#1A1A1A; }
+
+/* ---------- Estados globales ---------- */
+::selection{ background:#D4AF37; color:#1A1A1A; }
+:focus-visible{ outline:2px solid var(--tf-gold); outline-offset:2px; border-radius:var(--tf-radius); }
+
+/* ---------- Tabs canónicos ---------- */
+.tab-item, .nav-tab{
+  font-family:var(--tf-labels); text-transform:uppercase; letter-spacing:.08em; font-weight:600;
+  color:#6b5a38; background:rgba(253,248,238,.55);
+  border:1px solid var(--tf-parchment); border-bottom:none;
+  border-radius:var(--tf-radius) var(--tf-radius) 0 0;
+  padding:.7rem 1rem; cursor:pointer; transition:all .15s ease;
+}
+.tab-item:hover, .nav-tab:hover{ color:var(--tf-copper); }
+.tab-item.active, .tab-active, .nav-tab-active, .tab.is-active{
+  color:var(--tf-gold); background:var(--tf-coal); border-color:var(--tf-coal);
+  box-shadow:inset 0 -2px 0 var(--tf-gold); font-weight:700;
+}
+
+/* ---------- Botones canónicos (2 variantes) ---------- */
+.btn-gold, .btn-gold-emboss, .btn-gold-relief{
+  font-family:var(--tf-labels); font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+  background:var(--tf-gold); color:var(--tf-coal); border:1px solid var(--tf-gold-deep);
+  border-radius:var(--tf-radius); box-shadow:0 2px 0 var(--tf-copper); cursor:pointer;
+  transition:filter .15s ease, transform .15s ease;
+}
+.btn-gold:hover, .btn-gold-emboss:hover, .btn-gold-relief:hover{ filter:brightness(1.08); }
+.btn-gold:active, .btn-gold-emboss:active, .btn-gold-relief:active{ transform:translateY(1px); }
+.btn-copper-outline{
+  font-family:var(--tf-labels); font-weight:600; text-transform:uppercase; letter-spacing:.06em;
+  background:transparent; color:var(--tf-copper); border:1px solid var(--tf-copper);
+  border-radius:var(--tf-radius); cursor:pointer; transition:background .15s ease;
+}
+.btn-copper-outline:hover{ background:rgba(139,90,43,.1); }
+
+/* ---------- Tarjetas ---------- */
+.card-parchment, .sim-dlg .sim-dlg-card{ border-radius:var(--tf-radius); }
+
+/* ---------- Footer canónico ---------- */
+.sim-footer{
+  font-family:var(--tf-serif); background:#161616; border-top:2px solid var(--tf-gold);
+  color:var(--tf-bronze); padding:2rem 1.5rem 2.5rem; position:relative; z-index:20;
+}
+.sim-footer-inner{
+  max-width:1160px; margin:0 auto; display:flex; flex-wrap:wrap;
+  gap:1rem 2rem; align-items:center; justify-content:space-between;
+}
+.sim-footer-brand b{
+  font-family:var(--tf-logo); font-size:20px; letter-spacing:.12em;
+  color:var(--tf-gold); text-shadow:0 1px 0 var(--tf-copper);
+}
+.sim-footer-brand i{
+  display:block; font-style:normal; font-size:9.5px; letter-spacing:.22em;
+  text-transform:uppercase; color:rgba(212,175,55,.72); margin-top:3px;
+}
+.sim-footer-nav{ display:flex; gap:.4rem .9rem; flex-wrap:wrap; }
+.sim-footer-nav a{
+  font-family:var(--tf-labels); font-size:13px; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--tf-parchment); text-decoration:none;
+}
+.sim-footer-nav a:hover{ color:var(--tf-gold); }
+.sim-footer-legal{
+  width:100%; font-size:11.5px; letter-spacing:.02em; line-height:1.5;
+  border-top:1px solid rgba(139,90,43,.35); padding-top:.8rem; margin-top:.4rem;
+}
+
+/* ---------- Menú móvil (hamburguesa) ---------- */
+.sim-menu-toggle{
+  display:none; align-items:center; justify-content:center; width:44px; height:44px;
+  background:transparent; border:1px solid rgba(212,175,55,.5); color:var(--tf-gold);
+  border-radius:var(--tf-radius); cursor:pointer;
+}
+.sim-menu-toggle:hover{ background:rgba(212,175,55,.12); }
+.sim-panel{
+  position:fixed; top:72px; left:0; right:0; z-index:490;
+  background:rgba(22,22,22,.98); border-bottom:2px solid var(--tf-gold);
+  box-shadow:0 18px 30px rgba(0,0,0,.45); padding:.8rem 1.25rem 1rem;
+}
+.sim-panel-nav{ display:flex; flex-direction:column; gap:.25rem; }
+.sim-panel-nav a, .sim-panel .sim-panel-btn{
+  font-family:var(--tf-labels); font-size:15px; letter-spacing:.06em; text-transform:uppercase;
+  color:#F4E8D1; text-decoration:none; padding:.7rem .4rem;
+  border-bottom:1px solid rgba(139,90,43,.3);
+}
+.sim-panel-nav a.activo{ color:var(--tf-gold); }
+.sim-panel .sim-panel-btn{ background:none; text-align:left; cursor:pointer; color:var(--tf-parchment); }
+.sim-panel .sim-badge{ width:max-content; margin:.6rem .4rem 0; }
+
+/* ---------- Cerrar sesión ---------- */
+.sim-logout{
+  font-family:var(--tf-labels); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  color:#F4E8D1; background:rgba(139,26,26,.28); border:1px solid rgba(139,26,26,.6);
+  border-radius:var(--tf-radius); padding:.45rem .7rem; cursor:pointer; white-space:nowrap;
+}
+.sim-logout:hover{ background:rgba(139,26,26,.5); color:#FDF8EE; }
+
+@media (max-width:920px){
+  .sim-menu-toggle{ display:inline-flex; }
+}
+
+/* ---------- Badges tipados de la wiki ---------- */
+.badge-place{
+  background:rgba(139,90,43,.14); color:#8B5A2B; border:1px solid rgba(139,90,43,.45);
+}
+.badge-npc{
+  background:rgba(107,142,35,.14); color:#556B2F; border:1px solid rgba(107,142,35,.5);
+}
+.badge-creature{
+  background:rgba(139,26,26,.12); color:#8B1A1A; border:1px solid rgba(139,26,26,.4);
+}
+.badge-note{
+  background:rgba(139,90,43,.1); color:#5C4A32; border:1px solid rgba(139,90,43,.35);
+}
+/* ---------- Ficha OGL (P12) ---------- */
+.stat-bar-bg{ background-color:#E8DCC8; border:1px solid #C2A980; }
+.stat-bar-fill{ background-color:#8B5A2B; }
+.ogl-divider{ margin-top:1.25rem; margin-bottom:0.75rem; }
+.ogl-divider-header{ font-family:'Barlow Condensed',sans-serif; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:#8B5A2B; padding-bottom:2px; display:flex; align-items:center; gap:0.5rem; }
+.ogl-divider-line{ height:2px; background-color:#8B1A1A; width:100%; border-radius:1px; }
+.pf-tag{ border:1px solid #8B5A2B; background-color:#F7F1E3; color:#1A1A1A; transition:all .2s ease; }
+.pf-tag:hover{ background-color:#E8DCC8; border-color:#8B1A1A; }
+.btn-bronze{ background:linear-gradient(180deg,#9C6734 0%,#8B5A2B 50%,#70441C 100%); border:1px solid #573312; box-shadow:0 2px 5px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.25); color:#FDF8EE; }
+.btn-bronze:hover{ background:linear-gradient(180deg,#AB733C 0%,#996330 50%,#7D4C20 100%); box-shadow:0 3px 6px rgba(0,0,0,.28); transform:translateY(-1px); }
+.btn-like{ background-color:#FDF8EE; border:1px solid #C2A980; transition:all .2s ease; }
+.btn-like:hover{ border-color:#8B5A2B; background-color:#F5EFE0; transform:scale(1.03); }
+
+/* ---------- Hoja de pergamino (P11) ---------- */
+.parchment-sheet{
+  background-color:#FDF8EE;
+  box-shadow:0 10px 30px rgba(40,20,5,.22), 0 1px 3px rgba(0,0,0,.1);
+}
+
+/* ---------- Sliders del editor de build (P13) ---------- */
+.slider-vertical{
+  -webkit-appearance:none; appearance:none; writing-mode:bt-lr;
+  width:8px; height:120px; background:#E8DCC8; border-radius:4px; outline:none;
+}
+.slider-vertical::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none; width:22px; height:16px;
+  background:linear-gradient(180deg,#FDF0A6 0%,#D4AF37 50%,#A67C1E 100%);
+  border:1.5px solid #1A1A1A; box-shadow:0 2px 4px rgba(0,0,0,.35);
+  border-radius:3px; cursor:pointer;
+}
+.slider-vertical::-moz-range-thumb{
+  width:22px; height:16px;
+  background:linear-gradient(180deg,#FDF0A6 0%,#D4AF37 50%,#A67C1E 100%);
+  border:1.5px solid #1A1A1A; box-shadow:0 2px 4px rgba(0,0,0,.35);
+  border-radius:3px; cursor:pointer;
+}
+.slider-horizontal{
+  -webkit-appearance:none; appearance:none; width:100%; height:8px;
+  background:#E8DCC8; border-radius:4px; outline:none;
+}
+.slider-horizontal::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none; width:24px; height:24px;
+  background:radial-gradient(circle,#FFE79A 20%,#D4AF37 70%,#8B5A2B 100%);
+  border:2px solid #1A1A1A; box-shadow:0 2px 5px rgba(0,0,0,.4);
+  border-radius:50%; cursor:pointer;
+}
+.slider-horizontal::-moz-range-thumb{
+  width:24px; height:24px;
+  background:radial-gradient(circle,#FFE79A 20%,#D4AF37 70%,#8B5A2B 100%);
+  border:2px solid #1A1A1A; box-shadow:0 2px 5px rgba(0,0,0,.4);
+  border-radius:50%; cursor:pointer;
+}
+
+/* ---------- Shell de pantallas de módulo (P29/P34) ---------- */
+.tfinder-shell{ max-width:1160px; margin:0 auto; padding:2.25rem 1.25rem 4rem; }

@@ -1,0 +1,62 @@
+{
+  "stats": [
+    { "label": "En Espera", "valor": 3, "tono": "rojo" },
+    { "label": "Ocultos", "valor": 8, "tono": "cobre" },
+    { "label": "Total Casos", "valor": 27, "tono": "tinta" }
+  ],
+  "pestanas": [
+    { "id": "pendiente", "label": "Pendiente", "conteo": 3 },
+    { "id": "oculto", "label": "Oculto", "conteo": 8 },
+    { "id": "todos", "label": "Todos", "conteo": 27 }
+  ],
+  "casos": [
+    {
+      "id": "caso-412",
+      "tipo": "POST",
+      "contenido": "«Este máster es un estafador total y sus reglas...»",
+      "motivo": "Lenguaje hostil y difamación",
+      "tonoMotivo": "rojo",
+      "autor": "Kragor_ElGris",
+      "autorMeta": "Nvl 2 • Aventurero",
+      "fecha": "14 OCT 4712 • 18:42",
+      "reportes": 5,
+      "estado": "pendiente"
+    },
+    {
+      "id": "caso-411",
+      "tipo": "COMENTARIO",
+      "contenido": "«Al final de Harrowstone el fantasma del profesor...»",
+      "motivo": "Spoiler sin etiqueta OGL",
+      "tonoMotivo": "cobre",
+      "autor": "MagoOscuro_99",
+      "autorMeta": "Nvl 1 • Conjurador",
+      "fecha": "14 OCT 4712 • 15:10",
+      "reportes": 4,
+      "estado": "pendiente"
+    },
+    {
+      "id": "caso-410",
+      "tipo": "WIKI",
+      "contenido": "«Guía definitiva: compra tus dados en DadosGolarion...»",
+      "motivo": "Spam publicitario externo",
+      "tonoMotivo": "rojo",
+      "autor": "DadosGolarionShop",
+      "autorMeta": "Cuenta nueva",
+      "fecha": "13 OCT 4712 • 22:18",
+      "reportes": 8,
+      "estado": "oculto"
+    },
+    {
+      "id": "caso-409",
+      "tipo": "BUILD",
+      "contenido": "«Build invencible nivel 1 con 40 puntos de compra...»",
+      "motivo": "Violación de Buy-Points OGL",
+      "tonoMotivo": "cobre",
+      "autor": "CheaterLord_PF",
+      "autorMeta": "Nvl 1 • Guerrero",
+      "fecha": "12 OCT 4712 • 09:45",
+      "reportes": 2,
+      "estado": "pendiente"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "eventos": [
+    {
+      "id": "ev-corona",
+      "mesaId": "la-corona-de-carrona",
+      "tipo": "Sesión 14",
+      "titulo": "Sábado 11 · 20:00",
+      "nota": "Vía Susurrante: El Juicio de la Bestia"
+    },
+    {
+      "id": "ev-auge",
+      "mesaId": "auge-senores-runas",
+      "tipo": "Sesión 9",
+      "titulo": "Domingo 12 · 18:00",
+      "nota": "Runas de Thassilon"
+    },
+    {
+      "id": "ev-trono",
+      "mesaId": "maldicion-trono-carmesi",
+      "tipo": "Votación",
+      "titulo": "Jueves 16 · 21:00",
+      "nota": "Cierre de capítulo III"
+    }
+  ]
+}
