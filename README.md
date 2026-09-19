@@ -76,7 +76,7 @@ Variables:
 ## Ejecución
 
 ```bash
-uvicorn main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8000
 ```
 
 - Al arrancar, `init_db()` crea automáticamente el archivo `tfinder.db` y la tabla `mesas` (si no existen) y aplica las migraciones necesarias.

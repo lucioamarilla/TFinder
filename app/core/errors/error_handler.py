@@ -3,7 +3,7 @@ import logging
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.controllers.mesas_controller import MesaNotFoundError
+from app.modules.mesas.controllers.mesas_controller import MesaNotFoundError
 
 logger = logging.getLogger("tfinder")
 

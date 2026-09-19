@@ -1,13 +1,11 @@
-from app.models.mesas_model import (
-    MesaCreate,
-    MesaOut,
-    MesaUpdate,
+from app.modules.mesas.models.mesas_model import (
     actualizar_mesa,
     crear_mesa,
     eliminar_mesa,
     listar_mesas,
     obtener_mesa_por_id,
 )
+from app.modules.mesas.schemas.mesas_schema import MesaCreate, MesaOut, MesaUpdate
 
 
 class MesaNotFoundError(Exception):
@@ -17,8 +15,7 @@ class MesaNotFoundError(Exception):
 
 
 def listar_mesas_controller():
-    filas = listar_mesas()
-    return [MesaOut(**fila) for fila in filas]
+    return [MesaOut(**fila) for fila in listar_mesas()]
 
 
 def obtener_mesa_controller(mesa_id):
@@ -29,16 +26,18 @@ def obtener_mesa_controller(mesa_id):
 
 
 def crear_mesa_controller(data: MesaCreate):
-    fila = crear_mesa(data)
-    return MesaOut(**fila)
+    return MesaOut(**crear_mesa(data))
 
 
 def actualizar_mesa_controller(mesa_id, data: MesaUpdate):
-    obtener_mesa_controller(mesa_id)
-    fila = actualizar_mesa(mesa_id, data)
-    return MesaOut(**fila)
+    fila = obtener_mesa_por_id(mesa_id)
+    if fila is None:
+        raise MesaNotFoundError(mesa_id)
+    return MesaOut(**actualizar_mesa(mesa_id, data))
 
 
 def eliminar_mesa_controller(mesa_id):
-    obtener_mesa_controller(mesa_id)
+    fila = obtener_mesa_por_id(mesa_id)
+    if fila is None:
+        raise MesaNotFoundError(mesa_id)
     eliminar_mesa(mesa_id)

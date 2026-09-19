@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Response
 
-from app.controllers.mesas_controller import (
+from app.modules.mesas.controllers.mesas_controller import (
     actualizar_mesa_controller,
     crear_mesa_controller,
     eliminar_mesa_controller,
     listar_mesas_controller,
     obtener_mesa_controller,
 )
-from app.models.mesas_model import MesaCreate, MesaOut, MesaUpdate
+from app.modules.mesas.schemas.mesas_schema import MesaCreate, MesaOut, MesaUpdate
 
 router = APIRouter(prefix="/api/v1/mesas")
 
