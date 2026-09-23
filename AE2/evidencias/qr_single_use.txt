@@ -1,0 +1,7 @@
+TFinder AE2 · QR de asistencia single-use (B07)
+======================================================================
+QR single-use (B07) sesion=5
+emitir -> HTTP 201 (payload sin email: eyJjdWVycG8iOnsic2VzaW9uIjo1LCJ1Ijo0LCJl...)
+1ª validación -> HTTP 200
+2ª validación (misma captura) -> HTTP 409
+GETDEL en Redis: 2ª lectura nil -> 409 QR vencido o ya utilizado

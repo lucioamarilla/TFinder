@@ -1,0 +1,31 @@
+TFinder AE2 · Carrera por la última vacante (B06)
+======================================================================
+CARRERA POR LA ÚLTIMA VACANTE (B06) — 10 concurrentes / 1 vacante
+ANTES (sin barreras): 10 x 201 y jugadores_actuales > jugadores_max
+Reproducción del bug de la carrera por vacante (AE1).
+
+Este archivo NO se recopila con pytest (no matchea `test_*.py`).
+Documenta el fallo que motivó las barreras de B06:
+
+1. Sin el UPDATE condicional (`ocupar_vacante`) ni la reserva Redis
+   (`reservar` en `services/vacante.py`), N solicitudes concurrentes
+   contra una mesa con 1 vacante terminan TODAS en 201 y el contador
+   `jugadores_actuales` supera a `jugadores_max`.
+
+2. Con B06 (doble barrera: SET NX en Redis + UPDATE ... WHERE
+   jugadores_actuales < jugadores_max), exactamente una gana: 1x201
+   y 9x409 (ver `tests/test_carrera.py`).
+
+Para reproducir el "antes", quitar el WHERE/RESERVA de forma temporal y
+correr `tests/test_carrera.py`: se observa `codigos.count(201) == 10` y
+`jugadores_actuales == 10 > jugadores_max == 1`.
+
+DESPUÉS (doble barrera Redis NX + UPDATE condicional):
+tests/test_cache.py::test_listado_usa_db_solo_en_miss_y_write_invalida PASSED [ 20%]
+tests/test_carrera.py::test_solo_uno_gana_la_ultima_vacante PASSED       [ 40%]
+tests/test_dlq.py::test_fallo_repetido_termina_en_dlq PASSED             [ 60%]
+tests/test_idempotencia.py::test_misma_key_no_duplica_solicitud_ni_vacante PASSED [ 80%]
+tests/test_qr.py::test_qr_no_es_reutilizable PASSED                      [100%]
+======================== 5 passed, 1 warning in 11.97s =========================
+tests/test_carrera.py::test_solo_uno_gana_la_ultima_vacante PASSED       [100%]
+========================= 1 passed, 1 warning in 7.50s =========================
