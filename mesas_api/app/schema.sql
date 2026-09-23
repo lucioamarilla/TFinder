@@ -23,3 +23,14 @@ CREATE TABLE IF NOT EXISTS usuarios (
     nombre         VARCHAR(120) NOT NULL,
     fecha_creacion TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS matchmaking (
+    id                SERIAL      PRIMARY KEY,
+    mesa_id           INTEGER     NOT NULL REFERENCES mesas (id) ON DELETE CASCADE,
+    estado            TEXT        NOT NULL DEFAULT 'llamada_abierta'
+                                  CHECK (estado IN ('llamada_abierta', 'cerrada', 'completa')),
+    llamada_abierta_at TIMESTAMPTZ,
+    fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_matchmaking_mesa ON matchmaking (mesa_id);
