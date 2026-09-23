@@ -8,6 +8,7 @@ from app.infra.logge import logger
 from app.infra.ready import evaluar_ready
 from app.middleware.log_context import CorrelationMiddleware
 from mesas_api.app.controllers.mesas import MesaNotFoundError
+from mesas_api.app.controllers.sesiones_controller import SesionNotFoundError
 from mesas_api.app.controllers.solicitudes_controller import (
     CupoAgotadoError,
     MesaNoExisteError,
@@ -20,13 +21,18 @@ from mesas_api.app.errors import (
     manejar_http,
     manejar_mesa_inexistente,
     manejar_no_encontrado,
+    manejar_qr_conflicto,
+    manejar_qr_invalido,
+    manejar_sesion_inexistente,
     manejar_validacion,
 )
 from mesas_api.app.init_db import init_db
 from mesas_api.app.routes.auth_routes import router as auth_router
 from mesas_api.app.routes.v1.matchmaking import router as matchmaking_router
 from mesas_api.app.routes.v1.mesas import router as mesas_router
+from mesas_api.app.routes.v1.sesiones import router as sesiones_router
 from mesas_api.app.routes.v1.solicitudes import router as solicitudes_router
+from mesas_api.app.services.qr_asistencia import _Conflict, _Invalid
 
 load_dotenv()
 
@@ -46,6 +52,9 @@ app.add_exception_handler(MesaNotFoundError, manejar_no_encontrado)
 app.add_exception_handler(CupoAgotadoError, manejar_conflicto)
 app.add_exception_handler(SolicitudEnProcesoError, manejar_conflicto)
 app.add_exception_handler(MesaNoExisteError, manejar_mesa_inexistente)
+app.add_exception_handler(SesionNotFoundError, manejar_sesion_inexistente)
+app.add_exception_handler(_Conflict, manejar_qr_conflicto)
+app.add_exception_handler(_Invalid, manejar_qr_invalido)
 app.add_exception_handler(RequestValidationError, manejar_validacion)
 app.add_exception_handler(HTTPException, manejar_http)
 app.add_exception_handler(Exception, manejar_error_interno)
@@ -53,6 +62,7 @@ app.include_router(mesas_router)
 app.include_router(auth_router)
 app.include_router(matchmaking_router)
 app.include_router(solicitudes_router)
+app.include_router(sesiones_router)
 
 
 def psql_disponible():
