@@ -9,6 +9,7 @@ from mesas_api.app.controllers.mesas import (
 )
 from mesas_api.app.middleware.auth import usuario_actual
 from mesas_api.app.schemas import MesaCreate, MesaOut, MesaUpdate
+from mesas_api.app.services.eventos import publicar_solicitud
 
 router = APIRouter(prefix="/api/v1/mesas")
 
@@ -37,3 +38,10 @@ def actualizar_mesa(mesa_id: int, payload: MesaUpdate, _=Depends(usuario_actual)
 def eliminar_mesa(mesa_id: int, _=Depends(usuario_actual)):
     eliminar_mesa_controller(mesa_id)
     return Response(status_code=204)
+
+
+@router.post("/{mesa_id}/solicitar", status_code=202)
+def solicitar_union(mesa_id: int, usuario: dict = Depends(usuario_actual)):
+    obtener_mesa_controller(mesa_id)
+    publicar_solicitud(mesa_id, int(usuario["sub"]))
+    return {"estado": "pendiente"}
