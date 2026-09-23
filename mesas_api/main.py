@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 
+from app.infra.logge import logger
+from app.infra.ready import evaluar_ready
+from app.middleware.log_context import CorrelationMiddleware
 from mesas_api.app.controllers.mesas import MesaNotFoundError
 from mesas_api.app.db import abrir_pool, cerrar_pool, get_pool
 from mesas_api.app.errors import (
@@ -24,11 +27,13 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     abrir_pool()
     init_db()
+    logger.info("servicio iniciado")
     yield
     cerrar_pool()
 
 
-app = FastAPI(title="TFinder · Mesas API", version="0.4.0", lifespan=lifespan)
+app = FastAPI(title="TFinder · Mesas API", version="0.5.0", lifespan=lifespan)
+app.add_middleware(CorrelationMiddleware)
 app.add_exception_handler(MesaNotFoundError, manejar_no_encontrado)
 app.add_exception_handler(RequestValidationError, manejar_validacion)
 app.add_exception_handler(HTTPException, manejar_http)
@@ -38,9 +43,24 @@ app.include_router(auth_router)
 app.include_router(matchmaking_router)
 
 
+def psql_disponible():
+    abrir_pool()
+    return get_pool().connection()
+
+
 @app.get("/health")
 def health():
     abrir_pool()
     with get_pool().connection() as conn:
         conn.execute("SELECT 1")
     return {"status": "ok", "servicio": "mesas-api"}
+
+
+@app.get("/live")
+def live():
+    return {"estado": "vivo"}
+
+
+@app.get("/ready")
+def ready():
+    return evaluar_ready(psql_disponible)

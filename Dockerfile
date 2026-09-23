@@ -28,4 +28,4 @@ ENV SERVICE=${SERVICE}
 EXPOSE 8001
 
 # --host 0.0.0.0 es obligatorio dentro del contenedor
-CMD ["sh", "-c", "uvicorn ${SERVICE}.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "uvicorn ${SERVICE}.main:app --host 0.0.0.0 --port ${PORT} --no-access-log"]
