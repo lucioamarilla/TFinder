@@ -58,3 +58,18 @@ def eliminar_mesa(mesa_id):
     with get_connection() as conn:
         cursor = conn.execute("DELETE FROM mesas WHERE id = %s", (mesa_id,))
         return cursor.rowcount
+
+
+def ocupar_vacante(mesa_id) -> bool:
+    """Check-and-set atómico: solo la transacción que pasa el WHERE devuelve fila.
+
+    En Postgres el UPDATE toma lock de fila hasta el commit; dos solicitudes
+    concurrentes se serializan y solo una gana el cupo.
+    """
+    with get_connection() as conn:
+        cursor = conn.execute(
+            "UPDATE mesas SET jugadores_actuales = jugadores_actuales + 1"
+            " WHERE id = %s AND jugadores_actuales < jugadores_max RETURNING id",
+            (mesa_id,),
+        )
+        return cursor.fetchone() is not None

@@ -5,6 +5,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from mesas_api.app.controllers.mesas import MesaNotFoundError
+from mesas_api.app.controllers.solicitudes_controller import (
+    CupoAgotadoError,
+    MesaNoExisteError,
+    SolicitudEnProcesoError,
+)
 
 logger = logging.getLogger("tfinder.mesas")
 
@@ -22,6 +27,14 @@ def manejar_http(request, exc: HTTPException):
 
 
 def manejar_no_encontrado(request, exc: MesaNotFoundError):
+    return JSONResponse(status_code=404, content=_body_error(404, str(exc)))
+
+
+def manejar_conflicto(request, exc):
+    return JSONResponse(status_code=409, content=_body_error(409, str(exc)))
+
+
+def manejar_mesa_inexistente(request, exc: MesaNoExisteError):
     return JSONResponse(status_code=404, content=_body_error(404, str(exc)))
 
 
