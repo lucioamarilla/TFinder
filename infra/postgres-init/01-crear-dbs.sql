@@ -17,3 +17,16 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'feed_db')\gexec
 
 SELECT 'CREATE DATABASE notif_db'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'notif_db')\gexec
+
+-- B11: bases de testing (aisladas de las de desarrollo).
+SELECT 'CREATE DATABASE mesas_db_test'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'mesas_db_test')\gexec
+
+SELECT 'CREATE DATABASE builds_db_test'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'builds_db_test')\gexec
+
+SELECT 'CREATE DATABASE feed_db_test'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'feed_db_test')\gexec
+
+SELECT 'CREATE DATABASE notif_db_test'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'notif_db_test')\gexec
