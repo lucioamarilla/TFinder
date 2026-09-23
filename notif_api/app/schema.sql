@@ -38,3 +38,17 @@ CREATE TABLE IF NOT EXISTS mensaje_dlq (
     error   TEXT NOT NULL,
     fecha   TIMESTAMPTZ DEFAULT now()
 );
+
+-- B08: documentos generados de forma asincrona (PDF de comprobante).
+-- id es el documento_id que el emisor (builds-api) devuelve en el 202.
+CREATE TABLE IF NOT EXISTS documentos (
+    id        VARCHAR(36) PRIMARY KEY,
+    tipo      VARCHAR(16) NOT NULL CHECK (tipo IN ('build', 'diario')),
+    id_origen BIGINT NOT NULL,
+    ruta      TEXT,
+    estado    VARCHAR(16) NOT NULL DEFAULT 'en_proceso'
+                           CHECK (estado IN ('en_proceso', 'listo', 'error')),
+    fecha     TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_documentos_origen ON documentos (tipo, id_origen);

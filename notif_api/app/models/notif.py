@@ -63,3 +63,31 @@ def listar_dlq(limite: int = 50):
         f["fecha"] = _json(f.get("fecha"))
         salida.append(f)
     return salida
+
+
+def crear_documento(doc_id: str, tipo: str, id_origen: int):
+    """Idempotente: si el documento ya existe (reintento/replay) no falla."""
+    if not isinstance(id_origen, int):
+        raise ValueError(f"id_origen invalido: {id_origen!r}")
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO documentos (id, tipo, id_origen) VALUES (%s, %s, %s)"
+            " ON CONFLICT (id) DO NOTHING",
+            (doc_id, tipo, id_origen),
+        )
+
+
+def actualizar_documento(doc_id: str, ruta: str):
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE documentos SET estado = 'listo', ruta = %s WHERE id = %s",
+            (ruta, doc_id),
+        )
+
+
+def obtener_documento(doc_id: str):
+    with get_connection() as conn:
+        fila = conn.execute(
+            "SELECT * FROM documentos WHERE id = %s", (doc_id,)
+        ).fetchone()
+        return dict(fila) if fila else None

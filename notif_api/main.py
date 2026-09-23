@@ -16,6 +16,8 @@ from notif_api.app.init_db import init_db
 from notif_api.app.models.notif import listar_dlq
 from notif_api.app.routes.v1.event_log import router as event_log_router
 from notif_api.app.routes.v1.notificaciones import router as notificaciones_router
+from notif_api.app.routes.v1.pdf import router as pdf_router
+from notif_api.app.workers import pdf as pdf_worker
 
 load_dotenv()
 
@@ -27,16 +29,18 @@ async def lifespan(app: FastAPI):
     logger.info("servicio iniciado")
     Thread(target=mesa_consumer.run, daemon=True).start()
     Thread(target=sesion_consumer.run, daemon=True).start()
+    Thread(target=pdf_worker.run, daemon=True).start()
     yield
     cerrar_pool()
 
 
-app = FastAPI(title="TFinder · Notif API", version="0.4.0", lifespan=lifespan)
+app = FastAPI(title="TFinder · Notif API", version="0.5.0", lifespan=lifespan)
 app.add_middleware(CorrelationMiddleware)
 app.add_exception_handler(RequestValidationError, manejar_validacion)
 app.add_exception_handler(Exception, manejar_error_interno)
 app.include_router(notificaciones_router)
 app.include_router(event_log_router)
+app.include_router(pdf_router)
 
 
 @app.get("/api/v1/dlq")

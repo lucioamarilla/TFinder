@@ -115,6 +115,8 @@ services:
       BUILDS_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/builds_db
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
+      JWT_SECRET: ${JWT_SECRET:-dev-secret}  # B03: valida access_token de mesas-api
+      JWT_EXP_MIN: ${JWT_EXP_MIN:-1440}
       PORT: "8001"
     ports:
       - "8002:8001"        # /docs en http://localhost:8002

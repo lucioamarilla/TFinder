@@ -15,6 +15,7 @@ from builds_api.app.errors import (
     manejar_validacion,
 )
 from builds_api.app.init_db import init_db
+from builds_api.app.routes.v1.build_pdf import router as build_pdf_router
 from builds_api.app.routes.v1.builds import router as builds_router
 from builds_api.app.routes.v1.tags import router as tags_router
 
@@ -30,13 +31,14 @@ async def lifespan(app: FastAPI):
     cerrar_pool()
 
 
-app = FastAPI(title="TFinder · Builds API", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="TFinder · Builds API", version="0.4.0", lifespan=lifespan)
 app.add_middleware(CorrelationMiddleware)
 app.add_exception_handler(BuildNotFoundError, manejar_no_encontrado)
 app.add_exception_handler(RequestValidationError, manejar_validacion)
 app.add_exception_handler(Exception, manejar_error_interno)
 app.include_router(builds_router)
 app.include_router(tags_router)
+app.include_router(build_pdf_router)
 
 
 def psql_disponible():
