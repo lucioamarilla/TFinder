@@ -1,58 +1,37 @@
-# observabilidad Specification
+# Purpose
 
-## Purpose
-
-Define la observabilidad base de TFinder AE2 (RNF-13, RNF-16): logs estructurados en JSON con `correlation_id` en los 4 servicios, propagación del identificador de correlación por header y hacia mensajes de eventos, y endpoints `/live`/`/ready` para verificar el proceso y sus dependencias, sin emitir datos sensibles en los logs.
+Define la observabilidad base de los 4 servicios AE2: logs estructurados JSON con `correlation_id` (propagado por header y por los mensajes RabbitMQ), y endpoints de salud `/live` (proceso) y `/ready` (dependencias) que F09 consultará.
 
 ## Requirements
 
-### Requirement: Logs JSON estructurados con correlación
-Los 4 servicios DEBEN emitir sus logs en una única línea JSON por registro con los campos `ts`, `nivel`, `servicio`, `mensaje` y `correlation_id` (default `-`), y `exc` opcional con el traceback cuando exista excepción, mediante un módulo compartido `app/infra/logge.py`.
+### Requirement: Logs JSON con correlación
+Cada evento de log de los 4 servicios DEBE emitirse en JSON con al menos `ts`, `nivel`, `servicio`, `mensaje` y `correlation_id` (default `-` si no hay traza); el `correlation_id` DEBE configurarse a partir del header `X-Correlation-Id` de cada request y quedar disponible para los logs del recorrido.
 
-#### Scenario: Salida JSON por servicio
-- **WHEN** se emite cualquier log de nivel INFO o superior en cualquiera de los 4 servicios
-- **THEN** la línea de consola es un objeto JSON con `ts`, `nivel`, `servicio`, `mensaje` y `correlation_id` presentes
+#### Scenario: Request con header de correlación
+- **WHEN** llega un request con `X-Correlation-Id: abc123`
+- **THEN** todos los logs de ese request contienen `"correlation_id": "abc123"` y la respuesta incluye el mismo header
 
-#### Scenario: Traceback estructurado
-- **WHEN** el logger registra una excepción con `exc_info`
-- **THEN** el JSON incluye el campo `exc` con el traceback formateado
+### Requirement: Propagación de correlación a eventos
+Cuando un request publica un evento RabbitMQ (p. ej. `mesa.solicitada`), el mensaje DEBE incluir el `correlation_id` del request, y el consumidor DEBE loguear el procesamiento con ese mismo id.
 
-### Requirement: Correlation id por header X-Correlation-Id
-Cada servicio DEBE aceptar `X-Correlation-Id` en el request HTTP y usarlo como `correlation_id` en los logs del recorrido; si no viene, DEBEn generar uno nuevo. El middleware DEBE registrar la entrada y salida del request con el mismo CID y reflejarlo en el header de respuesta.
+#### Scenario: Recorrido request → evento → consumidor
+- **WHEN** un request con `X-Correlation-Id: cid-x` origina `mesa.solicitada` y `notif-api` la consume
+- **THEN** aparecen ≥3 logs (request iniciado/finalizado en mesas, consumido en notif) con `"correlation_id": "cid-x"`
 
-#### Scenario: CID provisto por el cliente
-- **WHEN** un request llega con `X-Correlation-Id: cid-test-42`
-- **THEN** los logs de entrada y salida de ese request en el servicio usan `correlation_id: cid-test-42` y la respuesta incluye `X-Correlation-Id: cid-test-42`
+### Requirement: `/live` y `/ready`
+Cada servicio DEBE exponer `GET /live` → `200` si el proceso responde, y `GET /ready` → `200` solo si PostgreSQL, Redis y RabbitMQ responden; si alguna falla, `/ready` DEBE responder `503` con el detalle de dependencias.
 
-#### Scenario: CID autogenerado
-- **WHEN** un request llega sin `X-Correlation-Id`
-- **THEN** el servicio genera un CID (16 chars hex) y todos los logs de ese recorrido comparten ese valor
+#### Scenario: Todo sano
+- **WHEN** `GET /ready` con postgres, redis y rabbitmq arriba
+- **THEN** responde `200` con `{"estado":"listo","dependencias":{...}}`
 
-### Requirement: Propagación del correlation id a mensajes publicados
-El módulo compartido DEBE inyectar `correlation_id` en el payload de los mensajes RabbitMQ publicados (tomando el del contexto del request), de modo que `request → evento → consumer` rastree el mismo CID.
+#### Scenario: Dependencia caída (postgres)
+- **WHEN** `GET /ready` con PostgreSQL fuera
+- **THEN** responde `503` con `{"estado":"degradado","dependencias":{"postgres":false,...}}` y los otros servicios siguen dando `/live` `200`
 
-#### Scenario: Mensaje con correlación
-- **WHEN** se publica un mensaje durante un request con CID conocido
-- **THEN** el payload del mensaje lleva el campo `correlation_id` con ese valor, y un consumidor que lo registre en `event-log` permite grepear el CID punta a punta
+### Requirement: No imprimir secretos
+Los logs NO DEBEN imprimir tokens, passwords ni el contenido completo de QRs (solo IDs/resultados).
 
-### Requirement: Endpoints de salud /live y /ready
-Los 4 servicios DEBEN exponer `GET /live` (responde `200` si el proceso responde, sin dependencias) y `GET /ready` (responde `200` con `{"estado":"listo","dependencias":{...}}` solo si PostgreSQL, Redis y RabbitMQ responden, o `503` con `{"estado":"degradado",...}` si alguna falla).
-
-#### Scenario: Ready completo
-- **WHEN** PostgreSQL, Redis y RabbitMQ responden y se consulta `/ready`
-- **THEN** la respuesta es `200` con `estado: listo` y las tres dependencias en `true`
-
-#### Scenario: Ready degradado
-- **WHEN** alguna dependencia (p. ej. PostgreSQL) no responde y se consulta `/ready`
-- **THEN** la respuesta es `503` con `estado: degradado` y las dependencias fallidas en `false`
-
-#### Scenario: Live sin dependencias
-- **WHEN** se consulta `/live` aun con dependencias caídas
-- **THEN** la respuesta es `200` con `estado: vivo`
-
-### Requirement: Logs sin datos sensibles
-Los servicios DEBEN abstenerse de registrar tokens JWT, contraseñas y QRs completos en los logs; los identificadores/valores sensibles se enmascaran o se omite.
-
-#### Scenario: Ausencia de secretos en logs
-- **WHEN** se revisan las líneas JSON emitidas por un recorrido autenticado
-- **THEN** no aparece ningún token de acceso/refresh, contraseña ni QR completo en ningún campo
+#### Scenario: Log de autenticación sin token
+- **WHEN** un request autenticado se registra en logs
+- **THEN** ninguna línea de log contiene el `access_token`, el password ni el campo `qr_data` completo; a lo sumo se referencian IDs o resultados
