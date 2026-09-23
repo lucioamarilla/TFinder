@@ -55,6 +55,7 @@ class MesaOut(BaseModel):
     horario: Optional[str] = None
     estado: EstadoMesa
     nivel_inicial: Optional[int] = None
+    jugadores_actuales: int = 0
     jugadores_max: Optional[int] = None
     fecha_creacion: str
 
