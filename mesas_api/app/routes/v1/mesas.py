@@ -7,11 +7,19 @@ from mesas_api.app.controllers.mesas import (
     listar_mesas_controller,
     obtener_mesa_controller,
 )
+from mesas_api.app.controllers.sesiones_controller import SesionNotFoundError
 from mesas_api.app.middleware.auth import usuario_actual
+from mesas_api.app.models.sesiones import listar_miembros
 from mesas_api.app.schemas import MesaCreate, MesaOut, MesaUpdate
 from mesas_api.app.services.eventos import publicar_solicitud
 
 router = APIRouter(prefix="/api/v1/mesas")
+
+
+@router.get("/{mesa_id}/miembros")
+def miembros_mesa(mesa_id: int, _=Depends(usuario_actual)):
+    obtener_mesa_controller(mesa_id)
+    return {"mesa_id": mesa_id, "miembros": listar_miembros(mesa_id)}
 
 
 @router.get("", response_model=list[MesaOut])

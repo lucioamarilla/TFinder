@@ -91,3 +91,42 @@ def obtener_documento(doc_id: str):
             "SELECT * FROM documentos WHERE id = %s", (doc_id,)
         ).fetchone()
         return dict(fila) if fila else None
+
+
+def registrar_email(destino: str, asunto: str, cuerpo: str, estado: str, error: str = None):
+    with get_connection() as conn:
+        cursor = conn.execute(
+            "INSERT INTO emails (destino, asunto, cuerpo, estado, error)"
+            " VALUES (%s, %s, %s, %s, %s) RETURNING id",
+            (destino, asunto, cuerpo, estado, error),
+        )
+        return cursor.fetchone()["id"]
+
+
+def obtener_email(email_id: int):
+    with get_connection() as conn:
+        fila = conn.execute(
+            "SELECT * FROM emails WHERE id = %s", (email_id,)
+        ).fetchone()
+        return dict(fila) if fila else None
+
+
+def actualizar_estado_email(email_id: int, estado: str, error: str = None):
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE emails SET estado = %s, error = %s WHERE id = %s",
+            (estado, error, email_id),
+        )
+
+
+def listar_emails(limite: int = 50):
+    with get_connection() as conn:
+        filas = conn.execute(
+            "SELECT * FROM emails ORDER BY id DESC LIMIT %s", (limite,)
+        ).fetchall()
+    salida = []
+    for fila in filas:
+        f = dict(fila)
+        f["fecha"] = _json(f.get("fecha"))
+        salida.append(f)
+    return salida
