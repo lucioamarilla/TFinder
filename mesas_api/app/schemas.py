@@ -67,6 +67,18 @@ class AuthRegistro(BaseModel):
     rol: ROLES = "usuario"
 
 
+class QrValidate(BaseModel):
+    usuario_id: int
+    qr_data: str
+
+
+class QROut(BaseModel):
+    qr_data: str
+    png_base64: str
+    expira_en_seg: int
+    sesion_id: int
+
+
 class AuthLogin(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1)
