@@ -1,0 +1,11 @@
+TFinder AE2 · RabbitMQ colas y DLQ (B05)
+======================================================================
+Panel/estado RabbitMQ (tfinder.events, durable)
+Timeout: 60.0 seconds ...
+Listing queues for vhost / ...
+name	messages
+notif.mesa	0
+notif.sesion	0
+doc.pdf	0
+dlq.general	0
+colas notif.mesa/notif.sesion/dol.pdf consumidas con ACK; dlq.general vacía salvo poison (B05).

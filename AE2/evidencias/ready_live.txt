@@ -1,0 +1,5 @@
+Health /live y /ready (B10)
+port 8001: /live 200 y /ready HTTP 200 -> {'estado': 'listo', 'dependencias': {'postgres': True, 'redis': True, 'rabbitmq': True}}
+port 8002: /live 200 y /ready HTTP 200 -> {'estado': 'listo', 'dependencias': {'postgres': True, 'redis': True, 'rabbitmq': True}}
+port 8003: /live 200 y /ready HTTP 200 -> {'estado': 'listo', 'dependencias': {'postgres': True, 'redis': True, 'rabbitmq': True}}
+port 8004: /live 200 y /ready HTTP 200 -> {'estado': 'listo', 'dependencias': {'postgres': True, 'redis': True, 'rabbitmq': True}}
