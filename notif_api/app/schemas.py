@@ -3,6 +3,10 @@ from typing import Any, Optional
 from pydantic import BaseModel
 
 
+class AuthRecuperar(BaseModel):
+    email: str
+
+
 class NotificacionOut(BaseModel):
     id: int
     grupo: Optional[str] = "mesas"

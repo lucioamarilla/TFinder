@@ -1,91 +1,110 @@
 import { reactive, computed } from 'vue'
+import { authApi } from '@/api/endpoints'
 
-const PROFILES = {
-  auth: { nombre: 'Aldren Valeros', rol: 'auth', iniciales: 'AV', titulo: 'Aventurero & Cronista' },
-  admin: { nombre: 'Alguacil del Cónclave', rol: 'admin', iniciales: 'AC', titulo: 'Moderación & Vigilancia' }
-}
+const STORAGE = 'tfinder-sesion'
 
-const STORAGE_KEY = 'tfinder-rol'
-const TOKEN_KEY = 'tfinder-access'
+const state = reactive({ access: null, refresh: null, user: null })
 
-function readStoredRole() {
+function leerGuardado() {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored === 'admin' || stored === 'auth' ? stored : 'guest'
-  } catch {
-    return 'guest'
-  }
-}
-
-const state = reactive({
-  role: readStoredRole(),
-  user: PROFILES[readStoredRole()] || null
-})
-
-function persist(role) {
-  try {
-    localStorage.setItem(STORAGE_KEY, role)
+    const guardado = localStorage.getItem(STORAGE)
+    if (guardado) Object.assign(state, JSON.parse(guardado))
   } catch {
     /* almacenamiento no disponible */
   }
 }
 
-function limpiarSesionLocal() {
-  state.role = 'guest'
-  state.user = null
-  persist('guest')
+function persistir() {
   try {
-    localStorage.removeItem(TOKEN_KEY)
+    localStorage.setItem(
+      STORAGE,
+      JSON.stringify({
+        access: state.access,
+        refresh: state.refresh,
+        user: state.user
+      })
+    )
   } catch {
     /* almacenamiento no disponible */
   }
 }
 
-export function useAuth() {
-  const role = computed(() => state.role)
-  const user = computed(() => state.user)
-  const isAuthenticated = computed(() => state.role !== 'guest')
-  const isAdmin = computed(() => state.role === 'admin')
-
-  function login(credentials = {}) {
-    const target = credentials.role === 'admin' ? 'admin' : 'auth'
-    state.role = target
-    state.user = PROFILES[target]
-    persist(target)
-    return state.user
-  }
-
-  function loginAs(role) {
-    state.role = role
-    state.user = PROFILES[role] || null
-    persist(role)
-    return state.user
-  }
-
-  function logout() {
-    limpiarSesionLocal()
-  }
-
-  function can(required) {
-    if (!required) return true
-    return state.role === required
-  }
-
-  return { role, user, isAuthenticated, isAdmin, login, loginAs, logout, can }
+function mapaRol(rol) {
+  if (rol === 'admin') return 'admin'
+  return rol ? 'auth' : 'guest'
 }
 
-export function currentRole() {
-  return state.role
+function perfilDe(email, rol) {
+  const alias =
+    (email.split('@')[0] || 'Aventurero')
+      .replace(/[._-]+/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase()) || 'Aventurero'
+  const iniciales =
+    alias
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join('') || 'AV'
+  return {
+    email,
+    rol,
+    nombre: alias,
+    iniciales,
+    titulo: rol === 'admin' ? 'Moderación & Vigilancia' : 'Aventurero & Cronista'
+  }
 }
 
-export function currentAccessToken() {
+export async function login(credentials) {
+  const { datos } = await authApi.login(credentials)
+  state.access = datos.access_token
+  state.refresh = datos.refresh_token
+  const { datos: perfil } = await authApi.me()
+  state.user = perfilDe(perfil.email, perfil.rol)
+  persistir()
+  return state.user
+}
+
+export async function logout() {
   try {
-    return localStorage.getItem(TOKEN_KEY)
+    await authApi.logout()
   } catch {
-    return null
+    /* red caída: igual limpiamos */
   }
+  clearSession()
 }
 
 export function clearSession() {
-  limpiarSesionLocal()
+  state.access = null
+  state.refresh = null
+  state.user = null
+  try {
+    localStorage.removeItem(STORAGE)
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+leerGuardado()
+
+export function useAuth() {
+  const role = computed(() => mapaRol(state.user?.rol))
+  const user = computed(() => state.user)
+  const isAuthenticated = computed(() => Boolean(state.access))
+  const isAdmin = computed(() => state.user?.rol === 'admin')
+
+  function can(required) {
+    if (!required) return true
+    return mapaRol(state.user?.rol) === required
+  }
+
+  return { role, user, isAuthenticated, isAdmin, login, logout, can }
+}
+
+export function currentRole() {
+  return mapaRol(state.user?.rol)
+}
+
+export function currentAccessToken() {
+  return state.access
 }
