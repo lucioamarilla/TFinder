@@ -6,6 +6,7 @@ const PROFILES = {
 }
 
 const STORAGE_KEY = 'tfinder-rol'
+const TOKEN_KEY = 'tfinder-access'
 
 function readStoredRole() {
   try {
@@ -24,6 +25,17 @@ const state = reactive({
 function persist(role) {
   try {
     localStorage.setItem(STORAGE_KEY, role)
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+function limpiarSesionLocal() {
+  state.role = 'guest'
+  state.user = null
+  persist('guest')
+  try {
+    localStorage.removeItem(TOKEN_KEY)
   } catch {
     /* almacenamiento no disponible */
   }
@@ -51,9 +63,7 @@ export function useAuth() {
   }
 
   function logout() {
-    state.role = 'guest'
-    state.user = null
-    persist('guest')
+    limpiarSesionLocal()
   }
 
   function can(required) {
@@ -66,4 +76,16 @@ export function useAuth() {
 
 export function currentRole() {
   return state.role
+}
+
+export function currentAccessToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function clearSession() {
+  limpiarSesionLocal()
 }
