@@ -73,6 +73,64 @@ Variables:
 
 > **Nota**: si las variables se dejan vacías, el servidor usa sus valores por defecto (`PORT=8000` y `SQLite` en `./tfinder.db`).
 
+## Infraestructura con Docker Compose (AE2 / B01)
+
+Entorno de desarrollo reproducible: PostgreSQL, Redis, RabbitMQ y MailHog se levantan con un solo comando. La configuración es 100 % por variables de entorno (`.env`, ver `.env.example`) y no hay secretos en el código.
+
+### Levantar la infraestructura
+
+```bash
+cp .env.example .env          # unica vez; ajustar si hace falta
+docker compose up -d postgres redis rabbitmq mailhog
+docker compose ps            # los 3 con healthcheck deben quedar "healthy"
+```
+
+Para detener todo, sin borrar datos: `docker compose down`. Para resetear **todo** (incluidas las bases extra del init): `docker compose down -v`.
+
+### Servicios y puertos
+
+| Servicio | Imagen | Container | Puertos publicados | Healthcheck |
+|---|---|---|---|---|
+| postgres | `postgres:16-alpine` | `tfinder-postgres` | `5432` | `pg_isready` |
+| redis | `redis:7-alpine` | `tfinder-redis` | `6390 → 6379` | `redis-cli ping` |
+| rabbitmq | `rabbitmq:3.13-management-alpine` | `tfinder-rabbitmq` | `5673 → 5672` (AMQP), `15673 → 15672` (UI) | `rabbitmq-diagnostics ping` |
+| mailhog | `mailhog/mailhog:v1.0.1` | `tfinder-mailhog` | `1025` (SMTP), `8025` (UI) | — |
+| api (opcional) | build local | `tfinder-api` | `8001` | — |
+
+- PostgreSQL crea 4 bases al primer arranque: `mesas_db` (via `POSTGRES_DB`) y `builds_db`, `feed_db`, `notif_db` (via `infra/postgres-init/01-crear-dbs.sql`).
+- Paneles: RabbitMQ `http://localhost:15673` (login `tfinder/tfinder`) y MailHog `http://localhost:8025`.
+- API en contenedor: `docker compose up -d --build api` → `http://localhost:8001/docs`.
+
+### Variables de entorno
+
+Documentadas en `.env.example` (todas con valores de ejemplo no sensibles):
+
+| Variable | Descripción | Ejemplo (host) |
+|---|---|---|
+| PORT | Puerto del API | 8001 |
+| PGSQL_HOST / PGSQL_PORT / PGSQL_USER / PGSQL_PASSWORD | Conexión Postgres (host) | localhost / 5432 / tfinder / tfinder |
+| DATABASE_URL | URL completa de la DB principal | postgresql://tfinder:tfinder@localhost:5432/mesas_db |
+| REDIS_URL | Cliente Redis compartido (`app/infra/redis.py`) | redis://localhost:6390/0 |
+| RABBITMQ_URL | Broker RabbitMQ (`app/infra/rabbitmq.py`) | amqp://tfinder:tfinder@localhost:5673/ |
+| JWT_SECRET / JWT_EXP_MIN | Firma y expiración de JWT | change-me-en-produccion / 1440 |
+| SMTP_HOST / SMTP_PORT / MAIL_FROM | Email sandbox (MailHog) | localhost / 1025 / noreply@tfinder.local |
+| VITE_API_URL | URL del API para el frontend | http://localhost:8001 |
+
+### `localhost` vs nombres de servicio (dentro del contenedor)
+
+Los valores de `.env` apuntan a **`localhost`** porque el desarrollo principal corre el API con venv en el host, usando los puertos publicados. Cuando el API corre **dentro** de un contenedor (servicio `api`), está en la misma red de compose y debe usar los **nombres de servicio** en lugar de `localhost`:
+
+| Servicio | Host | Dentro del contenedor |
+|---|---|---|
+| postgres | `localhost:5432` | `postgres:5432` |
+| redis | `localhost:6390` | `redis:6379` |
+| rabbitmq | `localhost:5673` | `rabbitmq:5672` |
+| mailhog | `localhost:1025` | `mailhog:1025` |
+
+### Gotcha: init de bases de datos
+
+Los scripts de `docker-entrypoint-initdb.d` (que crean `builds_db`, `feed_db` y `notif_db`) **solo corren la primera vez**, cuando el volumen de postgres está vacío. Si borraste un servicio o reseteaste con `docker compose up` sin volumen, para recrear las bases extra: `docker compose down -v && docker compose up -d postgres`. (El script es idempotente, así que un segundo arranque no falla.)
+
 ## Ejecución
 
 ```bash

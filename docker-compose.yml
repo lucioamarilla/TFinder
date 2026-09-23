@@ -1,0 +1,100 @@
+# TFinder AE2 · Entorno de desarrollo reproducible (B01)
+# Un solo comando levanta los 4 servicios de infraestructura:
+#   docker compose up -d
+#
+# Convencion de puertos "localhost vs dentro del contenedor":
+#   - Desde el HOST usas: localhost:5432, localhost:6390, localhost:5673, localhost:1025
+#   - Dentro del contenedor (B02+) usas los nombres de servicio: postgres, redis, rabbitmq
+#
+# Usuario/password de desarrollo (solo local, nunca produccion): tfinder/tfinder
+# RabbitMQ panel: http://localhost:15673  (tfinder/tfinder)
+# MailHog   panel: http://localhost:8025
+
+name: tfinder
+
+services:
+  # ---------------- PostgreSQL 16 ----------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: tfinder-postgres
+    environment:
+      POSTGRES_USER: tfinder          # usuario superusuario de la instancia
+      POSTGRES_PASSWORD: tfinder      # password solo de desarrollo (RNF-11)
+      POSTGRES_DB: mesas_db           # DB que la imagen crea automaticamente; el resto via init
+    ports:
+      - "5432:5432"                   # host:contenedor -> psql desde tu maquina
+    volumes:
+      - tfinder-pg:/var/lib/postgresql/data          # datos persistentes
+      - ./infra/postgres-init:/docker-entrypoint-initdb.d  # crea builds/feed/notif_db
+    healthcheck:                       # criterio: postgres DEBE quedar healthy
+      test: ["CMD-SHELL", "pg_isready -U tfinder -d mesas_db"]
+      # pg_isready sale 0 cuando postgres acepta conexiones; el healthcheck
+      # del entrypoint lo corre cada 5s hasta que responde.
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  # ---------------- Redis 7 ----------------
+  redis:
+    image: redis:7-alpine
+    container_name: tfinder-redis
+    command: ["redis-server", "--appendonly", "yes"]  # persistencia AOF en disco
+    ports:
+      - "6390:6379"                   # 6379 interno publicado como 6390 (no chocar con local)
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]   # redis-cli ping -> PONG -> exit 0
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---------------- RabbitMQ (management) ----------------
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: tfinder-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: tfinder
+      RABBITMQ_DEFAULT_PASS: tfinder
+    ports:
+      - "5673:5672"        # AMQP para pika
+      - "15673:15672"      # panel web management
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      # rabbitmq-diagnostics ping responde y sale 0 cuando el broker esta vivo
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # ---------------- MailHog (email sandbox) ----------------
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: tfinder-mailhog
+    ports:
+      - "1025:1025"        # SMTP (proveedor sandbox, B09)
+      - "8025:8025"        # panel web (bandeja de email)
+    # Sin healthcheck: mailhog responde apenas arranca (imagen trivial)
+
+  # ---------------- API (opcional) ----------------
+  # Rutas de conexion dentro del contenedor: el API corre en la misma red de
+  # compose, por lo que SI sobreescribis DATABASE_URL/REDIS_URL/RABBITMQ_URL
+  # (con nombres de servicio) en un .env propio del contenedor. El .env de
+  # desarrollo apunta a localhost (ver pestaña "localhost vs contenedor").
+  # Para usarlo: docker compose up -d --build api
+  api:
+    build: .
+    container_name: tfinder-api
+    env_file: .env
+    ports:
+      - "8001:8001"        # /docs en http://localhost:8001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  tfinder-pg:              # volumen nombrado: los datos de postgres sobreviven
+    # a `docker compose down`. Para resetear TODO (incl. las DBs extra del
+    # init): `docker compose down -v` (borra el volumen) y volver a `up`.

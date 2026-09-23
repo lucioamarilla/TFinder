@@ -13,6 +13,11 @@ def _db_path():
     return url.replace("sqlite:///", "", 1)
 
 
+def _usar_sqlite():
+    url = os.getenv("DATABASE_URL", "sqlite:///./tfinder.db")
+    return url.startswith("sqlite")
+
+
 def get_db_connection():
     conn = sqlite3.connect(_db_path())
     conn.row_factory = sqlite3.Row
@@ -21,6 +26,8 @@ def get_db_connection():
 
 
 def init_db():
+    if not _usar_sqlite():
+        return
     schema_path = os.path.join(BASE_DIR, "schema.sql")
     with open(schema_path, encoding="utf-8") as f:
         ddl = f.read()
