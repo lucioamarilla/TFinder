@@ -10,22 +10,22 @@ const { login } = useAuth()
 const toast = useToast()
 
 const form = reactive({ email: '', password: '' })
-const recordarme = ref(true)
 const mostrarPassword = ref(false)
 const enviando = ref(false)
 const errorGeneral = ref('')
 
 const emailValido = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
 
-function destino() {
+function redirigir(rol) {
   const redirect = route.query.redirect
   if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
-    return redirect
+    router.push(redirect)
+    return
   }
-  return '/dashboard'
+  router.push(rol === 'admin' ? '/admin/moderacion' : '/dashboard')
 }
 
-function enviar() {
+async function enviar() {
   errorGeneral.value = ''
   if (!form.email.trim() || !form.password) {
     errorGeneral.value = 'Completa tu correo electrónico y contraseña para abrir tu grimorio.'
@@ -36,11 +36,15 @@ function enviar() {
     return
   }
   enviando.value = true
-  setTimeout(() => {
-    const perfil = login({ email: form.email, remember: recordarme.value })
+  try {
+    const perfil = await login({ email: form.email.trim(), password: form.password })
     toast.ok(`¡Bienvenido de vuelta, ${perfil.nombre}!`)
-    router.push(destino())
-  }, 600)
+    redirigir(perfil.rol)
+  } catch (e) {
+    errorGeneral.value = e?.mensaje ?? 'No pudimos abrir tu grimorio. Revisá tus credenciales.'
+  } finally {
+    enviando.value = false
+  }
 }
 </script>
 
@@ -123,15 +127,6 @@ function enviar() {
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
             </button>
           </div>
-        </div>
-
-        <div class="flex items-center pt-1">
-          <label class="flex items-center gap-2.5 cursor-pointer select-none">
-            <input v-model="recordarme" type="checkbox" checked class="rune-checkbox" id="remember_me">
-            <span class="font-narrative text-[15px] text-[#1A1A1A] hover:text-[#8B5A2B] transition-colors">
-              Recuérdame en este sagrado códice
-            </span>
-          </label>
         </div>
 
         <div class="pt-2">
