@@ -161,6 +161,13 @@ services:
       NOTIF_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/notif_db
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
+      SMTP_HOST: mailhog           # B09: proveedor de email en sandbox
+      SMTP_PORT: "1025"
+      SMTP_TIMEOUT: "3"
+      MAIL_FROM: noreply@tfinder.local
+      MESAS_URL: http://mesas-api:8001       # contrato REST de miembros (B09)
+      MESAS_EMAIL: ${MESAS_EMAIL:-email_svc@tfinder.dev}
+      MESAS_PASSWORD: ${MESAS_PASSWORD:-cambiar-svc-password}
       PORT: "8001"
     ports:
       - "8004:8001"        # /docs en http://localhost:8004
