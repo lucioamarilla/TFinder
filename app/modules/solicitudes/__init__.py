@@ -1,1 +1,0 @@
-"""Solicitudes: esqueleto (futuro)."""

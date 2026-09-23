@@ -1,6 +1,8 @@
-# TFinder AE2 · Entorno de desarrollo reproducible (B01)
-# Un solo comando levanta los 4 servicios de infraestructura:
+# TFinder AE2 · Entorno de desarrollo reproducible (B01 + B02)
+# Un solo comando levanta la infraestructura:
 #   docker compose up -d
+# Los 4 servicios (mesas/builds/feed/notif-api) son opcionales:
+#   docker compose up -d --build mesas-api builds-api feed-api notif-api
 #
 # Convencion de puertos "localhost vs dentro del contenedor":
 #   - Desde el HOST usas: localhost:5432, localhost:6390, localhost:5673, localhost:1025
@@ -74,24 +76,68 @@ services:
       - "8025:8025"        # panel web (bandeja de email)
     # Sin healthcheck: mailhog responde apenas arranca (imagen trivial)
 
-  # ---------------- API (opcional) ----------------
-  # Rutas de conexion dentro del contenedor: el API corre en la misma red de
-  # compose, por lo que SI sobreescribis DATABASE_URL/REDIS_URL/RABBITMQ_URL
-  # (con nombres de servicio) en un .env propio del contenedor. El .env de
-  # desarrollo apunta a localhost (ver pestaña "localhost vs contenedor").
-  # Para usarlo: docker compose up -d --build api
-  api:
-    build: .
-    container_name: tfinder-api
-    env_file: .env
+  # ---------------- Servicios AE2 (opcionales, B02) ----------------
+  # Imagen única con ARG SERVICE; dentro del contenedor postgres se alcanza por
+  # nombre de servicio (no localhost). Levantá el que necesites:
+  #   docker compose up -d --build mesas-api builds-api feed-api notif-api
+  mesas-api:
+    build:
+      context: .
+      args:
+        SERVICE: mesas_api
+    container_name: tfinder-mesas-api
+    environment:
+      MESAS_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/mesas_db
+      PORT: "8001"
     ports:
       - "8001:8001"        # /docs en http://localhost:8001
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
+
+  builds-api:
+    build:
+      context: .
+      args:
+        SERVICE: builds_api
+    container_name: tfinder-builds-api
+    environment:
+      BUILDS_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/builds_db
+      PORT: "8001"
+    ports:
+      - "8002:8001"        # /docs en http://localhost:8002
+    depends_on:
+      postgres:
         condition: service_healthy
-      rabbitmq:
+
+  feed-api:
+    build:
+      context: .
+      args:
+        SERVICE: feed_api
+    container_name: tfinder-feed-api
+    environment:
+      FEED_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/feed_db
+      PORT: "8001"
+    ports:
+      - "8003:8001"        # /docs en http://localhost:8003
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  notif-api:
+    build:
+      context: .
+      args:
+        SERVICE: notif_api
+    container_name: tfinder-notif-api
+    environment:
+      NOTIF_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/notif_db
+      PORT: "8001"
+    ports:
+      - "8004:8001"        # /docs en http://localhost:8004
+    depends_on:
+      postgres:
         condition: service_healthy
 
 volumes:

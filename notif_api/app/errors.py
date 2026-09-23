@@ -1,0 +1,31 @@
+import logging
+
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+logger = logging.getLogger("tfinder.notif")
+
+
+def _body_error(codigo, mensaje):
+    return {"error": {"codigo": codigo, "mensaje": mensaje}}
+
+
+def manejar_validacion(request, exc: RequestValidationError):
+    piezas = []
+    for detalle in exc.errors():
+        loc = detalle.get("loc", [])
+        campo = ".".join(str(p) for p in loc)
+        msg = detalle.get("msg", "Valor invalido")
+        piezas.append(f"{campo}: {msg}" if campo else msg)
+    return JSONResponse(
+        status_code=400,
+        content=_body_error(400, "; ".join(piezas) or "Datos de entrada invalidos"),
+    )
+
+
+def manejar_error_interno(request, exc: Exception):
+    logger.exception("Error no controlado en %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content=_body_error(500, "Error interno del servidor"),
+    )
