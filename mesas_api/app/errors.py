@@ -1,5 +1,6 @@
 import logging
 
+from fastapi import HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -10,6 +11,14 @@ logger = logging.getLogger("tfinder.mesas")
 
 def _body_error(codigo, mensaje):
     return {"error": {"codigo": codigo, "mensaje": mensaje}}
+
+
+def manejar_http(request, exc: HTTPException):
+    detalle = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=_body_error(exc.status_code, detalle),
+    )
 
 
 def manejar_no_encontrado(request, exc: MesaNotFoundError):
