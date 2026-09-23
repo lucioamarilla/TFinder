@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Request, Response
 
 from mesas_api.app.controllers.mesas import (
     actualizar_mesa_controller,
@@ -49,7 +49,15 @@ def eliminar_mesa(mesa_id: int, _=Depends(usuario_actual)):
 
 
 @router.post("/{mesa_id}/solicitar", status_code=202)
-def solicitar_union(mesa_id: int, usuario: dict = Depends(usuario_actual)):
+def solicitar_union(
+    mesa_id: int,
+    request: Request,
+    usuario: dict = Depends(usuario_actual),
+):
     obtener_mesa_controller(mesa_id)
-    publicar_solicitud(mesa_id, int(usuario["sub"]))
+    publicar_solicitud(
+        mesa_id,
+        int(usuario["sub"]),
+        correlation_id=request.scope.get("correlation_id"),
+    )
     return {"estado": "pendiente"}

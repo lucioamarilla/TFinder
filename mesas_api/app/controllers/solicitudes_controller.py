@@ -20,7 +20,9 @@ class MesaNoExisteError(Exception):
     pass
 
 
-def solicitar_union(mesa_id: int, usuario_id: int, idem_key: str = None):
+def solicitar_union(
+    mesa_id: int, usuario_id: int, idem_key: str = None, correlation_id: str = "-"
+):
     if idem_key:
         previo = obtener_resultado(idem_key)
         if previo is not None:
@@ -48,7 +50,7 @@ def solicitar_union(mesa_id: int, usuario_id: int, idem_key: str = None):
         )
         if idem_key:
             guardar_resultado(idem_key, solicitud)
-        publicar_aceptacion(mesa_id, usuario_id)
+        publicar_aceptacion(mesa_id, usuario_id, correlation_id=correlation_id)
         return solicitud
     finally:
         liberar(mesa_id)
