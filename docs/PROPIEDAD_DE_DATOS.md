@@ -1,4 +1,4 @@
-# Propiedad de Datos — TFinder AE2 (B02)
+# Propiedad de Datos — TFinder AE2 (B02–B03)
 
 Cada base de datos pertenece a **un único servicio** (su dueño). Ningún servicio
 lee ni escribe SQL sobre las bases de los demás dominios (RNF-04: cero lecturas
@@ -11,6 +11,7 @@ por consulta SQL directa.
 | Base        | Tabla            | Servicio dueño | Endpoints que la exponen                |
 | ----------- | ---------------- | -------------- | --------------------------------------- |
 | `mesas_db`  | `mesas`          | `mesas-api`    | `GET/POST /api/v1/mesas`, `GET/PUT/DELETE /api/v1/mesas/{id}` |
+| `mesas_db`  | `usuarios`       | `mesas-api`    | `POST /api/v1/auth/register`, `POST /api/v1/auth/login` (B03) |
 | `builds_db` | `builds`         | `builds-api`   | `GET /api/v1/builds`, `GET /api/v1/builds/{id}` |
 | `builds_db` | `tags`           | `builds-api`   | `GET /api/v1/tags`                      |
 | `feed_db`   | `publicaciones`  | `feed-api`     | `GET /api/v1/feed`                      |
@@ -23,9 +24,7 @@ por consulta SQL directa.
 - Un servicio abre pool con `psycopg_pool` únicamente contra su propia `*_db`
   (ver `app/db.py` de cada servicio — ahí vive el default de `DATABASE_URL`).
 - Cualquier tabla o columna nueva se agrega al `schema.sql` del servicio dueño.
-- `mesas_db` es base de solo catálogo de mesas; los flujos de sesiones (B07) y
-  matchmaking (B10) agregan tablas al servicio dueño correspondiente o consumen
-  eventos, sin tocar tablas ajenas.
+- `mesas_db` guarda el catálogo de mesas y los usuarios del dominio de autenticación (B03); los flujos de sesiones (B07) y matchmaking (B10) agregan tablas al servicio dueño correspondiente o consumen eventos, sin tocar tablas ajenas.
 
 ## Verificación automatizable
 

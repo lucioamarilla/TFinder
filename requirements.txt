@@ -26,3 +26,6 @@ PyJWT==2.9.0
 qrcode==7.4.2
 fpdf2==2.7.9
 python-json-logger==2.0.7
+
+# Autenticación (B03): EmailStr de pydantic
+email-validator==2.2.0

@@ -1,8 +1,10 @@
 from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 EstadoMesa = Literal["abierta", "cerrada"]
+
+ROLES = Literal["usuario", "gm", "admin"]
 
 EDITABLE_FIELDS = {
     "nombre",
@@ -55,3 +57,19 @@ class MesaOut(BaseModel):
     nivel_inicial: Optional[int] = None
     jugadores_max: Optional[int] = None
     fecha_creacion: str
+
+
+class AuthRegistro(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    nombre: str = Field(min_length=1)
+    rol: ROLES = "usuario"
+
+
+class AuthLogin(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1)
+
+
+class AuthRefresh(BaseModel):
+    refresh_token: str

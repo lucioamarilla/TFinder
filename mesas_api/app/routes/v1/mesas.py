@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, Response
 
 from mesas_api.app.controllers.mesas import (
     actualizar_mesa_controller,
@@ -7,6 +7,7 @@ from mesas_api.app.controllers.mesas import (
     listar_mesas_controller,
     obtener_mesa_controller,
 )
+from mesas_api.app.middleware.auth import usuario_actual
 from mesas_api.app.schemas import MesaCreate, MesaOut, MesaUpdate
 
 router = APIRouter(prefix="/api/v1/mesas")
@@ -23,16 +24,16 @@ def obtener_mesa(mesa_id: int):
 
 
 @router.post("", response_model=MesaOut, status_code=201)
-def crear_mesa(payload: MesaCreate):
+def crear_mesa(payload: MesaCreate, _=Depends(usuario_actual)):
     return crear_mesa_controller(payload)
 
 
 @router.put("/{mesa_id}", response_model=MesaOut)
-def actualizar_mesa(mesa_id: int, payload: MesaUpdate):
+def actualizar_mesa(mesa_id: int, payload: MesaUpdate, _=Depends(usuario_actual)):
     return actualizar_mesa_controller(mesa_id, payload)
 
 
 @router.delete("/{mesa_id}", status_code=204)
-def eliminar_mesa(mesa_id: int):
+def eliminar_mesa(mesa_id: int, _=Depends(usuario_actual)):
     eliminar_mesa_controller(mesa_id)
     return Response(status_code=204)
