@@ -14,6 +14,7 @@ from mesas_api.app.errors import (
 )
 from mesas_api.app.init_db import init_db
 from mesas_api.app.routes.auth_routes import router as auth_router
+from mesas_api.app.routes.v1.matchmaking import router as matchmaking_router
 from mesas_api.app.routes.v1.mesas import router as mesas_router
 
 load_dotenv()
@@ -27,13 +28,14 @@ async def lifespan(app: FastAPI):
     cerrar_pool()
 
 
-app = FastAPI(title="TFinder · Mesas API", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="TFinder · Mesas API", version="0.4.0", lifespan=lifespan)
 app.add_exception_handler(MesaNotFoundError, manejar_no_encontrado)
 app.add_exception_handler(RequestValidationError, manejar_validacion)
 app.add_exception_handler(HTTPException, manejar_http)
 app.add_exception_handler(Exception, manejar_error_interno)
 app.include_router(mesas_router)
 app.include_router(auth_router)
+app.include_router(matchmaking_router)
 
 
 @app.get("/health")

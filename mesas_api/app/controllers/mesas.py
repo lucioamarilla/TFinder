@@ -8,6 +8,11 @@ from mesas_api.app.models.mesa import (
     obtener_mesa_por_id,
 )
 from mesas_api.app.schemas import MesaCreate, MesaOut, MesaUpdate
+from mesas_api.app.services.cache import (
+    guardar_listado,
+    invalidar_listado,
+    obtener_listado_cachead,
+)
 
 
 class MesaNotFoundError(Exception):
@@ -23,7 +28,16 @@ def _formatear_fila(fila):
 
 
 def listar_mesas_controller():
-    return [MesaOut(**fila) for fila in (_formatear_fila(f) for f in listar_mesas()) if fila]
+    cache = obtener_listado_cachead()
+    if cache is not None:
+        return cache
+    listado = [
+        MesaOut(**fila).model_dump()
+        for fila in (_formatear_fila(f) for f in listar_mesas())
+        if fila
+    ]
+    guardar_listado(listado)
+    return listado
 
 
 def obtener_mesa_controller(mesa_id):
@@ -34,14 +48,18 @@ def obtener_mesa_controller(mesa_id):
 
 
 def crear_mesa_controller(data: MesaCreate):
-    return MesaOut(**(_formatear_fila(crear_mesa(data))))
+    mesa = MesaOut(**(_formatear_fila(crear_mesa(data))))
+    invalidar_listado()
+    return mesa
 
 
 def actualizar_mesa_controller(mesa_id, data: MesaUpdate):
     fila = _formatear_fila(obtener_mesa_por_id(mesa_id))
     if fila is None:
         raise MesaNotFoundError(mesa_id)
-    return MesaOut(**(_formatear_fila(actualizar_mesa(mesa_id, data))))
+    mesa = MesaOut(**(_formatear_fila(actualizar_mesa(mesa_id, data))))
+    invalidar_listado()
+    return mesa
 
 
 def eliminar_mesa_controller(mesa_id):
@@ -49,3 +67,4 @@ def eliminar_mesa_controller(mesa_id):
     if fila is None:
         raise MesaNotFoundError(mesa_id)
     eliminar_mesa(mesa_id)
+    invalidar_listado()
