@@ -87,8 +87,10 @@ services:
         SERVICE: mesas_api
     container_name: tfinder-mesas-api
     environment:
+      SERVICIO: mesas-api
       MESAS_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/mesas_db
       REDIS_URL: redis://redis:6379/0        # interno; host publica 6390 (B01)
+      RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/  # interno; host publica 5673 (B01)
       JWT_SECRET: ${JWT_SECRET:-dev-secret}  # B03: sesiones JWT
       JWT_EXP_MIN: ${JWT_EXP_MIN:-1440}      # 24 h, default
       PORT: "8001"
@@ -96,6 +98,10 @@ services:
       - "8001:8001"        # /docs en http://localhost:8001
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   builds-api:
@@ -105,12 +111,19 @@ services:
         SERVICE: builds_api
     container_name: tfinder-builds-api
     environment:
+      SERVICIO: builds-api
       BUILDS_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/builds_db
+      REDIS_URL: redis://redis:6379/0
+      RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
       PORT: "8001"
     ports:
       - "8002:8001"        # /docs en http://localhost:8002
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   feed-api:
@@ -120,12 +133,19 @@ services:
         SERVICE: feed_api
     container_name: tfinder-feed-api
     environment:
+      SERVICIO: feed-api
       FEED_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/feed_db
+      REDIS_URL: redis://redis:6379/0
+      RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
       PORT: "8001"
     ports:
       - "8003:8001"        # /docs en http://localhost:8003
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   notif-api:
@@ -135,12 +155,19 @@ services:
         SERVICE: notif_api
     container_name: tfinder-notif-api
     environment:
+      SERVICIO: notif-api
       NOTIF_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/notif_db
+      REDIS_URL: redis://redis:6379/0
+      RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
       PORT: "8001"
     ports:
       - "8004:8001"        # /docs en http://localhost:8004
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
 volumes:
