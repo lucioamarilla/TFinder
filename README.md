@@ -133,13 +133,23 @@ Los scripts de `docker-entrypoint-initdb.d` (que crean `builds_db`, `feed_db` y 
 
 ## Ejecución
 
+Desde el host (requiere la infraestructura de compose levantada):
+
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn mesas_api.main:app --port 8001    # CRUD de mesas (http://localhost:8001/docs)
+uvicorn builds_api.main:app --port 8002   # builds/tags
+uvicorn feed_api.main:app --port 8003     # feed/wiki
+uvicorn notif_api.main:app --port 8004    # notificaciones/event-log
 ```
 
-- Al arrancar, `init_db()` crea automáticamente el archivo `tfinder.db` y la tabla `mesas` (si no existen) y aplica las migraciones necesarias.
-- Documentación interactiva (Swagger): http://localhost:8000/docs
-- Esquema OpenAPI: http://localhost:8000/openapi.json
+O dentro de contenedores:
+
+```bash
+docker compose up -d --build mesas-api builds-api feed-api notif-api
+```
+
+- Al arrancar, cada servicio abre su pool `psycopg_pool` contra su `*_db`, crea sus tablas (`schema.sql` idempotente) y aplica sus índices.
+- Documentación interactiva de cada servicio en `http://localhost:<puerto>/docs`.
 
 ## Modelo de datos — entidad Mesa
 
