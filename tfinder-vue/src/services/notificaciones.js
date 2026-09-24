@@ -1,40 +1,59 @@
-import notificacionesData from '@/data/notificaciones.json'
+import { notifApi } from '@/api/endpoints'
 
-const LATENCIA_SIMULADA_MS = 250
+function mapearEnlace(enlace) {
+  if (!enlace) return null
+  if (typeof enlace === 'string') return { label: 'Ver', to: enlace }
+  const par = Object.entries(enlace)[0]
+  if (!par) return null
+  return { label: par[1] || 'Ver', to: par[0] }
+}
 
-const latencia = () => new Promise((resolve) => setTimeout(resolve, LATENCIA_SIMULADA_MS))
+function mapear(n) {
+  return {
+    id: n.id,
+    grupo: n.grupo,
+    icono: n.icono,
+    leida: Boolean(n.leida),
+    autor: n.autor,
+    mensaje: n.mensaje,
+    entidad: n.entidad,
+    detalle: n.detalle,
+    enlace: mapearEnlace(n.enlace),
+    fecha: formatearFecha(n.creado_en)
+  }
+}
 
-const catalogo = notificacionesData.notificaciones.map((n) => ({
-  ...n,
-  enlace: n.enlace ? { ...n.enlace } : null
-}))
-
-function clonar(notificacion) {
-  return { ...notificacion, enlace: notificacion.enlace ? { ...notificacion.enlace } : null }
+function formatearFecha(iso) {
+  if (!iso) return 'recientemente'
+  try {
+    return new Intl.DateTimeFormat('es-CO', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(iso))
+  } catch {
+    return 'recientemente'
+  }
 }
 
 export async function getNotificaciones() {
-  await latencia()
-  return catalogo.map(clonar)
+  const { datos } = await notifApi.notificaciones()
+  return datos.map(mapear)
 }
 
 export async function marcarLeida(id) {
-  await latencia(150)
-  const notificacion = catalogo.find((n) => n.id === id)
-  if (!notificacion) throw new Error('No encontramos ese aviso del cónclave.')
-  notificacion.leida = true
-  return clonar(notificacion)
+  const { datos } = await notifApi.marcarLeida(id)
+  return mapear(datos)
 }
 
 export async function marcarTodasLeidas() {
-  await latencia(280)
-  catalogo.forEach((n) => {
-    n.leida = true
-  })
-  return catalogo.map(clonar)
+  const { datos } = await notifApi.notificaciones()
+  await Promise.all(datos.filter((n) => !n.leida).map((n) => notifApi.marcarLeida(n.id)))
+  return getNotificaciones()
 }
 
 export async function getNoLeidas() {
-  await latencia(120)
-  return catalogo.filter((n) => !n.leida).length
+  const { datos } = await notifApi.notificaciones()
+  return datos.filter((n) => !n.leida).length
 }

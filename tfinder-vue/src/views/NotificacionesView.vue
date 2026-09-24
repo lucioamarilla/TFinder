@@ -1,13 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getNotificaciones, marcarLeida, marcarTodasLeidas } from '@/services/notificaciones.js'
+import { marcarLeida, marcarTodasLeidas } from '@/services/notificaciones.js'
 import { useNotifications } from '@/composables/useNotifications'
 import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
 const toast = useToast()
-const { unreadCount, loadCount } = useNotifications()
+const { lista, noLeidas, desconectado, refrescar } = useNotifications()
 
 const FILTROS = [
   { id: 'todas', label: 'Todas' },
@@ -26,7 +26,6 @@ const ICONOS = {
 }
 
 const filtro = ref('todas')
-const lista = ref([])
 const cargando = ref(true)
 const fallo = ref(null)
 const procesando = ref(false)
@@ -42,13 +41,11 @@ function contar(id) {
 async function cargar() {
   cargando.value = true
   fallo.value = null
-  try {
-    lista.value = await getNotificaciones()
-  } catch (e) {
-    fallo.value = e.message || 'No pudimos abrir el centro de avisos.'
-  } finally {
-    cargando.value = false
+  await refrescar()
+  if (desconectado.value) {
+    toast.info('notif-api está caído: se muestra el último estado conocido.')
   }
+  cargando.value = false
 }
 
 function reemplazar(actualizada) {
@@ -60,7 +57,7 @@ async function abrir(notificacion) {
   if (!notificacion.leida) {
     try {
       reemplazar(await marcarLeida(notificacion.id))
-      await loadCount()
+      await refrescar()
     } catch (e) {
       toast.error(e.message)
     }
@@ -69,14 +66,14 @@ async function abrir(notificacion) {
 }
 
 async function marcarTodas() {
-  if (unreadCount.value === 0) {
+  if (noLeidas.value === 0) {
     toast.info('No quedan avisos sin leer.')
     return
   }
   procesando.value = true
   try {
-    lista.value = await marcarTodasLeidas()
-    await loadCount()
+    await marcarTodasLeidas()
+    await refrescar()
     toast.ok('Todos los avisos del cónclave fueron marcados como leídos.')
   } catch (e) {
     toast.error(e.message)
@@ -122,6 +119,16 @@ onMounted(cargar)
           </svg>
           {{ procesando ? 'Marcando…' : 'Marcar todas como leídas' }}
         </button>
+        <button
+          type="button"
+          class="self-start sm:self-auto px-4 py-2 border border-[#C2A980] text-[#8B7D6B] hover:border-[#8B5A2B] hover:text-[#8B5A2B] rounded text-xs font-tarzana font-bold transition-all"
+          @click="cargar"
+        >
+          ↻ Recargar
+        </button>
+      </div>
+      <div v-if="desconectado" class="mt-3 px-3 py-2 border border-[#B7AFA2] bg-[#F4EAD6]/60 text-[#8B7D6B] rounded-sm text-xs font-tarzana font-semibold" role="status">
+        notif-api está caído: no se pueden alcanzar los avisos ahora mismo.
       </div>
 
       <div class="flex flex-wrap gap-2 mt-4" role="tablist">

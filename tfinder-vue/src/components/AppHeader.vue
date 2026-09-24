@@ -9,7 +9,7 @@ import { onMounted } from 'vue'
 
 const router = useRouter()
 const { role, user, logout } = useAuth()
-const { unreadCount, loadCount } = useNotifications()
+const { unreadCount: noLeidas, desconectado } = useNotifications()
 const { mobileOpen: menuOpen, toggleMenu, closeMenu } = useShell()
 
 const nav = computed(() => NAV[role.value])
@@ -20,10 +20,6 @@ function onLogout() {
   closeMenu()
   router.push('/')
 }
-
-onMounted(() => {
-  if (role.value !== 'guest') loadCount()
-})
 </script>
 
 <template>
@@ -46,13 +42,14 @@ onMounted(() => {
       <span v-if="role === 'guest'" class="sim-badge">PF1e · OGL v1.0a</span>
       <template v-else>
         <span class="sim-badge">+ PF1e Compatible OGL</span>
-        <RouterLink class="sim-bell" to="/notificaciones" title="Notificaciones">
+        <RouterLink class="sim-bell" to="/notificaciones" title="Notificaciones" :class="{ offline: desconectado }">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
-          <span v-if="unreadCount > 0" class="sim-count">{{ unreadCount }}</span>
+          <span v-if="noLeidas > 0 && !desconectado" class="sim-count">{{ noLeidas }}</span>
         </RouterLink>
+        <small v-if="desconectado" class="sim-offline" role="status">sin conexión a avisos</small>
         <RouterLink class="sim-perfil" to="/perfil" active-class="activo">
           <span class="sim-avatar" :class="{ activo: $route.path === '/perfil' }">{{ user?.iniciales }}</span>
           <span class="sim-nombre"><b>{{ user?.nombre }}</b><i>{{ user?.titulo }}</i></span>
