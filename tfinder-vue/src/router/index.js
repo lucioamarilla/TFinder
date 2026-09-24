@@ -18,6 +18,7 @@ const PaginaWikiView = () => import('@/views/gestion/PaginaWikiView.vue')
 const WikiEditorView = () => import('@/views/gestion/WikiEditorView.vue')
 const CalendarioView = () => import('@/views/gestion/CalendarioView.vue')
 const SesionesView = () => import('@/views/gestion/SesionesView.vue')
+const SesionQrView = () => import('@/views/gestion/SesionQrView.vue')
 const DiarioEditorView = () => import('@/views/gestion/DiarioEditorView.vue')
 const JugadoresView = () => import('@/views/gestion/JugadoresView.vue')
 const BuildsView = () => import('@/views/gestion/BuildsView.vue')
@@ -70,6 +71,7 @@ const routes = [
   { path: '/mesas/:id/calendario', name: 'mesa-calendario', component: CalendarioView, props: (r) => ({ mesaId: r.params.id }), meta: { roles: ['auth', 'admin'] } },
   { path: '/mesas/:id/sesiones', name: 'mesa-sesiones', component: SesionesView, props: (r) => ({ mesaId: r.params.id }), meta: { roles: ['auth', 'admin'] } },
   { path: '/mesas/:id/sesiones/:sesionId/diario', name: 'mesa-diario-editar', component: DiarioEditorView, props: (r) => ({ mesaId: r.params.id, sesionId: r.params.sesionId }), meta: { roles: ['auth', 'admin'] } },
+  { path: '/mesas/:id/sesiones/:sesionId/qr', name: 'mesa-sesion-qr', component: SesionQrView, props: (r) => ({ mesaId: r.params.id, sesionId: r.params.sesionId }), meta: { roles: ['auth', 'admin'] } },
   { path: '/mesas/:id/jugadores', name: 'mesa-jugadores', component: JugadoresView, props: (r) => ({ mesaId: r.params.id }), meta: { roles: ['auth', 'admin'] } },
   { path: '/mesas/:id/builds', name: 'mesa-builds', component: BuildsView, props: (r) => ({ mesaId: r.params.id }), meta: { roles: ['auth', 'admin'] } },
 

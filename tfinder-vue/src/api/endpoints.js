@@ -21,6 +21,12 @@ export const mesasApi = {
     })
 }
 
+export const sesionesApi = {
+  qr: (sesionId) => api('mesas', `/api/v1/sesiones/${sesionId}/qr`, { metodo: 'POST' }),
+  validarQr: (sesionId, body) =>
+    api('mesas', `/api/v1/sesiones/${sesionId}/qr/validar`, { metodo: 'POST', cuerpo: body })
+}
+
 export const matchmakingApi = {
   abrir: (mmId) => api('mesas', `/api/v1/matchmaking/${mmId}/abrir`, { metodo: 'POST' }),
   estado: (mmId) => api('mesas', `/api/v1/matchmaking/${mmId}/estado`)
