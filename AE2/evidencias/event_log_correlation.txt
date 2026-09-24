@@ -1,0 +1,6 @@
+TFinder AE2 · Event-log por correlation_id (B12)
+======================================================================
+EVENT-LOG CORRELACIÓN (B10/B12)
+publicado mesa.solicitada con correlation_id=cid-evid-1790272144
+GET /event-log?correlation_id=cid-evid-1790272144 -> HTTP 200
+mesa.solicitada consumido corr=cid-evid-1790272144

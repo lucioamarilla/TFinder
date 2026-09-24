@@ -139,6 +139,7 @@ services:
       FEED_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/feed_db
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
+      JWT_SECRET: ${JWT_SECRET:-dev-secret}  # B03: valida access_token de mesas-api
       PORT: "8001"
     ports:
       - "8003:8001"        # /docs en http://localhost:8003

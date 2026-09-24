@@ -4,6 +4,7 @@ from notif_api.app.models.notif import (
     actualizar_documento,
     crear_documento,
     evento_ya_procesado,
+    marcar_documento_error,
     registrar_evento,
 )
 from notif_api.app.services.pdf_service import generar_pdf_build, generar_pdf_diario
@@ -21,10 +22,14 @@ def _procesar(mensaje: dict) -> bool:
         return False
     crear_documento(doc_id, tipo.rsplit(".", 1)[1], id_origen)
     datos = mensaje.get("datos") or {}
-    if tipo == "doc.pdf.build":
-        ruta = generar_pdf_build(id_origen, datos)
-    else:
-        ruta = generar_pdf_diario(id_origen, datos)
+    try:
+        if tipo == "doc.pdf.build":
+            ruta = generar_pdf_build(id_origen, datos)
+        else:
+            ruta = generar_pdf_diario(id_origen, datos)
+    except Exception:
+        marcar_documento_error(doc_id)
+        raise
     actualizar_documento(doc_id, ruta)
     registrar_evento(
         mensaje["event_id"], tipo, {"doc_id": doc_id, "id_origen": id_origen},

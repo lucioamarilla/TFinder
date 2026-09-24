@@ -1,0 +1,14 @@
+TFinder AE2 · Health: /ready degradado/restaurado (B12)
+======================================================================
+READY DEGRADADO / RESTAURADO (B12)
+con Redis OK:
+port 8001: HTTP 200 {"estado":"listo","dependencias":{"postgres":true,"redis":true,"rabbitmq":true}}
+port 8002: HTTP 200 {"estado":"listo","dependencias":{"postgres":true,"redis":true,"rabbitmq":true}}
+port 8003: HTTP 200 {"estado":"listo","dependencias":{"postgres":true,"redis":true,"rabbitmq":true}}
+port 8004: HTTP 200 {"estado":"listo","dependencias":{"postgres":true,"redis":true,"rabbitmq":true}}
+Redis pausado (timeout 2s, B05 fix):
+port 8001: HTTP 503 {"estado":"degradado","dependencias":{"postgres":true,"redis":false,"rabbitmq":true}}
+port 8002: HTTP 503 {"estado":"degradado","dependencias":{"postgres":true,"redis":false,"rabbitmq":true}}
+port 8003: HTTP 503 {"estado":"degradado","dependencias":{"postgres":true,"redis":false,"rabbitmq":true}}
+restaurado:
+port 8003: HTTP 200 {"estado":"listo","dependencias":{"postgres":true,"redis":true,"rabbitmq":true}}

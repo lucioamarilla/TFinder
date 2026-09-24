@@ -1,17 +1,13 @@
 TFinder AE2 · Suite pytest (B11)
 ======================================================================
 pytest tests -v (B11):
-igmas_III/TFinder_AE2/TFinder/venv/bin/python3
-rootdir: /home/luciox/Facultad/paradigmas_III/TFinder_AE2/TFinder
-configfile: pytest.ini
-plugins: anyio-4.14.2
-collecting ... collected 5 items
-
-tests/test_cache.py::test_listado_usa_db_solo_en_miss_y_write_invalida PASSED [ 20%]
-tests/test_carrera.py::test_solo_uno_gana_la_ultima_vacante PASSED       [ 40%]
-tests/test_dlq.py::test_fallo_repetido_termina_en_dlq PASSED             [ 60%]
-tests/test_idempotencia.py::test_misma_key_no_duplica_solicitud_ni_vacante PASSED [ 80%]
-tests/test_qr.py::test_qr_no_es_reutilizable PASSED                      [100%]
+test_ready_degradado[rabbitmq-builds_api.main] PASSED [ 77%]
+tests/test_ready_degradado.py::test_ready_degradado[rabbitmq-feed_api.main] PASSED [ 81%]
+tests/test_ready_degradado.py::test_ready_degradado[rabbitmq-notif_api.main] PASSED [ 85%]
+tests/test_ready_degradado.py::test_ready_degradado[postgres-mesas_api.main] PASSED [ 88%]
+tests/test_ready_degradado.py::test_ready_degradado[postgres-builds_api.main] PASSED [ 92%]
+tests/test_ready_degradado.py::test_ready_degradado[postgres-feed_api.main] PASSED [ 96%]
+tests/test_ready_degradado.py::test_ready_degradado[postgres-notif_api.main] PASSED [100%]
 
 =============================== warnings summary ===============================
 venv/lib/python3.12/site-packages/fastapi/testclient.py:1
@@ -19,4 +15,4 @@ venv/lib/python3.12/site-packages/fastapi/testclient.py:1
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-======================== 5 passed, 1 warning in 11.55s =========================
+======================== 27 passed, 1 warning in 22.70s ========================

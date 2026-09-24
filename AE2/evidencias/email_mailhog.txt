@@ -1,6 +1,8 @@
 TFinder AE2 · Email sandbox MailHog (B09)
 ======================================================================
-MailHog bandeja (SMTP sandbox, B09) — 1 correos
+MailHog bandeja (SMTP sandbox, B09) — 2 correos
+From: noreply@tfinder.local  To: nuevo_aventurero@test.local
+Subject: TFinder · Recuperar contraseña
 From: noreply@tfinder.local  To: jugadora_carrera@tfinder.dev
 Subject: TFinder · Sesión confirmada
 outbox en notif_db: estado enviado/fallido + POST /emails/{id}/reintentar
