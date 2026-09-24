@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getCandidatos, anotarseEnLlamadoAbierto, enviarSolicitud } from '@/services/matchmaking.js'
+import { matchmakingApi } from '@/api/endpoints'
 import { useToast } from '@/composables/useToast'
 import LoadingState from '@/components/LoadingState.vue'
 import ErrorState from '@/components/ErrorState.vue'

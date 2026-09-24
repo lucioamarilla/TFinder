@@ -21,3 +21,9 @@ export const notifApi = {
   marcarLeida: (id) => api('notif', `/api/v1/notificaciones/${id}/leida`, { metodo: 'PATCH' }),
   eventLog: () => api('notif', '/api/v1/event-log')
 }
+export const matchmakingApi = {
+  abrir: (mmId) => api('mesas', `/api/v1/matchmaking/${mmId}/abrir`, { metodo: 'POST' }),
+  estado: (mmId) => api('mesas', `/api/v1/matchmaking/${mmId}/estado`),
+  anotarse: (mesaId, cuerpo) =>
+    api('mesas', `/api/v1/mesas/${mesaId}/solicitudes`, { metodo: 'POST', cuerpo })
+}
