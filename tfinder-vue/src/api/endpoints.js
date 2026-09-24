@@ -13,8 +13,12 @@ export const mesasApi = {
   crear: (b) => api('mesas', '/api/v1/mesas', { metodo: 'POST', cuerpo: b }),
   actualizar: (id, b) => api('mesas', `/api/v1/mesas/${id}`, { metodo: 'PUT', cuerpo: b }),
   eliminar: (id) => api('mesas', `/api/v1/mesas/${id}`, { metodo: 'DELETE' }),
-  solicitarUnion: (mesaId) =>
-    api('mesas', `/api/v1/mesas/${mesaId}/solicitar`, { metodo: 'POST' })
+  solicitarUnion: (mesaId, cuerpo, key) =>
+    api('mesas', `/api/v1/mesas/${mesaId}/solicitudes`, {
+      metodo: 'POST',
+      cuerpo: cuerpo ?? {},
+      idempotenciaKey: key
+    })
 }
 
 export const notifApi = {
