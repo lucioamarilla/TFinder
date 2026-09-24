@@ -67,3 +67,13 @@ export function useAuth() {
 export function currentRole() {
   return state.role
 }
+
+export function currentAccessToken() {
+  return null
+}
+
+export function clearSession() {
+  state.role = 'guest'
+  state.user = null
+  persist('guest')
+}
