@@ -13,8 +13,8 @@ from notif_api.app.consumers import sesion as sesion_consumer
 from notif_api.app.db import abrir_pool, cerrar_pool, get_pool
 from notif_api.app.errors import manejar_error_interno, manejar_validacion
 from notif_api.app.init_db import init_db
-from notif_api.app.models.notif import listar_dlq
 from notif_api.app.routes.v1.auth import router as auth_router
+from notif_api.app.routes.v1.dlq import router as dlq_router
 from notif_api.app.routes.v1.emails import router as emails_router
 from notif_api.app.routes.v1.event_log import router as event_log_router
 from notif_api.app.routes.v1.notificaciones import router as notificaciones_router
@@ -45,11 +45,7 @@ app.include_router(auth_router)
 app.include_router(event_log_router)
 app.include_router(emails_router)
 app.include_router(pdf_router)
-
-
-@app.get("/api/v1/dlq")
-def dlq(limite: int = 50):
-    return listar_dlq(limite)
+app.include_router(dlq_router)
 
 
 def psql_disponible():

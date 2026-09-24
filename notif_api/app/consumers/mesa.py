@@ -29,7 +29,10 @@ def _procesar(mensaje: dict) -> bool:
         entidad="mesa",
         enlace={"/mesas/{id}".format(id=mesa_id): "ver mesa"},
     )
-    registrar_evento(mensaje["event_id"], tipo, {"mesa_id": mesa_id})
+    registrar_evento(
+        mensaje["event_id"], tipo, {"mesa_id": mesa_id},
+        correlation_id=mensaje.get("correlation_id", "-"),
+    )
     return True
 
 

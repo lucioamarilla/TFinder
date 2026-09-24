@@ -26,7 +26,10 @@ def _procesar(mensaje: dict) -> bool:
     else:
         ruta = generar_pdf_diario(id_origen, datos)
     actualizar_documento(doc_id, ruta)
-    registrar_evento(mensaje["event_id"], tipo, {"doc_id": doc_id, "id_origen": id_origen})
+    registrar_evento(
+        mensaje["event_id"], tipo, {"doc_id": doc_id, "id_origen": id_origen},
+        correlation_id=mensaje.get("correlation_id", "-"),
+    )
     return True
 
 

@@ -29,3 +29,4 @@ class EventOut(BaseModel):
     usuarioId: Optional[str] = None
     metadata: Optional[Any] = None
     ocurridoEn: Optional[str] = None
+    correlationId: Optional[str] = None

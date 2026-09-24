@@ -45,7 +45,10 @@ def _procesar(mensaje: dict) -> bool:
         asunto, cuerpo = email_r
         for destino in obtener_emails_mesa(mesa_id):
             enviar_email(destino, asunto, cuerpo.format(mesa_id=mesa_id))
-    registrar_evento(mensaje["event_id"], tipo, {"mesa_id": mesa_id})
+    registrar_evento(
+        mensaje["event_id"], tipo, {"mesa_id": mesa_id},
+        correlation_id=mensaje.get("correlation_id", "-"),
+    )
     return True
 
 
