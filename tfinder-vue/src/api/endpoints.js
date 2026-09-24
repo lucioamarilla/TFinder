@@ -21,6 +21,11 @@ export const mesasApi = {
     })
 }
 
+export const matchmakingApi = {
+  abrir: (mmId) => api('mesas', `/api/v1/matchmaking/${mmId}/abrir`, { metodo: 'POST' }),
+  estado: (mmId) => api('mesas', `/api/v1/matchmaking/${mmId}/estado`)
+}
+
 export const notifApi = {
   notificaciones: () => api('notif', '/api/v1/notificaciones'),
   marcarLeida: (id) =>
