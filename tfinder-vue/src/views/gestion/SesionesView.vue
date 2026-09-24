@@ -102,7 +102,17 @@ watch(() => props.mesaId, cargar)
             </div>
           </div>
 
-          <div class="shrink-0 flex items-center justify-end pl-2">
+          <div class="shrink-0 flex items-center justify-end gap-2 pl-2">
+            <RouterLink
+              v-if="['confirmada', 'ejecutada', 'abierta', 'en_curso'].includes(sesion.estado)"
+              :to="`/mesas/${mesaId}/sesiones/${sesion.id}/qr`"
+              class="inline-flex items-center space-x-1.5 text-xs font-tarzana font-bold uppercase tracking-wider text-[#6B8E23] hover:text-[#4A6B17] border-[1.5px] border-[#6B8E23]/50 hover:border-[#6B8E23] rounded-xs px-3 py-1.5 transition-colors"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 17m-1 0a1 1 0 114 0 1 1 0 01-4 0zm12 0a1 1 0 114 0 1 1 0 01-4 0z"></path>
+              </svg>
+              <span>Asistencia (QR)</span>
+            </RouterLink>
             <RouterLink
               v-if="accionDe(sesion).tipo === 'ver'"
               :to="`/mesas/${mesaId}/sesiones/${sesion.id}/diario`"
