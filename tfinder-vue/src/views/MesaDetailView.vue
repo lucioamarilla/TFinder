@@ -85,9 +85,14 @@ onMounted(cargar)
         <div class="text-4xl mb-3 select-none" aria-hidden="true">🗝️</div>
         <h1 class="font-mason font-bold text-2xl text-[#8B5A2B]">Crónica no hallada</h1>
         <p class="font-narrative text-[#5A4A3A] mt-2">{{ error }}</p>
-        <RouterLink class="btn-gold inline-block mt-5 px-6 py-2.5 font-stat font-bold uppercase tracking-wider text-sm rounded-[2px]" to="/mesas">
-          ← Volver a explorar mesas
-        </RouterLink>
+        <div class="flex items-center justify-center gap-3 mt-5">
+          <button type="button" class="btn-gold px-6 py-2.5 font-stat font-bold uppercase tracking-wider text-sm rounded-[2px]" @click="cargar">
+            ↻ Reintentar
+          </button>
+          <RouterLink class="btn-copper-outline inline-block px-6 py-2.5 font-stat font-bold uppercase tracking-wider text-sm rounded-[2px]" to="/mesas">
+            ← Volver a explorar mesas
+          </RouterLink>
+        </div>
       </div>
     </div>
 
