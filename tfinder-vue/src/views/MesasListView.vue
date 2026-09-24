@@ -2,10 +2,17 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMesas } from '@/composables/useMesas'
+import { ultimaMedicion } from '@/services/mesas'
 import MesaCard from '@/components/MesaCard.vue'
 
 const route = useRoute()
 const { mesas, isLoading, error, retry } = useMesas()
+
+const medicionCaché = ref(0)
+
+function registrarMedicion() {
+  medicionCaché.value = ultimaMedicion()
+}
 
 const busqueda = ref('')
 const sistema = ref('Todos')
@@ -80,7 +87,15 @@ watch(
   { immediate: true }
 )
 
-onMounted(() => retry())
+onMounted(async () => {
+  await retry()
+  registrarMedicion()
+})
+
+async function refrescar() {
+  await retry()
+  registrarMedicion()
+}
 </script>
 
 <template>
@@ -154,12 +169,20 @@ onMounted(() => retry())
             {{ filtradas.length }} {{ filtradas.length === 1 ? 'mesa activa' : 'mesas activas' }}
             <span v-if="opsAplicadas" class="text-[#8B7D6B] normal-case font-semibold">(con filtros)</span>
           </span>
-          <label class="flex items-center gap-2">
-            <span class="font-stat uppercase text-xs font-bold tracking-wider text-[#8B7D6B]">Ordenar</span>
-            <select v-model="orden" class="select-parchment px-3 py-1.5 font-stat text-sm font-semibold rounded-[2px]">
-              <option v-for="o in opcionesOrden" :key="o.valor" :value="o.valor">{{ o.etiqueta }}</option>
-            </select>
-          </label>
+          <div class="flex items-center gap-3">
+            <span v-if="medicionCaché" class="font-stat text-xs font-bold text-[#6B8E23] bg-[#6B8E23]/10 border border-[#6B8E23]/40 px-2.5 py-1 rounded uppercase tracking-wider" title="Tiempo de respuesta del servicio mesas-api (1ª carga DB+Redis, siguientes caché)">
+              caché ~{{ medicionCaché }} ms
+            </span>
+            <label class="flex items-center gap-2">
+              <span class="font-stat uppercase text-xs font-bold tracking-wider text-[#8B7D6B]">Ordenar</span>
+              <select v-model="orden" class="select-parchment px-3 py-1.5 font-stat text-sm font-semibold rounded-[2px]">
+                <option v-for="o in opcionesOrden" :key="o.valor" :value="o.valor">{{ o.etiqueta }}</option>
+              </select>
+            </label>
+            <button type="button" class="btn-copper-outline px-3 py-1.5 font-stat text-xs font-bold uppercase tracking-wider rounded-[2px]" :disabled="isLoading" @click="refrescar">
+              Refrescar
+            </button>
+          </div>
         </div>
 
         <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center" role="status" aria-live="polite">

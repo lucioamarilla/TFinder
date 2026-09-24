@@ -11,11 +11,10 @@ export const mesasApi = {
   listar: () => api('mesas', '/api/v1/mesas'),
   detalle: (id) => api('mesas', `/api/v1/mesas/${id}`),
   crear: (b) => api('mesas', '/api/v1/mesas', { metodo: 'POST', cuerpo: b }),
-  solicitarUnion: (mesaId, b) =>
-    api('mesas', `/api/v1/mesas/${mesaId}/solicitudes`, {
-      metodo: 'POST',
-      cuerpo: b
-    })
+  actualizar: (id, b) => api('mesas', `/api/v1/mesas/${id}`, { metodo: 'PUT', cuerpo: b }),
+  eliminar: (id) => api('mesas', `/api/v1/mesas/${id}`, { metodo: 'DELETE' }),
+  solicitarUnion: (mesaId) =>
+    api('mesas', `/api/v1/mesas/${mesaId}/solicitar`, { metodo: 'POST' })
 }
 
 export const notifApi = {
