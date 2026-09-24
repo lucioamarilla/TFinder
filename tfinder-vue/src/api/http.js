@@ -69,5 +69,14 @@ export async function api(servicio, ruta, { metodo = 'GET', cuerpo = null, idemp
     throw new ApiError(err.codigo, err.mensaje, err.detalles ?? null)
   }
 
-  return { status: respuesta.status, datos, idempotenciaKey: solicitado }
+    const encabezados = {}
+  if (respuesta.headers?.forEach) {
+    respuesta.headers.forEach((v, k) => { encabezados[k.toLowerCase()] = v })
+  } else {
+    for (const [k, v] of Object.entries(respuesta.headers || {})) {
+      encabezados[(k || '').toLowerCase()] = v
+    }
+  }
+
+  return { status: respuesta.status, datos, idempotenciaKey: solicitado, encabezados }
 }
