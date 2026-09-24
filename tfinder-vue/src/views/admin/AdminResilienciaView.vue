@@ -9,6 +9,9 @@ const toast = useToast()
 
 const ajustes = ref([])
 const breakerEstado = ref('CERRADO')
+const estadoBroker = ref('listo')
+const broker = ref({})
+const dlqTotal = ref(0)
 const valores = reactive({})
 const cargando = ref(true)
 const fallo = ref(null)
@@ -30,6 +33,9 @@ const tonoBreaker = {
 function sincronizar(data) {
   ajustes.value = data.ajustes
   breakerEstado.value = data.breakerEstado
+  estadoBroker.value = data.estadoBroker
+  broker.value = data.broker
+  dlqTotal.value = data.dlqTotal
   data.ajustes.forEach((a) => {
     valores[a.id] = a.valor
   })
@@ -63,7 +69,7 @@ async function simular() {
   simulando.value = true
   try {
     sincronizar(await simularCaida())
-    toast.error('Simulacro de caída disparado · el breaker pasará a ABIERTO.')
+    toast.ok('Broker verificado: el breaker refleja el estado real de mesas-api.')
   } catch (e) {
     toast.error(e.message)
   } finally {
@@ -106,9 +112,19 @@ onMounted(cargar)
         <div class="flex items-center justify-between gap-2 border-b border-[#C2A980] pb-3">
           <div>
             <p class="font-tarzana font-bold text-[#1A1A1A]">Estado del circuit breaker · mesas-api</p>
-            <p class="font-tarzana text-xs text-[#8B7D6B]">El circuito se abre al superar el umbral de fallos consecutivos.</p>
+            <p class="font-tarzana text-xs text-[#8B7D6B]">Derivado del estado real de /ready (postgres, redis, rabbitmq).</p>
           </div>
           <span class="font-mason text-xl font-bold" :class="tonoBreaker[breakerEstado]">{{ breakerEstado }}</span>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <span class="font-tarzana text-xs px-3 py-1 rounded-sm font-bold" :class="tonoBadge[estadoBroker === 'listo' ? 'verde' : estadoBroker === 'degradado' ? 'cobre' : 'rojo']">
+            mesas-api · {{ estadoBroker }}
+          </span>
+          <span class="font-tarzana text-xs px-3 py-1 rounded-sm font-bold" :class="tonoBadge[broker.postgres ? 'verde' : 'rojo']">pg {{ broker.postgres ? '✓' : '✗' }}</span>
+          <span class="font-tarzana text-xs px-3 py-1 rounded-sm font-bold" :class="tonoBadge[broker.redis ? 'verde' : 'rojo']">redis {{ broker.redis ? '✓' : '✗' }}</span>
+          <span class="font-tarzana text-xs px-3 py-1 rounded-sm font-bold" :class="tonoBadge[broker.rabbitmq ? 'verde' : 'rojo']">rabbitmq {{ broker.rabbitmq ? '✓' : '✗' }}</span>
+          <span class="font-tarzana text-xs px-3 py-1 rounded-sm font-bold" :class="tonoBadge[dlqTotal === 0 ? 'verde' : 'cobre']">DLQ en cola: {{ dlqTotal }}</span>
         </div>
 
         <div v-for="ajuste in ajustes" :key="ajuste.id" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -150,7 +166,7 @@ onMounted(cargar)
           :disabled="simulando"
           @click="simular"
         >
-          Simular caída
+          {{ simulando ? 'Verificando…' : 'Verificar broker' }}
         </button>
         <button
           type="button"

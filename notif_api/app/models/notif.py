@@ -18,12 +18,12 @@ def evento_ya_procesado(event_id: str) -> bool:
     return fila is not None
 
 
-def registrar_evento(event_id: str, tipo: str, metadata: dict = None):
+def registrar_evento(event_id: str, tipo: str, metadata: dict = None, correlation_id: str = "-"):
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO event_log (event_id, entidad_tipo, accion, metadata)"
-            " VALUES (%s, %s, %s, %s)",
-            (event_id, tipo, "consumido", json.dumps(metadata or {})),
+            "INSERT INTO event_log (event_id, entidad_tipo, accion, metadata, correlation_id)"
+            " VALUES (%s, %s, %s, %s, %s)",
+            (event_id, tipo, "consumido", json.dumps(metadata or {}), correlation_id),
         )
 
 
@@ -49,6 +49,26 @@ def registro_dlq(cola: str, payload, error: str):
             (cola, json.dumps(payload, ensure_ascii=False), error),
         )
         return dict(cursor.fetchone())
+
+
+def reintentar_dlq(id: int):
+    with get_connection() as conn:
+        fila = conn.execute(
+            "SELECT * FROM mensaje_dlq WHERE id = %s", (id,)
+        ).fetchone()
+        if fila is None:
+            return None
+        conn.execute("DELETE FROM mensaje_dlq WHERE id = %s", (id,))
+    return dict(fila)
+
+
+def descartar_dlq(id: int):
+    with get_connection() as conn:
+        cursor = conn.execute(
+            "DELETE FROM mensaje_dlq WHERE id = %s RETURNING *", (id,)
+        )
+        fila = cursor.fetchone()
+    return dict(fila) if fila else None
 
 
 def listar_dlq(limite: int = 50):
