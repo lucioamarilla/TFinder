@@ -18,6 +18,7 @@ class NotificacionOut(BaseModel):
     detalle: Optional[str] = None
     enlace: Optional[Any] = None
     fecha: Optional[str] = None
+    creado_en: Optional[str] = None
 
 
 class EventOut(BaseModel):
