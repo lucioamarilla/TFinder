@@ -1,86 +1,42 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useMesas } from '@/composables/useMesas'
-import MesaCard from '@/components/MesaCard.vue'
+import { mesasApi } from '@/api/endpoints'
+import { useToast } from '@/composables/useToast'
 
 const route = useRoute()
-const { mesas, isLoading, error, retry } = useMesas()
+const toast = useToast()
 
-const busqueda = ref('')
-const sistema = ref('Todos')
-const modalidad = ref('Cualquiera')
-const disponibilidad = ref('Cualquiera')
-const orden = ref('publicacion')
+const mesas = ref([])
+const cargando = ref(true)
+const error = ref('')
+const cacheOrigen = ref('')
+const cacheTier = ref('')
+const refKey = ref('')
 
-const opcionesSistemas = ['Todos', 'PF1e', 'PF2e', 'D&D 3.5', 'Starfinder']
-const opcionesModalidad = ['Cualquiera', 'Online', 'Presencial', 'Mixta']
-const opcionesDisponibilidad = ['Cualquiera', 'Con vacantes', 'Completas']
-const opcionesOrden = [
-  { valor: 'publicacion', etiqueta: 'Orden de publicación' },
-  { valor: 'plazas', etiqueta: 'Con más plazas libres' },
-  { valor: 'inicio', etiqueta: 'Iniciación primero' },
-  { valor: 'epico', etiqueta: 'Épicas de alto nivel primero' }
-]
-
-const filtradas = computed(() => {
-  const q = busqueda.value.trim().toLowerCase()
-  let lista = mesas.value.filter((m) => {
-    const coincideTexto =
-      !q ||
-      [m.nombre, m.gm, m.lore, m.descripcion, m.sistema, m.modalidad, m.ubicacion]
-        .join(' ')
-        .toLowerCase()
-        .includes(q)
-    const coincideSistema = sistema.value === 'Todos' || m.sistema === sistema.value
-    const coincideModalidad = modalidad.value === 'Cualquiera' || m.modalidad === modalidad.value
-    const coincideDisponibilidad =
-      disponibilidad.value === 'Cualquiera' ||
-      (disponibilidad.value === 'Con vacantes'
-        ? Boolean(m.vacante) && m.jugadores < m.plazas
-        : !Boolean(m.vacante) || m.jugadores >= m.plazas)
-    return coincideTexto && coincideSistema && coincideModalidad && coincideDisponibilidad
-  })
-
-  if (orden.value === 'plazas') {
-    lista = [...lista].sort((a, b) => (b.plazas - b.jugadores) - (a.plazas - a.jugadores))
-  } else if (orden.value === 'inicio' || orden.value === 'epico') {
-    const nivelInicio = (m) => {
-      const match = /(\d+)/.exec(m.rangoNivel ?? m.nivel ?? '')
-      return match ? Number(match[1]) : 0
-    }
-    lista = [...lista].sort(
-      (a, b) => nivelInicio(a) - nivelInicio(b) || nivelInicio(b) - nivelInicio(a)
-    )
-    if (orden.value === 'epico') lista.reverse()
+async function cargar() {
+  cargando.value = true
+  error.value = ''
+  try {
+    const resp = await mesasApi.listar()
+    mesas.value = resp.datos || []
+    const h = resp.encabezados || {}
+    cacheOrigen.value = h['x-cache'] || (h['x-served-from'] ? 'redis' : '')
+    cacheTier.value = h['x-cache-tier'] || ''
+    refKey.value = h['x-ref-key'] || ''
+  } catch (e) {
+    mesas.value = []
+    error.value = e?.mensaje || e?.message || 'No pudimos abrir el archivo de mesas.'
+  } finally {
+    cargando.value = false
   }
-  return lista
-})
-
-const opsAplicadas = computed(
-  () =>
-    Boolean(busqueda.value.trim()) ||
-    sistema.value !== 'Todos' ||
-    modalidad.value !== 'Cualquiera' ||
-    disponibilidad.value !== 'Cualquiera'
-)
-
-function limpiarFiltros() {
-  busqueda.value = ''
-  sistema.value = 'Todos'
-  modalidad.value = 'Cualquiera'
-  disponibilidad.value = 'Cualquiera'
 }
 
-watch(
-  () => route.query.q,
-  (q) => {
-    busqueda.value = typeof q === 'string' ? q : ''
-  },
-  { immediate: true }
-)
+onMounted(cargar)
 
-onMounted(() => retry())
+const vacantes = computed(() =>
+  mesas.value.map((m) => ({ id: m.id, nombre: m.nombre, libres: Math.max(m.plazas - (m.jugadores || 0), 0), plazas: m.plazas || 0 }))
+)
 </script>
 
 <template>
