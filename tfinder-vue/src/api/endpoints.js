@@ -21,22 +21,6 @@ export const mesasApi = {
     })
 }
 
-export const pdfApi = {
-  solicitarBuild: (buildId) =>
-    api('builds', `/api/v1/builds/${buildId}/pdf`, { metodo: 'POST' }),
-  estado: (docId) => api('notif', `/api/v1/pdf/${docId}`)
-}
-
-export const adminApi = {
-  live: (servicio) => api(servicio, '/live'),
-  ready: (servicio) => api(servicio, '/ready'),
-  dlq: () => api('notif', '/api/v1/dlq'),
-  eventLog: (cid) =>
-    api('notif', `/api/v1/event-log${cid ? `?correlation_id=${cid}` : ''}`),
-  reintentarDlq: (id) => api('notif', `/api/v1/dlq/${id}/reintentar`, { metodo: 'POST' }),
-  descartarDlq: (id) => api('notif', `/api/v1/dlq/${id}`, { metodo: 'DELETE' })
-}
-
 export const sesionesApi = {
   qr: (sesionId) => api('mesas', `/api/v1/sesiones/${sesionId}/qr`, { metodo: 'POST' }),
   validarQr: (sesionId, body) =>

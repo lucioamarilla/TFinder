@@ -3,9 +3,11 @@ import usuariosData from '@/data/admin/usuarios.json'
 import estadisticasData from '@/data/admin/estadisticas.json'
 import plataformaData from '@/data/admin/plataforma.json'
 import trazabilidadData from '@/data/admin/trazabilidad.json'
+import observabilidadData from '@/data/admin/observabilidad.json'
+import dlqData from '@/data/admin/dlq.json'
+import resilienciaData from '@/data/admin/resiliencia.json'
 import comparadorData from '@/data/admin/comparador.json'
 import prometheusData from '@/data/admin/prometheus.json'
-import { adminApi } from '@/api/endpoints'
 
 const LATENCIA_SIMULADA_MS = 350
 const latencia = (ms = LATENCIA_SIMULADA_MS) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -14,6 +16,7 @@ const clon = (v) => JSON.parse(JSON.stringify(v))
 
 const casos = moderacionData.casos.map((c) => ({ ...c }))
 const cuentas = usuariosData.usuarios.map((u) => ({ ...u }))
+const mensajesDlq = dlqData.mensajes.map((m) => ({ ...m }))
 const ajustes = resilienciaData.ajustes.map((a) => ({ ...a }))
 let breakerEstado = resilienciaData.breakerEstado
 
@@ -104,148 +107,44 @@ export async function getTrazabilidad() {
 }
 
 /* ── 7.6 Observabilidad ── */
-const SERVICIOS = ['mesas', 'builds', 'feed', 'notif']
-
 export async function getObservabilidad() {
-  const servicios = []
-  const alertas = []
-  for (const nombre of SERVICIOS) {
-    let estado = 'sin_datos'
-    let dependencias = null
-    let detalle = 'sin datos'
-    try {
-      const live = await adminApi.live(nombre)
-      if (live.datos?.estado === 'vivo') {
-        try {
-          const rd = await adminApi.ready(nombre)
-          dependencias = rd.datos?.dependencias ?? null
-          estado = rd.datos?.estado ?? 'degradado'
-          detalle = estado === 'listo' ? 'Listo' : 'Degradado'
-        } catch {
-          estado = 'degradado'
-          detalle = 'Dependencias no responden'
-        }
-      } else {
-        detalle = 'Servicio apagado'
-      }
-    } catch {
-      estado = 'sin_datos'
-      detalle = 'Sin datos del operador'
-      alertas.push(`Sin datos del operador: ${nombre}`)
-    }
-    if (estado === 'degradado') {
-      alertas.push(`${nombre} degradado: ${JSON.stringify(dependencias ?? {})}`)
-    }
-    servicios.push({
-      id: nombre,
-      nombre: nombre.toUpperCase(),
-      estado,
-      detalle,
-      dependencias,
-      tono: estado === 'listo' ? 'verde' : estado === 'degradado' ? 'ocre' : 'gris',
-      salud: estado === 'listo' ? 100 : estado === 'degradado' ? 60 : 0,
-      latencia: detalle,
-      uptime: ''
-    })
-  }
-
-  let logs = []
-  try {
-    const { datos } = await adminApi.eventLog()
-    logs = datos.slice(0, 20).map((e, i) => ({
-      id: i,
-      timestamp: formatearHora(e.ocurridoEn),
-      nivel: 'INFO',
-      servicio: 'notif',
-      mensaje: `evento ${e.accion} · ${e.entidadTipo ?? ''}`,
-      correlationId: e.correlationId || '-'
-    })).filter((l) => l.correlationId !== '-')
-  } catch {
-    // notif-api caído: logs sin datos, no rompe el panel
-  }
-
-  return { servicios, alertas, logs }
-}
-
-function formatearHora(iso) {
-  if (!iso) return '-'
-  try {
-    return new Date(iso).toLocaleTimeString('es-CO', { hour12: false })
-  } catch {
-    return '-'
-  }
+  await latencia(450)
+  return clon(observabilidadData)
 }
 
 /* ── 7.7 DLQ ── */
 export async function getDlq() {
-  const { datos } = await adminApi.dlq()
-  return {
-    mensajes: datos.map((m) => ({
-      id: m.id,
-      nombre: (m.payload?.tipo ?? m.cola) || 'evento',
-      cola: m.cola,
-      reintentos: typeof m.payload?._intentos === 'number' ? m.payload._intentos : 3,
-      fecha: m.fecha,
-      error: m.error,
-      payload: JSON.stringify(m.payload, null, 2),
-      correlationId: m.payload?.correlation_id ?? '-'
-    }))
-  }
+  await latencia()
+  return { mensajes: clon(mensajesDlq) }
 }
 
 export async function reintentarMensaje(id) {
-  const { datos } = await adminApi.reintentarDlq(id)
-  return { id: datos.id, nombre: 'reintentado' }
+  await latencia(400)
+  const i = mensajesDlq.findIndex((m) => m.id === id)
+  if (i < 0) throw new Error('Ese mensaje ya salió de la cola de fallidos.')
+  const [m] = mensajesDlq.splice(i, 1)
+  return { id: m.id, nombre: m.nombre }
 }
 
 export async function descartarMensaje(id) {
-  await adminApi.descartarDlq(id)
-  return { id }
+  await latencia()
+  const i = mensajesDlq.findIndex((m) => m.id === id)
+  if (i < 0) throw new Error('Ese mensaje ya salió de la cola de fallidos.')
+  const [m] = mensajesDlq.splice(i, 1)
+  return { id: m.id, nombre: m.nombre }
 }
 
 export async function drenarCola() {
-  const { datos } = await adminApi.dlq()
-  let total = 0
-  for (const m of datos) {
-    await adminApi.descartarDlq(m.id)
-    total += 1
-  }
+  await latencia(450)
+  const total = mensajesDlq.length
+  mensajesDlq.splice(0, mensajesDlq.length)
   return { total }
 }
 
 /* ── 7.8 Resiliencia ── */
 export async function getResiliencia() {
-  const broker = { redis: false, rabbitmq: false, postgres: false }
-  let estadoBroker = 'sin_datos'
-  try {
-    const rd = await adminApi.ready('mesas')
-    Object.assign(broker, rd.datos?.dependencias ?? {})
-    estadoBroker = rd.datos?.estado ?? 'degradado'
-  } catch {
-    estadoBroker = 'sin_datos'
-  }
-  let dlqTotal = 0
-  try {
-    const { datos } = await adminApi.dlq()
-    dlqTotal = datos.length
-  } catch {
-    dlqTotal = 0
-  }
-  breakerEstado = estadoBroker === 'listo' ? 'CERRADO' : 'ABIERTO'
-  const ajusteBroker = ajustes.find((a) => a.id === 'cb-umbral')
-  if (ajusteBroker) {
-    ajusteBroker.badge = {
-      texto: breakerEstado,
-      tono: breakerEstado === 'CERRADO' ? 'verde' : 'rojo'
-    }
-  }
-  return {
-    breakerEstado,
-    estadoBroker,
-    broker,
-    dlqTotal,
-    ajustes: clon(ajustes)
-  }
+  await latencia()
+  return { breakerEstado, ajustes: clon(ajustes) }
 }
 
 export async function guardarResiliencia(limites) {
@@ -263,7 +162,11 @@ export async function guardarResiliencia(limites) {
 }
 
 export async function simularCaida() {
-  return getResiliencia()
+  await latencia(400)
+  breakerEstado = 'ABIERTO'
+  const cb = ajustes.find((a) => a.id === 'cb-umbral')
+  if (cb) cb.badge = { texto: 'ABIERTO', tono: 'rojo' }
+  return { breakerEstado, ajustes: clon(ajustes) }
 }
 
 /* ── 7.9 Comparador ── */

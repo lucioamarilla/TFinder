@@ -28,6 +28,7 @@ async function cargar() {
 
 function inspeccionar(mensaje) {
   abierto.value = abierto.value === mensaje.id ? null : mensaje.id
+  toast.info('Payload inspeccionado (simulado).')
 }
 
 async function reintentar(mensaje) {
@@ -108,7 +109,6 @@ onMounted(cargar)
                 <th scope="col" class="px-4 py-3">Mensaje</th>
                 <th scope="col" class="px-4 py-3">Cola</th>
                 <th scope="col" class="px-4 py-3">Reintentos</th>
-                <th scope="col" class="px-4 py-3">Motivo</th>
                 <th scope="col" class="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
@@ -118,8 +118,7 @@ onMounted(cargar)
                   <td class="px-4 py-3 font-bold text-[#1A1A1A]">{{ mensaje.nombre }}</td>
                   <td class="px-4 py-3 text-[#5C5346]">{{ mensaje.cola }}</td>
                   <td class="px-4 py-3">{{ mensaje.reintentos }}</td>
-                  <td class="px-4 py-3 text-[#8B1A1A] font-tarzana text-xs" :title="mensaje.error">{{ (mensaje.error || '').slice(0, 48) }}</td>
-                  <td class="px-4 py-3 text-right">
+                  <td class="px-4 py-3">
                     <div class="flex flex-wrap items-center justify-end gap-2">
                       <button
                         type="button"
@@ -148,16 +147,14 @@ onMounted(cargar)
                   </td>
                 </tr>
                 <tr v-if="abierto === mensaje.id" class="border-b border-[#E5D6BC] bg-[#F8F2E4]">
-                  <td colspan="5" class="px-4 py-3">
-                    <p class="font-tarzana text-[10px] uppercase tracking-widest text-[#8B7D6B] mb-1">
-                      Payload · cid {{ mensaje.correlationId }}
-                    </p>
+                  <td colspan="4" class="px-4 py-3">
+                    <p class="font-tarzana text-[10px] uppercase tracking-widest text-[#8B7D6B] mb-1">Payload</p>
                     <pre class="font-mono text-xs text-[#1A1A1A] whitespace-pre-wrap break-all">{{ mensaje.payload }}</pre>
                   </td>
                 </tr>
               </template>
               <tr v-if="mensajes.length === 0">
-                <td colspan="5" class="px-4 py-10 text-center">
+                <td colspan="4" class="px-4 py-10 text-center">
                   <p class="font-mason text-lg text-[#8B5A2B] font-bold">La cola está vacía</p>
                   <p class="font-minion italic text-sm text-[#8B7D6B] mt-1">No quedan mensajes fallidos por procesar.</p>
                 </td>

@@ -1,31 +1,21 @@
-import { ref, onMounted } from 'vue'
-import { getNotificaciones, getNoLeidas } from '@/services/notificaciones'
+import { ref } from 'vue'
+import { getNotificaciones } from '@/services/notificaciones'
 
-const lista = ref([])
-const noLeidas = ref(0)
-const desconectado = ref(false)
-let timer = null
-let arrancado = false
+const unreadCount = ref(0)
 
-export async function refrescar() {
-  try {
-    const [items, pendientes] = await Promise.all([getNotificaciones(), getNoLeidas()])
-    lista.value = items
-    noLeidas.value = pendientes
-    desconectado.value = false
-  } catch (e) {
-    desconectado.value = true
+export function useNotifications() {
+  async function loadCount() {
+    try {
+      const list = await getNotificaciones()
+      unreadCount.value = list.filter((n) => !n.leida).length
+    } catch {
+      unreadCount.value = 0
+    }
   }
-}
 
-function arrancarPolling(periodoMs) {
-  if (arrancado) return
-  arrancado = true
-  refrescar()
-  timer = setInterval(refrescar, periodoMs)
-}
+  function setUnread(value) {
+    unreadCount.value = value
+  }
 
-export function useNotifications(periodoMs = 5000) {
-  onMounted(() => arrancarPolling(periodoMs))
-  return { lista, noLeidas, desconectado, refrescar }
+  return { unreadCount, loadCount, setUnread }
 }

@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getObservabilidad } from '@/services/admin.js'
-import { adminApi } from '@/api/endpoints'
 import { useToast } from '@/composables/useToast'
 import LoadingState from '@/components/LoadingState.vue'
 import ErrorState from '@/components/ErrorState.vue'
@@ -16,36 +15,21 @@ const logs = ref([])
 const cargando = ref(true)
 const fallo = ref(null)
 const siguiendo = ref(false)
-const cidFiltro = ref('')
 
-function formatearHora(iso) {
-  try {
-    return new Date(iso).toLocaleTimeString('es-CO', { hour12: false })
-  } catch {
-    return '-'
-  }
+const tonoServicio = {
+  verde: 'text-[#6B8E23] border-[#6B8E23]/40',
+  ocre: 'text-[#8B5A2B] border-[#8B5A2B]/40'
 }
 
-function convertirLog(e) {
-  return {
-    id: e.id,
-    timestamp: formatearHora(e.ocurridoEn),
-    nivel: 'INFO',
-    servicio: 'notif',
-    mensaje: `evento ${e.accion} · ${e.entidadTipo ?? ''}`,
-    correlationId: e.correlationId || '-'
-  }
+const barraTono = {
+  verde: 'bg-[#6B8E23]',
+  ocre: 'bg-[#8B5A2B]'
 }
 
-async function traerLogs() {
-  try {
-    const { datos } = await adminApi.eventLog(cidFiltro.value || undefined)
-    logs.value = datos.slice(0, 20).map(convertirLog)
-    if (cidFiltro.value) toast.info(`Traza del recorrido ${cidFiltro.value}`)
-  } catch {
-    logs.value = []
-    if (cidFiltro.value) toast.error('notif-api no responde: sin trazas del operador.')
-  }
+const tonoNivel = {
+  INFO: 'text-[#6B8E23] border-[#6B8E23]/40 bg-[#6B8E23]/10',
+  WARN: 'text-[#8B5A2B] border-[#8B5A2B]/40 bg-[#8B5A2B]/10',
+  ERROR: 'text-[#8B1A1A] border-[#8B1A1A]/40 bg-[#8B1A1A]/10'
 }
 
 async function cargar() {
@@ -55,17 +39,12 @@ async function cargar() {
     const data = await getObservabilidad()
     servicios.value = data.servicios
     alertas.value = data.alertas
-    if (data.logs.length > 0) logs.value = data.logs.slice(0, 20)
+    logs.value = data.logs
   } catch (e) {
     fallo.value = e.message || 'El tablero de observabilidad no respondió.'
   } finally {
     cargando.value = false
   }
-}
-
-function seguir(cid) {
-  cidFiltro.value = cid === cidFiltro.value ? '' : cid
-  traerLogs()
 }
 
 function activarSeguimiento() {
@@ -95,7 +74,7 @@ onMounted(cargar)
     <header class="mb-6">
       <h1 class="font-mason text-3xl font-bold text-[#8B5A2B] tracking-wide">✦ Observabilidad</h1>
       <p class="font-minion italic text-[#5C4633] mt-1">
-        Salud real de los microservicios del cónclave: /live y /ready de cada servicio.
+        Salud de los microservicios del cónclave en tiempo real (datos simulados).
       </p>
     </header>
 
@@ -116,10 +95,8 @@ onMounted(cargar)
             <div class="h-full rounded-full" :class="barraTono[svc.tono]" :style="{ width: svc.salud + '%' }"></div>
           </div>
           <div class="flex flex-wrap justify-between gap-2 font-tarzana text-xs text-[#8B7D6B] mt-2">
-            <span>{{ svc.detalle }}</span>
-            <span v-if="svc.dependencias" class="text-[#6B8E23]">
-              pg:{{ svc.dependencias.postgres ? '✓' : '✗' }} · redis:{{ svc.dependencias.redis ? '✓' : '✗' }} · rq:{{ svc.dependencias.rabbitmq ? '✓' : '✗' }}
-            </span>
+            <span>{{ svc.latencia }}</span>
+            <span>{{ svc.uptime }}</span>
           </div>
         </article>
       </div>
@@ -152,17 +129,18 @@ onMounted(cargar)
             <tbody>
               <tr v-for="log in logs" :key="log.id" class="border-b border-[#C2A980]/60 last:border-0 align-top">
                 <td class="px-4 py-3 font-tarzana text-xs text-[#5C5346] whitespace-nowrap">{{ log.timestamp }}</td>
-                <td class="px-4 py-3 font-tarzana text-xs text-[#6B8E23] font-bold">{{ log.nivel }}</td>
+                <td class="px-4 py-3">
+                  <span class="font-tarzana text-[11px] font-bold px-2 py-0.5 rounded border" :class="tonoNivel[log.nivel]">{{ log.nivel }}</span>
+                </td>
                 <td class="px-4 py-3 font-tarzana text-xs text-[#3A2E1F]">{{ log.servicio }}</td>
                 <td class="px-4 py-3 text-[#3A2E1F]">{{ log.mensaje }}</td>
                 <td class="px-4 py-3 font-tarzana text-xs">
                   <button
                     type="button"
                     class="text-[#8B5A2B] hover:underline min-h-[44px]"
-                    :class="{ 'font-bold': cidFiltro === log.correlationId }"
-                    @click="seguir(log.correlationId)"
+                    @click="toast.info(`Traza correlacionada: ${log.correlationId}`)"
                   >
-                    {{ log.correlationId }} {{ cidFiltro === log.correlationId ? '· filtrando' : '' }}
+                    {{ log.correlationId }}
                   </button>
                 </td>
               </tr>
