@@ -3,17 +3,21 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getMesa } from '@/services/mesas'
 import { useAuth } from '@/composables/useAuth'
+import { useSolicitud } from '@/composables/useSolicitud'
 import { useToast } from '@/composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
-const { isAuthenticated } = useAuth()
+const { isAuthenticated, user } = useAuth()
 const toast = useToast()
 
 const mesa = ref(null)
 const isLoading = ref(true)
 const error = ref(null)
 const tabActiva = ref('resumen')
+
+const mesaId = computed(() => Number(route.params.id))
+const solicitud = useSolicitud(mesaId.value)
 
 const requisitosLista = computed(() =>
   (mesa.value?.requisitos ?? '').split('·').map((r) => r.trim()).filter(Boolean)
@@ -24,6 +28,18 @@ const vacantes = computed(() =>
 )
 
 const hayVacantes = computed(() => Boolean(mesa.value?.vacante) && vacantes.value > 0)
+
+const ultimaVacante = computed(() =>
+  Boolean(mesa.value) && mesa.value.jugadores === mesa.value.plazas - 1 && mesa.value.plazas > 1
+)
+
+const etiquetaBotón = computed(() => ({
+  inactivo: 'Quiero unirme',
+  enviando: 'Enviando solicitud…',
+  solicitada: 'Solicitud enviada',
+  agotada: 'Sin vacantes',
+  error: 'Reintentar'
+}[solicitud.estado.value]))
 
 async function cargar() {
   isLoading.value = true
@@ -39,20 +55,32 @@ async function cargar() {
   }
 }
 
-function unirse() {
+async function unirse() {
   if (!mesa.value) return
-  if (!isAuthenticated.value) {
+  if (!isAuthenticated.value || !user.value) {
     router.push({ path: '/login', query: { redirect: route.fullPath } })
     return
   }
-  if (!hayVacantes.value) {
+  if (solicitud.estado.value === 'enviando' || solicitud.estado.value === 'solicitada') return
+  if (!hayVacantes.value && solicitud.estado.value !== 'error') {
     toast.info('La crónica no tiene vacantes disponibles por ahora.')
     return
   }
-  toast.ok(`Solicitud enviada al director de juego de "${mesa.value.nombre}".`)
+  await solicitud.unirse(user.value.email)
+  if (solicitud.estado.value === 'solicitada') {
+    toast.ok(`Solicitud enviada a "${mesa.value.nombre}".`)
+  } else if (solicitud.estado.value === 'agotada') {
+    toast.error(solicitud.mensaje.value)
+  } else if (solicitud.estado.value === 'error') {
+    toast.error(solicitud.mensaje.value)
+  }
 }
 
-watch(() => route.params.id, cargar)
+watch(() => route.params.id, () => {
+  solicitud.estado.value = 'inactivo'
+  solicitud.mensaje.value = ''
+  cargar()
+})
 onMounted(cargar)
 </script>
 
@@ -125,14 +153,22 @@ onMounted(cargar)
             </div>
           </div>
 
-          <div class="flex items-center">
+          <div class="flex items-center flex-col gap-2">
+            <div
+              v-if="solicitud.estado.value === 'agotada'"
+              class="font-tarzana text-[0.8rem] font-bold px-3 py-1.5 rounded uppercase tracking-wider bg-[#8B1A1A]/10 text-[#8B1A1A] border border-[#8B1A1A]/50 max-w-[220px] text-center"
+              role="alert"
+            >
+              {{ solicitud.mensaje.value }}
+            </div>
             <button
               type="button"
-              :disabled="!isAuthenticated && false"
+              :disabled="isLoading || solicitud.estado.value === 'enviando' || solicitud.estado.value === 'solicitada'"
+              :aria-busy="solicitud.estado.value === 'enviando'"
               :title="isAuthenticated ? 'Solicitar plaza en esta crónica' : 'Debes registrarte o iniciar sesión para solicitar plaza en esta crónica'"
               class="font-tarzana text-[0.9rem] font-semibold px-5 py-2.5 rounded-sm uppercase tracking-wider shadow-inner flex items-center gap-2 transition-colors"
               :class="isAuthenticated
-                ? (hayVacantes ? 'btn-gold text-[#1A1A1A]' : 'text-[#8B7D6B] bg-[#E8DCC8] border border-[#8B7D6B] cursor-not-allowed')
+                ? (solicitud.estado.value === 'agotada' ? 'text-[#8B7D6B] bg-[#E8DCC8] border border-[#8B7D6B] cursor-not-allowed' : (hayVacantes ? 'btn-gold text-[#1A1A1A]' : 'text-[#8B7D6B] bg-[#E8DCC8] border border-[#8B7D6B] cursor-not-allowed'))
                 : 'text-[#8B7D6B] bg-[#E8DCC8] border border-[#8B7D6B] cursor-pointer hover:text-[#8B5A2B] hover:bg-[#E5D5BC]'"
               @click="unirse"
             >
@@ -142,7 +178,7 @@ onMounted(cargar)
               <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354c-1.813 1.25-3.5 2-4.5 2S5.313 6.354 4.5 6.604V18c.813-.25 2-.604 3.5-.854 1.5-.25 2.5.062 3.5.854m0-9v9m0-9c-1.313-.75-3-1.5-4.5-1.5S5.313 5.104 4.5 5.354V17c.813-.25 2-.604 3.5-.854 1.5-.25 2.5.062 3.5.854"/>
               </svg>
-              {{ isAuthenticated ? 'Solicitar plaza' : 'Inicia sesión para unirte' }}
+              {{ isAuthenticated ? etiquetaBotón : 'Inicia sesión para unirte' }}
             </button>
           </div>
         </div>
@@ -272,6 +308,13 @@ onMounted(cargar)
               </div>
               <div class="mt-1.5 h-2.5 bg-[#C2A980]/40 border border-[#C2A980] rounded overflow-hidden">
                 <div class="h-full bg-gradient-to-r from-[#B8860B] to-[#D4AF37]" :style="{ width: `${Math.round((mesa.jugadores / mesa.plazas) * 100)}%` }"></div>
+              </div>
+              <div
+                v-if="ultimaVacante"
+                class="mt-2 font-tarzana text-[0.75rem] font-bold uppercase tracking-wider px-2 py-1 rounded border bg-[#8B1A1A]/10 text-[#8B1A1A] border-[#8B1A1A]/50"
+                role="alert"
+              >
+                ⚠ Última vacante — 1 puesto en disputa
               </div>
             </div>
 
