@@ -11,7 +11,12 @@
 | 9 · QR single-use | `qr_single_use.png` | Emitir 201 → 1ª validación 200 → 2ª validación 409 (GETDEL, sin email en payload) |
 | 9 · PDF asíncrono | `pdf_202_y_ficha.png` | `POST /builds/1/pdf → 202` con `documento_id`; `GET /pdf/{id} → 200 application/pdf` |
 | 8 · Observabilidad / correlación | `logs_correlation_id.png` | `X-Correlation-Id: cid-ev-…` en 3 logs de 2 servicios (request mesas → evento → consumidor notif) |
+| 8 · Event-log por correlation_id | `event_log_correlation.png` | `published mesa.solicitada corr=cid-evid-…`; `GET /event-log?correlation_id=…` → 200 con el recorrido del evento |
+| 8 · SSE en vivo | `sse_notificaciones.png` | `GET /notificaciones/stream?usuario_id=28`: conectado → `data: {… "Solicitud aceptada" …}` en vivo al publicar `mesa.aceptada` |
+| 9 · Diario PDF con auth | `diario_pdf_202.png` | `POST /diario/pdf` sin token → 401; con token → 202 + `documento_id`; `GET /pdf/{id}/estado` → `estado:"listo"`; notif-api genera el PDF |
+| 9 · DLQ reintentar/descartar | `dlq_reintentar_y_descartar.png` | `GET /dlq → 200 (33)`; `POST /dlq/{id}/reintentar → 200` (re-publica y borra fila); `DELETE /dlq/{id} → 200`; id inexistente → 404 |
 | 13 · Salud | `ready_live.png` | `/ready` 200 en los 4 servicios con postgres/redis/rabbitmq listos; `/live` 200 |
+| 13 · Salud degradada | `ready_degradado.png` | Redis pausado → `/ready` 503 `{"estado":"degradado",…,"redis":false}` en ~2s (timeout B05); restaurado → 200 |
 | 13 · Reproducibilidad | `pytest_v.png` | `pytest tests -v` → 5 passed (cache, carrera, idempotencia, QR, DLQ) |
 
 ## Cómo regenerar

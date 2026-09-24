@@ -6,6 +6,7 @@ from notif_api.app.models.notif import (
     registrar_evento,
 )
 from notif_api.app.services.email_service import enviar_email, obtener_emails_mesa
+from notif_api.app.services.stream import hub
 
 REGLA = {
     "sesion.confirmada": ("Sesión confirmada", "La sesión de la mesa {mesa_id} quedó confirmada"),
@@ -34,12 +35,23 @@ def _procesar(mensaje: dict) -> bool:
         return False
     titulo, plantilla = regla
     mesa_id = mensaje.get("mesa_id")
-    guardar_notificacion(
-        usuario_id=mensaje.get("usuario_id"),
+    usuario_id = mensaje.get("usuario_id")
+    notif_id = guardar_notificacion(
+        usuario_id=usuario_id,
         titulo=titulo,
         detalle=plantilla.format(mesa_id=mesa_id),
         entidad="sesion",
         enlace={"/mesas/{id}".format(id=mesa_id): "ver mesa"},
+    )
+    hub.publicar(
+        usuario_id,
+        {
+            "id": notif_id,
+            "titulo": titulo,
+            "detalle": plantilla.format(mesa_id=mesa_id),
+            "entidad": "sesion",
+            "enlace": {"/mesas/{id}".format(id=mesa_id): "ver mesa"},
+        },
     )
     if email_r:
         asunto, cuerpo = email_r

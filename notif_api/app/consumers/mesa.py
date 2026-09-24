@@ -5,6 +5,7 @@ from notif_api.app.models.notif import (
     guardar_notificacion,
     registrar_evento,
 )
+from notif_api.app.services.stream import hub
 
 REGLA = {
     "mesa.solicitada": ("Solicitud enviada", "Solicitaste unirte a la mesa {mesa_id}"),
@@ -22,12 +23,23 @@ def _procesar(mensaje: dict) -> bool:
         return False
     titulo, plantilla = regla
     mesa_id = mensaje.get("mesa_id")
-    guardar_notificacion(
-        usuario_id=mensaje.get("usuario_id"),
+    usuario_id = mensaje.get("usuario_id")
+    notif_id = guardar_notificacion(
+        usuario_id=usuario_id,
         titulo=titulo,
         detalle=plantilla.format(mesa_id=mesa_id),
         entidad="mesa",
         enlace={"/mesas/{id}".format(id=mesa_id): "ver mesa"},
+    )
+    hub.publicar(
+        usuario_id,
+        {
+            "id": notif_id,
+            "titulo": titulo,
+            "detalle": plantilla.format(mesa_id=mesa_id),
+            "entidad": "mesa",
+            "enlace": {"/mesas/{id}".format(id=mesa_id): "ver mesa"},
+        },
     )
     registrar_evento(
         mensaje["event_id"], tipo, {"mesa_id": mesa_id},

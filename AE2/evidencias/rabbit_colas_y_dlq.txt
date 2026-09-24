@@ -7,5 +7,5 @@ name	messages
 notif.mesa	0
 notif.sesion	0
 doc.pdf	0
-dlq.general	0
+dlq.general	3
 colas notif.mesa/notif.sesion/dol.pdf consumidas con ACK; dlq.general vacía salvo poison (B05).

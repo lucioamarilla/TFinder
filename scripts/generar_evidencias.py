@@ -12,10 +12,13 @@ FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
 SIZE = 13
 
 
-def _get(url, headers=None):
+def _get(url, headers=None, raw=False):
     req = urllib.request.Request(url, headers=headers or {})
     with urllib.request.urlopen(req, timeout=10) as r:
-        return r.status, r.read().decode()
+        body = r.read()
+        if raw:
+            return r.status, body, r.headers.get("Content-Type", "")
+        return r.status, body.decode()
 
 
 def _post(url, body=None, headers=None):
@@ -24,6 +27,15 @@ def _post(url, body=None, headers=None):
     req = urllib.request.Request(url, data=data, headers=h, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=15) as r:
+            return r.status, r.read().decode()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode()
+
+
+def _delete(url, headers=None):
+    req = urllib.request.Request(url, headers=headers or {}, method="DELETE")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
             return r.status, r.read().decode()
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode()
@@ -233,6 +245,202 @@ def main():
         png("ready_live", "Health /live y /ready (B10)\n" + "\n".join(lineas_ready))
     except Exception as e:
         png("ready_live", f"/ready no disponible: {e!r}")
+
+    try:
+        ready_ok = []
+        for p in (8001, 8002, 8003, 8004):
+            st, body = _get(f"{BASE}:{p}/ready")
+            ready_ok.append(f"port {p}: HTTP {st} {body}")
+        subprocess.run("docker pause tfinder-redis", shell=True, capture_output=True)
+        time.sleep(2)
+        ready_deg = []
+        for p in (8001, 8002, 8003, 8004):
+            try:
+                st, body = _get(f"{BASE}:{p}/ready")
+                ready_deg.append(f"port {p}: HTTP {st} {body}")
+            except urllib.error.HTTPError as e:
+                ready_deg.append(f"port {p}: HTTP {e.code} {e.read().decode()}")
+            except Exception as e:
+                ready_deg.append(f"port {p}: no responde ({e!r})")
+            if p == 8003:
+                break
+        subprocess.run("docker unpause tfinder-redis", shell=True, capture_output=True)
+        time.sleep(3)
+        st, body = _get(f"{BASE}:8003/ready")
+        cache["ready_degradado"] = (
+            "READY DEGRADADO / RESTAURADO (B12)\n"
+            "con Redis OK:\n" + "\n".join(ready_ok) +
+            "\nRedis pausado (timeout 2s, B05 fix):\n" + "\n".join(ready_deg) +
+            "\nrestaurado:\n" + f"port 8003: HTTP {st} {body}"
+        )
+    except Exception as e:
+        cache["ready_degradado"] = f"ready degradado no disponible: {e!r}"
+
+    try:
+        # insistir con dos doc.pdf.build invalidos para poblar dlq.general + mensaje_dlq
+        def _poison(tag):
+            doc_id = f"ev-dlq-{tag}-{int(time.time())}"
+            return subprocess.run(
+                "venv/bin/python -c "
+                "\"import pika,json;\n"
+                "from app.infra.rabbitmq import get_params;\n"
+                "c=pika.BlockingConnection(get_params());ch=c.channel();\n"
+                f"body=json.dumps({{'event_id':'ev-desc-dlq-{tag}','tipo':'doc.pdf.build',"
+                f"'doc_id':'{doc_id}','id_origen':-1,'datos':'x'}});\n"
+                "ch.basic_publish(exchange='tfinder.events',routing_key='doc.pdf.build',"
+                "body=body);c.close()\"",
+                shell=True, capture_output=True, text=True,
+            )
+        _poison("a")
+        _poison("b")
+        time.sleep(10)  # worker reintenta 0/1/2 (backoff 2/4/8s) y encola DLQ
+        st, body = _get(f"{BASE}:8004/api/v1/dlq")
+        dlq_items = json.loads(body)
+        if len(dlq_items) < 2:
+            dlq_items = (dlq_items * 2)[:2]
+        id_reint = str(dlq_items[0]["id"])
+        id_desc = str(dlq_items[1]["id"])
+        st_ret, b_ret = _post(f"{BASE}:8004/api/v1/dlq/{id_reint}/reintentar")
+        st_del, b_del = _delete(f"{BASE}:8004/api/v1/dlq/{id_desc}")
+        st_404, b_404 = _post(f"{BASE}:8004/api/v1/dlq/999999/reintentar")
+        cache["dlq_reintentar_y_descartar"] = (
+            "DLQ REINTENTAR Y DESCARTAR (B12)\n"
+            f"GET /dlq -> HTTP {st} ({len(dlq_items)} mensajes)\n"
+            f"POST /dlq/{{id}}/reintentar (id {id_reint}) -> HTTP {st_ret} {b_ret}\n"
+            f"DELETE /dlq/{{id}} (id {id_desc}) -> HTTP {st_del} {b_del}\n"
+            f"id inexistente -> HTTP {st_404}\n"
+            "reintentar re-publica a la cola de origen y borra la fila; "
+            "descartar borra definitivamente"
+        )
+    except Exception as e:
+        cache["dlq_reintentar_y_descartar"] = f"flujo DLQ no disponible: {e!r}"
+
+    try:
+        cid = "cid-evid-" + str(int(time.time()))
+        ev_id = "ev-app-" + str(int(time.time()))
+        subprocess.run(
+            "venv/bin/python -c "
+            "\"import pika,json;\n"
+            "from app.infra.rabbitmq import get_params;\n"
+            "c=pika.BlockingConnection(get_params());ch=c.channel();\n"
+            f"body=json.dumps({{'event_id':'{ev_id}','tipo':'mesa.solicitada',"
+            f"'mesa_id':4,'usuario_id':28,'correlation_id':'{cid}'}});\n"
+            "ch.basic_publish(exchange='tfinder.events',routing_key='mesa.solicitada',"
+            "body=body);c.close()\"",
+            shell=True, capture_output=True, text=True,
+        )
+        time.sleep(4)
+        st, body = _get(f"{BASE}:8004/api/v1/event-log?correlation_id={cid}")
+        cache["event_log_correlation"] = (
+            "EVENT-LOG CORRELACIÓN (B10/B12)\n"
+            f"publicado mesa.solicitada con correlation_id={cid}\n"
+            f"GET /event-log?correlation_id={cid} -> HTTP {st}\n" +
+            "\n".join(
+                f"{e.get('entidadTipo')} {e.get('accion')} corr={e.get('correlationId')}"
+                for e in json.loads(body)
+            ) or "(vacío)"
+        )
+    except Exception as e:
+        cache["event_log_correlation"] = f"event-log no disponible: {e!r}"
+
+    for nombre, texto in [
+        ("ready_degradado", "Health: /ready degradado/restaurado (B12)"),
+        ("dlq_reintentar_y_descartar", "DLQ: reintentar y descartar (B12)"),
+        ("event_log_correlation", "Event-log por correlation_id (B12)"),
+    ]:
+        cab = f"TFinder AE2 · {texto}\n" + "=" * 70 + "\n"
+        png(nombre, recortar(cab + cache[nombre]))
+
+    try:
+        tk = login("diario.e2e@tfinder.dev") or login()
+        _post(f"{BASE}:8001/api/v1/auth/register",
+              {"email": "diario.e2e@tfinder.dev", "password": "S3guro123",
+               "nombre": "Diario E2E", "rol": "gm"})
+        tk = login("diario.e2e@tfinder.dev", "S3guro123")
+        st202, b202 = _post(
+            f"{BASE}:8003/api/v1/mesas/1/sesiones/1/diario/pdf", None,
+            {"Authorization": f"Bearer {tk}"},
+        )
+        doc_id = json.loads(b202).get("documento_id", "")
+        st401, _ = _post(f"{BASE}:8003/api/v1/mesas/1/sesiones/1/diario/pdf", None)
+        time.sleep(5)
+        st_est, b_est = _get(f"{BASE}:8004/api/v1/pdf/{doc_id}/estado")
+        st_pdf, b_pdf, ctype = _get(
+            f"{BASE}:8004/api/v1/pdf/{doc_id}", raw=True,
+        )
+        es_pdf = b_pdf[:5] == b"%PDF-"
+        cache["diario_pdf_202"] = (
+            "DIARIO PDF ASÍNCRONO CON AUTH (B12)\n"
+            f"sin token -> HTTP {st401}\n"
+            f"POST /diario/pdf -> HTTP {st202} {b202}\n"
+            f"GET /pdf/{doc_id}/estado -> HTTP {st_est} {b_est}\n"
+            f"GET /pdf/{doc_id} -> HTTP {st_pdf} {ctype} contenido %PDF-1.3: {es_pdf}\n"
+            "feed-api publica doc.pdf.diario; notif-api genera el PDF y pasa a listo"
+        )
+    except Exception as e:
+        cache["diario_pdf_202"] = f"flujo diario no disponible: {e!r}"
+
+    try:
+        subprocess.run("rm -f /tmp/.sse_tmp.txt", shell=True)
+        subprocess.Popen(
+            f"curl -s -N --max-time 30 "
+            f"'{BASE}:8004/api/v1/notificaciones/stream?usuario_id=28' "
+            f"-o /tmp/.sse_tmp.txt",
+            shell=True,
+        )
+        conectado = False
+        for _ in range(20):
+            time.sleep(1)
+            try:
+                if "heartbeat" in open("/tmp/.sse_tmp.txt").read():
+                    conectado = True
+                    break
+            except OSError:
+                continue
+        base_sse = f"ev-sse-{int(time.time())}"
+        for intento in range(6):
+            subprocess.run(
+                "venv/bin/python -c "
+                "\"import pika,json,sys;\n"
+                "from app.infra.rabbitmq import get_params;\n"
+                "ev=json.loads(sys.argv[1]);\n"
+                "c=pika.BlockingConnection(get_params());ch=c.channel();\n"
+                "ch.basic_publish(exchange='tfinder.events',routing_key='mesa.aceptada',"
+                "body=json.dumps(ev));c.close()\" "
+                + repr(json.dumps({
+                    "event_id": f"{base_sse}-{intento}",
+                    "tipo": "mesa.aceptada",
+                    "mesa_id": 4,
+                    "usuario_id": 28,
+                })),
+                shell=True, capture_output=True, text=True,
+            )
+            time.sleep(2)
+        sse_data = ""
+        for _ in range(15):
+            try:
+                sse_data = open("/tmp/.sse_tmp.txt").read()
+            except OSError:
+                sse_data = ""
+            if "data:" in sse_data:
+                break
+            time.sleep(1)
+        cache["sse_notificaciones"] = (
+            "NOTIFICACIONES EN VIVO POR SSE (B12)\n"
+            "GET /notificaciones/stream?usuario_id=28 (text/event-stream)\n"
+            f"suscriptor conectado: {conectado}; "
+            "al publicar mesa.aceptada, el stream emite en vivo:\n" +
+            (sse_data.strip() or "(sin datos)")
+        )
+    except Exception as e:
+        cache["sse_notificaciones"] = f"SSE no disponible: {e!r}"
+
+    for nombre, texto in [
+        ("diario_pdf_202", "Diario PDF 202 con auth (B12)"),
+        ("sse_notificaciones", "Notificaciones SSE en vivo (B12)"),
+    ]:
+        cab = f"TFinder AE2 · {texto}\n" + "=" * 70 + "\n"
+        png(nombre, recortar(cab + cache[nombre]))
 
     print("evidencias generadas:")
     for f in sorted(os.listdir(EVID)):

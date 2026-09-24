@@ -33,13 +33,15 @@ def guardar_notificacion(
     detalle: str = None,
     entidad: str = "mesa",
     enlace: dict = None,
-):
+) -> int:
     with get_connection() as conn:
-        conn.execute(
+        fila = conn.execute(
             "INSERT INTO notificaciones (usuario_id, grupo, mensaje, detalle, entidad, enlace)"
-            " VALUES (%s, 'mesas', %s, %s, %s, %s)",
+            " VALUES (%s, 'mesas', %s, %s, %s, %s)"
+            " RETURNING id",
             (usuario_id, titulo, detalle, entidad, json.dumps(enlace or {})),
-        )
+        ).fetchone()
+    return fila["id"]
 
 
 def registro_dlq(cola: str, payload, error: str):
@@ -102,6 +104,14 @@ def actualizar_documento(doc_id: str, ruta: str):
         conn.execute(
             "UPDATE documentos SET estado = 'listo', ruta = %s WHERE id = %s",
             (ruta, doc_id),
+        )
+
+
+def marcar_documento_error(doc_id: str):
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE documentos SET estado = 'error' WHERE id = %s",
+            (doc_id,),
         )
 
 

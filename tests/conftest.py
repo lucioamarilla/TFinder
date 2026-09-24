@@ -34,6 +34,33 @@ def bd_pruebas():
     cerrar_pool()
 
 
+@pytest.fixture(scope="session", autouse=True)
+def dlq_general_vacia():
+    """Purgar dlq.general para que test_dlq sea determinista.
+
+    El consumer real (notif-api en docker, cola notif.mesa) puede repoblar
+    dlq.general mientras corren los tests; _mensaje_dlgs_por_event re-encola
+    no-matcheados y se colgaria. Purgamos antes y despues de la sesion.
+    """
+    import pika
+
+    from app.infra.rabbitmq import get_params
+
+    def _purgar():
+        try:
+            conn = pika.BlockingConnection(get_params())
+            ch = conn.channel()
+            ch.queue_declare(queue="dlq.general", durable=True)
+            ch.queue_purge(queue="dlq.general")
+            conn.close()
+        except Exception:
+            pass
+
+    _purgar()
+    yield
+    _purgar()
+
+
 @pytest.fixture(autouse=True)
 def estado_limpio(bd_pruebas):
     with get_connection() as conn:
