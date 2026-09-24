@@ -1,5 +1,4 @@
-<script setup>
-import { ref, reactive, computed } from 'vue'
+<script setup>import { ref, reactive, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
@@ -25,22 +24,27 @@ function destino() {
   return '/dashboard'
 }
 
-function enviar() {
+async function enviar() {
   errorGeneral.value = ''
   if (!form.email.trim() || !form.password) {
-    errorGeneral.value = 'Completa tu correo electrónico y contraseña para abrir tu grimorio.'
+    errorGeneral.value = 'Completa tu correo y contraseña para abrir tu grimorio.'
     return
   }
   if (!emailValido.value) {
-    errorGeneral.value = 'El correo electrónico no parece válido.'
+    errorGeneral.value = 'El correo no parece válido. Revisá los caracteres escritos.'
     return
   }
   enviando.value = true
-  setTimeout(() => {
-    const perfil = login({ email: form.email, remember: recordarme.value })
+  try {
+    const perfil = await login({ email: form.email.trim(), password: form.password })
     toast.ok(`¡Bienvenido de vuelta, ${perfil.nombre}!`)
     router.push(destino())
-  }, 600)
+  } catch (e) {
+    const msg = e?.mensaje || e?.mensajeGeneral || e?.message
+    errorGeneral.value = typeof msg === 'string' && msg ? msg : 'No pudimos abrir tu grimorio. Comprobá tus credenciales y volvé a intentar.'
+  } finally {
+    enviando.value = false
+  }
 }
 </script>
 

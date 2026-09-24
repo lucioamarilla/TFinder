@@ -4,7 +4,8 @@ export const authApi = {
   register: (b) => api('mesas', '/api/v1/auth/register', { metodo: 'POST', cuerpo: b }),
   login: (b) => api('mesas', '/api/v1/auth/login', { metodo: 'POST', cuerpo: b }),
   logout: () => api('mesas', '/api/v1/auth/logout', { metodo: 'POST' }),
-  me: () => api('mesas', '/api/v1/auth/me')
+  me: () => api('mesas', '/api/v1/auth/me'),
+  recuperar: (b) => api('mesas', '/api/v1/auth/recuperar', { metodo: 'POST', cuerpo: b })
 }
 
 export const mesasApi = {

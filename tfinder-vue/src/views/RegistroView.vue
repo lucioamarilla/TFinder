@@ -1,11 +1,10 @@
-<script setup>
-import { ref, reactive, computed } from 'vue'
+<script setup>import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
-const { login } = useAuth()
+const { register } = useAuth()
 const toast = useToast()
 
 const form = reactive({ usuario: '', email: '', password: '', confirmacion: '' })
@@ -14,29 +13,42 @@ const enviando = ref(false)
 const errorGeneral = ref('')
 
 const emailValido = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
-const passwordsCoinciden = computed(() => form.password === form.confirmacion)
 const passwordLarga = computed(() => form.password.length >= 8)
+const passwordsCoinciden = computed(() => form.password === form.confirmacion)
 
-function validar() {
+async function enviar() {
+  errorGeneral.value = ''
   if (!form.usuario.trim() || !form.email.trim() || !form.password || !form.confirmacion) {
-    return 'Completa todos los campos para inscribirte en las crónicas.'
+    errorGeneral.value = 'Completa todos los campos para inscribirte en las crónicas.'
+    return
   }
-  if (!emailValido.value) return 'El correo electrónico no parece válido.'
-  if (!passwordLarga.value) return 'La contraseña debe tener al menos 8 caracteres.'
-  if (!passwordsCoinciden.value) return 'Las contraseñas no coinciden. Comprueba los caracteres ingresados.'
-  if (!acepta.value) return 'Debes aceptar las normas de la comunidad TFinder para registrarte.'
-  return ''
-}
-
-function enviar() {
-  errorGeneral.value = validar()
-  if (errorGeneral.value) return
+  if (!emailValido.value) {
+    errorGeneral.value = 'El correo no parece válido.'
+    return
+  }
+  if (!passwordLarga.value) {
+    errorGeneral.value = 'La contraseña debe tener al menos 8 caracteres.'
+    return
+  }
+  if (!passwordsCoinciden.value) {
+    errorGeneral.value = 'Las contraseñas no coinciden. Comprobá los caracteres ingresados.'
+    return
+  }
+  if (!acepta.value) {
+    errorGeneral.value = 'Debés aceptar las normas de la comunidad TFinder para registrarte.'
+    return
+  }
   enviando.value = true
-  setTimeout(() => {
-    const perfil = login({ email: form.email, usuario: form.usuario })
+  try {
+    const perfil = await register({ nombre: form.usuario.trim(), email: form.email.trim(), password: form.password })
     toast.ok(`Tu nombre ya figura en las crónicas, ${perfil.nombre}.`)
     router.push('/dashboard')
-  }, 600)
+  } catch (e) {
+    const msg = e?.mensaje || e?.message
+    errorGeneral.value = typeof msg === 'string' && msg ? msg : 'No pudimos inscribirte en las crónicas. Probá con otro nombre u otro correo.'
+  } finally {
+    enviando.value = false
+  }
 }
 </script>
 

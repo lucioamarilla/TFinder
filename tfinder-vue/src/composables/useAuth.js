@@ -1,79 +1,94 @@
 import { reactive, computed } from 'vue'
+import { authApi } from '@/api/endpoints'
 
-const PROFILES = {
-  auth: { nombre: 'Aldren Valeros', rol: 'auth', iniciales: 'AV', titulo: 'Aventurero & Cronista' },
-  admin: { nombre: 'Alguacil del Cónclave', rol: 'admin', iniciales: 'AC', titulo: 'Moderación & Vigilancia' }
-}
+const STORAGE_KEY = 'tfinder-sesion'
 
-const STORAGE_KEY = 'tfinder-rol'
-
-function readStoredRole() {
+function leerGuardada() {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored === 'admin' || stored === 'auth' ? stored : 'guest'
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return { access: null, refresh: null, user: null }
+    const datos = JSON.parse(raw)
+    return {
+      access: typeof datos.access === 'string' ? datos.access : null,
+      refresh: typeof datos.refresh === 'string' ? datos.refresh : null,
+      user: typeof datos.user === 'object' && datos.user !== null ? datos.user : null
+    }
   } catch {
-    return 'guest'
+    return { access: null, refresh: null, user: null }
   }
 }
 
-const state = reactive({
-  role: readStoredRole(),
-  user: PROFILES[readStoredRole()] || null
-})
+const state = reactive(leerGuardada())
 
-function persist(role) {
+function persistir() {
   try {
-    localStorage.setItem(STORAGE_KEY, role)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      access: state.access,
+      refresh: state.refresh,
+      user: state.user
+    }))
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
+export function currentAccessToken() {
+  return state.access
+}
+
+export function currentRole() {
+  return state.user?.rol ?? (state.access ? 'auth' : 'guest')
+}
+
+export async function login(credentials) {
+  const { datos } = await authApi.login(credentials)
+  state.access = datos.access_token
+  state.refresh = datos.refresh_token
+  const me = await authApi.me()
+  state.user = { sub: me.datos.sub, email: me.datos.email, rol: me.datos.rol }
+  persistir()
+  return state.user
+}
+
+export async function register(credentials) {
+  const { datos } = await authApi.register(credentials)
+  state.access = datos.access_token
+  state.refresh = datos.refresh_token
+  const me = await authApi.me()
+  state.user = { sub: me.datos.sub, email: me.datos.email, rol: me.datos.rol }
+  persistir()
+  return state.user
+}
+
+export async function recuperar(email) {
+  return authApi.recuperar(email)
+}
+
+export async function logout() {
+  try {
+    await authApi.logout()
+  } catch {
+    /* red ca��da: igual limpiamos la sesi��n local */
+  }
+  clearSession()
+}
+
+export function clearSession() {
+  state.access = null
+  state.refresh = null
+  state.user = null
+  try {
+    localStorage.removeItem(STORAGE_KEY)
   } catch {
     /* almacenamiento no disponible */
   }
 }
 
 export function useAuth() {
-  const role = computed(() => state.role)
+  const role = computed(() => currentRole())
   const user = computed(() => state.user)
-  const isAuthenticated = computed(() => state.role !== 'guest')
-  const isAdmin = computed(() => state.role === 'admin')
+  const isAuthenticated = computed(() => currentRole() !== 'guest')
+  const isAdmin = computed(() => state.user?.rol === 'admin')
 
-  function login(credentials = {}) {
-    const target = credentials.role === 'admin' ? 'admin' : 'auth'
-    state.role = target
-    state.user = PROFILES[target]
-    persist(target)
-    return state.user
-  }
-
-  function loginAs(role) {
-    state.role = role
-    state.user = PROFILES[role] || null
-    persist(role)
-    return state.user
-  }
-
-  function logout() {
-    state.role = 'guest'
-    state.user = null
-    persist('guest')
-  }
-
-  function can(required) {
-    if (!required) return true
-    return state.role === required
-  }
-
-  return { role, user, isAuthenticated, isAdmin, login, loginAs, logout, can }
-}
-
-export function currentRole() {
-  return state.role
-}
-
-export function currentAccessToken() {
-  return null
-}
-
-export function clearSession() {
-  state.role = 'guest'
-  state.user = null
-  persist('guest')
+  return { role, user, isAuthenticated, isAdmin, login, register, recuperar, logout, clearSession }
 }
