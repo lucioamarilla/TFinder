@@ -21,6 +21,12 @@ export const mesasApi = {
     })
 }
 
+export const pdfApi = {
+  solicitarBuild: (buildId) =>
+    api('builds', `/api/v1/builds/${buildId}/pdf`, { metodo: 'POST' }),
+  estado: (docId) => api('notif', `/api/v1/pdf/${docId}`)
+}
+
 export const sesionesApi = {
   qr: (sesionId) => api('mesas', `/api/v1/sesiones/${sesionId}/qr`, { metodo: 'POST' }),
   validarQr: (sesionId, body) =>

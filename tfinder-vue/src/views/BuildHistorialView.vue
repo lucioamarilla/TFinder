@@ -2,9 +2,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast.js'
-import { getHistorial, restaurarVersion, exportarHistorial } from '@/services/builds.js'
+import { getHistorial, restaurarVersion } from '@/services/builds.js'
+import { pdfApi } from '@/api/endpoints'
+import { usePdfDescarga } from '@/composables/usePdfDescarga.js'
 
 const props = defineProps({ id: { type: String, required: true } })
+
+const pdf = usePdfDescarga(() => pdfApi.solicitarBuild(Number(props.id)))
 
 const router = useRouter()
 const toast = useToast()
@@ -71,9 +75,13 @@ async function restaurar(version) {
   await cargar()
 }
 
-async function exportar() {
-  const res = await exportarHistorial(props.id)
-  toast.ok(`Historial de «${res.nombre}» exportado (.PDF).`)
+function exportar() {
+  if (pdf.fase.value === 'enviando' || pdf.fase.value === 'en_cola') return
+  if (pdf.fase.value === 'listo') {
+    pdf.abrirDescarga()
+    return
+  }
+  pdf.exportar()
 }
 </script>
 
@@ -88,7 +96,21 @@ async function exportar() {
     </div>
 
     <div class="flex flex-wrap gap-2 mb-6">
-      <button type="button" class="px-5 py-2.5 bg-[#D4AF37] text-[#1A1A1A] font-tarzana text-xs font-bold rounded-sm hover:brightness-110 transition" @click="exportar">Exportar historial</button>
+      <button
+        type="button"
+        class="px-5 py-2.5 font-tarzana text-xs font-bold rounded-sm transition disabled:opacity-60"
+        :class="pdf.fase === 'listo' ? 'bg-[#6B8E23] text-[#FDF8EE]' : 'bg-[#D4AF37] text-[#1A1A1A] hover:brightness-110'"
+        :disabled="['enviando', 'en_cola'].includes(pdf.fase)"
+        @click="exportar"
+      >
+        {{ { inactivo: 'Exportar historial', enviando: 'Esperando 202…', en_cola: 'Generando…', listo: 'Descargar PDF', error: 'Reintentar' }[pdf.fase] }}
+      </button>
+      <span v-if="pdf.fase === 'en_cola'" class="inline-flex items-center gap-1 text-[#8B5A2B] font-tarzana text-xs font-bold uppercase tracking-wider self-center">
+        <span class="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse"></span> en cola (async)
+      </span>
+      <p v-if="pdf.fase === 'error'" class="text-[#8B1A1A] font-minion text-sm" role="alert">
+        Falló la generación: {{ pdf.mensaje }}
+      </p>
       <button
         v-if="activa && anterior"
         type="button"

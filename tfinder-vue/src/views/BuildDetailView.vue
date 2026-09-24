@@ -4,9 +4,13 @@ import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast.js'
 import { getBuild, vincularBuild } from '@/services/builds.js'
 import { getMesas } from '@/services/mesas.js'
+import { pdfApi } from '@/api/endpoints'
+import { usePdfDescarga } from '@/composables/usePdfDescarga.js'
 import ModalAsociarBuild from '@/components/modals/ModalAsociarBuild.vue'
 
 const props = defineProps({ id: { type: String, required: true } })
+
+const pdf = usePdfDescarga(() => pdfApi.solicitarBuild(Number(props.id)))
 
 const router = useRouter()
 const toast = useToast()
@@ -93,6 +97,21 @@ async function vincular(mesaId) {
         <RouterLink :to="`/builds/${build.id}/historial`" class="font-tarzana text-xs font-bold text-[#8B5A2B] hover:underline uppercase tracking-wider">
           Historial y versionado →
         </RouterLink>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 px-4 py-2 rounded-sm font-tarzana text-xs font-bold uppercase tracking-wider transition disabled:opacity-60"
+          :class="pdf.fase === 'listo' ? 'bg-[#6B8E23] text-[#FDF8EE]' : 'bg-[#D4AF37] text-[#1A1A1A] hover:brightness-110'"
+          :disabled="['enviando', 'en_cola'].includes(pdf.fase)"
+          @click="pdf.fase === 'listo' ? pdf.abrirDescarga() : pdf.exportar()"
+        >
+          {{ { inactivo: 'Exportar PDF', enviando: 'Esperando 202…', en_cola: 'Generando…', listo: 'Descargar PDF', error: 'Reintentar' }[pdf.fase] }}
+        </button>
+        <span v-if="pdf.fase === 'en_cola'" class="inline-flex items-center gap-1 text-[#8B5A2B] font-tarzana text-xs font-bold uppercase tracking-wider">
+          <span class="w-2 h-2 rounded-full bg-[#D4AF37] animate-pulse"></span> en cola (async)
+        </span>
+        <p v-if="pdf.fase === 'error'" class="text-[#8B1A1A] font-minion text-sm" role="alert">
+          Falló la generación: {{ pdf.mensaje }}
+        </p>
       </div>
 
       <div class="relative bg-[#FDF8EE] border-2 border-[#C2A980] rounded-sm p-6 md:p-8 shadow-xl">
