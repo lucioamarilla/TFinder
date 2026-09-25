@@ -1,0 +1,7 @@
+TFinder AE2 · Observabilidad: correlación (B10)
+======================================================================
+Correlación punta a punta (B10) — X-Correlation-Id: cid-ev-1790272091
+{"ts": 1790272091540, "nivel": "INFO", "servicio": "notif-api", "mensaje": "evento procesado", "correlation_id": "cid-ev-1790272091"}
+{"ts": 1790272091500, "nivel": "INFO", "servicio": "mesas-api", "mensaje": "request iniciado", "correlation_id": "cid-ev-1790272091"}
+{"ts": 1790272091534, "nivel": "INFO", "servicio": "mesas-api", "mensaje": "request finalizado", "correlation_id": "cid-ev-1790272091"}
+request (mesas) -> evento mesa.solicitada -> consumidor (notif): mismo correlation_id

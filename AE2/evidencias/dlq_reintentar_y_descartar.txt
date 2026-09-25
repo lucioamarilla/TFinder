@@ -1,0 +1,8 @@
+TFinder AE2 · DLQ: reintentar y descartar (B12)
+======================================================================
+DLQ REINTENTAR Y DESCARTAR (B12)
+GET /dlq -> HTTP 200 (37 mensajes)
+POST /dlq/{id}/reintentar (id 77) -> HTTP 200 {"ok":true,"id":77,"cola":"notif.mesa"}
+DELETE /dlq/{id} (id 76) -> HTTP 200 {"ok":true,"id":76}
+id inexistente -> HTTP 404
+reintentar re-publica a la cola de origen y borra la fila; descartar borra definitivamente

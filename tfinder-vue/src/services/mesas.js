@@ -1,65 +1,59 @@
-import mesasData from '@/data/mesas.json'
+import { mesasApi } from '@/api/endpoints'
 
-const LATENCIA_SIMULADA_MS = 400
+let ultimaMedicionMs = 0
 
-const catalogo = mesasData.mesas.map((mesa) => ({
-  ...mesa,
-  etiquetas: [...mesa.etiquetas]
-}))
-
-let nextId = catalogo.length + 1
-
-function esperar(ms = LATENCIA_SIMULADA_MS) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+export function ultimaMedicion() {
+  return ultimaMedicionMs
 }
 
-function clonar(mesa) {
-  return { ...mesa, etiquetas: [...mesa.etiquetas] }
+function normalizar(m) {
+  return {
+    id: m.id,
+    nombre: m.nombre,
+    sistema: m.sistema ?? 'PF1e',
+    descripcion: m.descripcion ?? '',
+    tono: m.tono ?? '',
+    horario: m.horario ?? '',
+    estado: m.estado === 'abierta' ? 'Abierta' : 'Cerrada',
+    estadoCategoria: m.estado === 'abierta' ? 'Abierta' : 'Cerrada',
+    rangoNivel: m.nivel_inicial ? `Nivel ${m.nivel_inicial}` : '—',
+    nivel: m.nivel_inicial,
+    jugadores: m.jugadores_actuales ?? 0,
+    plazas: m.jugadores_max ?? 0,
+    vacante: (m.jugadores_actuales ?? 0) < (m.jugadores_max ?? 0),
+    etiquetas: m.etiquetas ?? [],
+    gm: 'Gestionada por el Cónclave',
+    modalidad: 'Online',
+    ubicacion: 'Discord',
+    frecuencia: m.horario ?? 'A coordinar',
+    proximaSesion: 'Por definir',
+    lore: m.descripcion || 'Crónica activa de la comunidad.'
+  }
 }
 
 export async function getMesas() {
-  await esperar()
-  return catalogo.map(clonar)
+  const t0 = performance.now()
+  const { datos } = await mesasApi.listar()
+  ultimaMedicionMs = Math.round(performance.now() - t0)
+  return (datos ?? []).map(normalizar)
 }
 
 export async function getMesa(id) {
-  await esperar()
-  const mesa = catalogo.find((item) => item.id === id)
-  if (!mesa) {
-    throw new Error(`No encontramos ninguna mesa con el identificador "${id}".`)
-  }
-  return clonar(mesa)
+  const { datos } = await mesasApi.detalle(id)
+  return normalizar(datos)
 }
 
 export async function crearMesa(entrada) {
-  await esperar(600)
-  const mesa = {
-    id: `mesa-${nextId++}`,
-    jugadores: 0,
-    estado: 'Abierta',
-    etiquetas: [],
-    ...entrada
-  }
-  catalogo.unshift(mesa)
-  return clonar(mesa)
+  const { datos } = await mesasApi.crear(entrada)
+  return normalizar(datos)
 }
 
 export async function actualizarMesa(id, cambios) {
-  await esperar()
-  const index = catalogo.findIndex((item) => item.id === id)
-  if (index < 0) {
-    throw new Error(`No encontramos ninguna mesa con el identificador "${id}".`)
-  }
-  catalogo[index] = { ...catalogo[index], ...cambios, etiquetas: [...(cambios.etiquetas ?? catalogo[index].etiquetas)] }
-  return clonar(catalogo[index])
+  const { datos } = await mesasApi.actualizar(id, cambios)
+  return normalizar(datos)
 }
 
 export async function eliminarMesa(id) {
-  await esperar()
-  const index = catalogo.findIndex((item) => item.id === id)
-  if (index < 0) {
-    throw new Error(`No encontramos ninguna mesa con el identificador "${id}".`)
-  }
-  const [removida] = catalogo.splice(index, 1)
-  return removida
+  await mesasApi.eliminar(id)
+  return { id }
 }

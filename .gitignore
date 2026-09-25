@@ -9,6 +9,20 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Testing / cobertura
+.coverage
+coverage.xml
+htmlcov/
+
+# Logs
+*.log
+
+# Docker (datos locales de infra si se usa bind-mount)
+pgdata/
+redisdata/
 
 # Base de datos local
 *.db

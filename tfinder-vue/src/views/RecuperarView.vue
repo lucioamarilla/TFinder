@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { api } from '@/api/http'
 
 const toast = useToast()
 const form = reactive({ email: '' })
@@ -10,7 +11,7 @@ const errorGeneral = ref('')
 
 const emailValido = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
 
-function enviar() {
+async function enviar() {
   errorGeneral.value = ''
   if (!form.email.trim()) {
     errorGeneral.value = 'Indica el correo con el que forjaste tu cuenta en TFinder.'
@@ -21,11 +22,18 @@ function enviar() {
     return
   }
   enviando.value = true
-  setTimeout(() => {
+  try {
+    await api('notif', '/api/v1/auth/recuperar', {
+      metodo: 'POST',
+      cuerpo: { email: form.email.trim() }
+    })
     enviado.value = true
+    toast.ok('Revisá tu casilla para continuar.')
+  } catch {
+    errorGeneral.value = 'El servicio de correo no respondió. Intentá de nuevo en unos segundos.'
+  } finally {
     enviando.value = false
-    toast.ok('Mensajero enviado con éxito.')
-  }, 600)
+  }
 }
 </script>
 

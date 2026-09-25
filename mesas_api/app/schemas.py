@@ -1,0 +1,88 @@
+from typing import Literal, Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+EstadoMesa = Literal["abierta", "cerrada"]
+
+ROLES = Literal["usuario", "gm", "admin"]
+
+EDITABLE_FIELDS = {
+    "nombre",
+    "sistema",
+    "descripcion",
+    "tono",
+    "horario",
+    "estado",
+    "nivel_inicial",
+    "jugadores_max",
+}
+
+
+class MesaCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    nombre: str = Field(min_length=1)
+    sistema: str = Field(min_length=1)
+    descripcion: Optional[str] = None
+    tono: Optional[str] = None
+    horario: Optional[str] = None
+    estado: EstadoMesa = "abierta"
+    nivel_inicial: Optional[int] = Field(default=None, ge=0, strict=True)
+    jugadores_max: Optional[int] = Field(default=None, gt=0, strict=True)
+
+
+class MesaUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    nombre: Optional[str] = Field(default=None, min_length=1)
+    sistema: Optional[str] = Field(default=None, min_length=1)
+    descripcion: Optional[str] = None
+    tono: Optional[str] = None
+    horario: Optional[str] = None
+    estado: Optional[EstadoMesa] = None
+    nivel_inicial: Optional[int] = Field(default=None, ge=0, strict=True)
+    jugadores_max: Optional[int] = Field(default=None, gt=0, strict=True)
+
+
+class MesaOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    sistema: str
+    descripcion: Optional[str] = None
+    tono: Optional[str] = None
+    horario: Optional[str] = None
+    estado: EstadoMesa
+    nivel_inicial: Optional[int] = None
+    jugadores_actuales: int = 0
+    jugadores_max: Optional[int] = None
+    fecha_creacion: str
+
+
+class AuthRegistro(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    nombre: str = Field(min_length=1)
+    rol: ROLES = "usuario"
+
+
+class QrValidate(BaseModel):
+    usuario_id: int
+    qr_data: str
+
+
+class QROut(BaseModel):
+    qr_data: str
+    png_base64: str
+    expira_en_seg: int
+    sesion_id: int
+
+
+class AuthLogin(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1)
+
+
+class AuthRefresh(BaseModel):
+    refresh_token: str

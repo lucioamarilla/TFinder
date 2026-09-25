@@ -1,0 +1,73 @@
+import logging
+
+from fastapi import HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+from mesas_api.app.controllers.mesas import MesaNotFoundError
+from mesas_api.app.controllers.sesiones_controller import SesionNotFoundError
+from mesas_api.app.controllers.solicitudes_controller import (
+    CupoAgotadoError,
+    MesaNoExisteError,
+    SolicitudEnProcesoError,
+)
+from mesas_api.app.services.qr_asistencia import _Conflict, _Invalid
+
+logger = logging.getLogger("tfinder.mesas")
+
+
+def _body_error(codigo, mensaje):
+    return {"error": {"codigo": codigo, "mensaje": mensaje}}
+
+
+def manejar_http(request, exc: HTTPException):
+    detalle = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=_body_error(exc.status_code, detalle),
+    )
+
+
+def manejar_no_encontrado(request, exc: MesaNotFoundError):
+    return JSONResponse(status_code=404, content=_body_error(404, str(exc)))
+
+
+def manejar_conflicto(request, exc):
+    return JSONResponse(status_code=409, content=_body_error(409, str(exc)))
+
+
+def manejar_mesa_inexistente(request, exc: MesaNoExisteError):
+    return JSONResponse(status_code=404, content=_body_error(404, str(exc)))
+
+
+def manejar_sesion_inexistente(request, exc: SesionNotFoundError):
+    return JSONResponse(status_code=404, content=_body_error(404, str(exc)))
+
+
+def manejar_qr_conflicto(request, exc: _Conflict):
+    return JSONResponse(status_code=409, content=_body_error(409, str(exc)))
+
+
+def manejar_qr_invalido(request, exc: _Invalid):
+    return JSONResponse(status_code=400, content=_body_error(400, str(exc)))
+
+
+def manejar_validacion(request, exc: RequestValidationError):
+    piezas = []
+    for detalle in exc.errors():
+        loc = detalle.get("loc", [])
+        campo = ".".join(str(p) for p in loc)
+        msg = detalle.get("msg", "Valor invalido")
+        piezas.append(f"{campo}: {msg}" if campo else msg)
+    return JSONResponse(
+        status_code=400,
+        content=_body_error(400, "; ".join(piezas) or "Datos de entrada invalidos"),
+    )
+
+
+def manejar_error_interno(request, exc: Exception):
+    logger.exception("Error no controlado en %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content=_body_error(500, "Error interno del servidor"),
+    )

@@ -1,0 +1,8 @@
+tests/test_cache.py::test_listado_usa_db_solo_en_miss_y_write_invalida PASSED [ 20%]
+tests/test_carrera.py::test_solo_uno_gana_la_ultima_vacante PASSED       [ 40%]
+tests/test_dlq.py::test_fallo_repetido_termina_en_dlq PASSED             [ 60%]
+tests/test_idempotencia.py::test_misma_key_no_duplica_solicitud_ni_vacante PASSED [ 80%]
+tests/test_qr.py::test_qr_no_es_reutilizable PASSED                      [100%]
+======================== 5 passed, 1 warning in 11.97s =========================
+tests/test_carrera.py::test_solo_uno_gana_la_ultima_vacante PASSED       [100%]
+========================= 1 passed, 1 warning in 7.50s =========================

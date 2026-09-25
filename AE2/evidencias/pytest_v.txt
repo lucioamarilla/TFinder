@@ -1,0 +1,18 @@
+TFinder AE2 · Suite pytest (B11)
+======================================================================
+pytest tests -v (B11):
+test_ready_degradado[rabbitmq-builds_api.main] PASSED [ 77%]
+tests/test_ready_degradado.py::test_ready_degradado[rabbitmq-feed_api.main] PASSED [ 81%]
+tests/test_ready_degradado.py::test_ready_degradado[rabbitmq-notif_api.main] PASSED [ 85%]
+tests/test_ready_degradado.py::test_ready_degradado[postgres-mesas_api.main] PASSED [ 88%]
+tests/test_ready_degradado.py::test_ready_degradado[postgres-builds_api.main] PASSED [ 92%]
+tests/test_ready_degradado.py::test_ready_degradado[postgres-feed_api.main] PASSED [ 96%]
+tests/test_ready_degradado.py::test_ready_degradado[postgres-notif_api.main] PASSED [100%]
+
+=============================== warnings summary ===============================
+venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /home/luciox/Facultad/paradigmas_III/TFinder_AE2/TFinder/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Usi…
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 27 passed, 1 warning in 22.70s ========================

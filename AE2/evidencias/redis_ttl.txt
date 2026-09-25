@@ -1,0 +1,6 @@
+TFinder AE2 · Redis TTL / invalidación (B02)
+======================================================================
+redis-cli --raw TTL cache:mesas:list
+> 60
+TTL cuenta regresiva: el listado de mesas vive 60 s en el cache (B02).
+1ª GET -> PostgreSQL (miss); 2ª GET -> Redis (hit); write -> DELETE (invalidación).

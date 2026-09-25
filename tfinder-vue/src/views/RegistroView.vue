@@ -3,6 +3,7 @@ import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import { authApi } from '@/api/endpoints'
 
 const router = useRouter()
 const { login } = useAuth()
@@ -28,15 +29,27 @@ function validar() {
   return ''
 }
 
-function enviar() {
+async function enviar() {
   errorGeneral.value = validar()
   if (errorGeneral.value) return
   enviando.value = true
-  setTimeout(() => {
-    const perfil = login({ email: form.email, usuario: form.usuario })
+  try {
+    await authApi.register({
+      email: form.email.trim(),
+      password: form.password,
+      nombre: form.usuario.trim()
+    })
+    const perfil = await login({ email: form.email.trim(), password: form.password })
     toast.ok(`Tu nombre ya figura en las crónicas, ${perfil.nombre}.`)
-    router.push('/dashboard')
-  }, 600)
+    router.push(perfil.rol === 'admin' ? '/admin/moderacion' : '/dashboard')
+  } catch (e) {
+    errorGeneral.value =
+      e?.codigo === 400
+        ? 'Ese correo ya está registrado.'
+        : (e?.mensaje ?? 'No pudimos inscribirte. Intentá de nuevo.')
+  } finally {
+    enviando.value = false
+  }
 }
 </script>
 

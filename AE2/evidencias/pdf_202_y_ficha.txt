@@ -1,0 +1,6 @@
+TFinder AE2 · PDF asíncrono (B08)
+======================================================================
+PDF asíncrono (B08)
+POST /builds/1/pdf -> HTTP 202 {"estado":"aceptado","documento_id":"03bd989aff334cfdaf6c526da4e3ce8c","detalle":"turno_enviado"}
+GET /pdf/03bd989aff334cfdaf6c526da4e3ce8c -> HTTP 200 Content-Type: application/pdf
+worker doc.pdf.build: en_proceso -> listo; el 202 responde el documento_id

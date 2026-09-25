@@ -1,0 +1,31 @@
+# Dependencias locales / entornos
+venv/
+*.egg-info/
+
+# Secretos y configuracion local
+.env
+
+# Control de versiones y herramientas de la maquina
+.git/
+.gitignore
+.opencode/
+openspec/
+
+# Frontend (se desarrolla y versiona aparte)
+tfinder-vue/
+
+# Tests y documentacion locales
+tests/
+TUTORIAL_B01.md
+README.md
+
+# Artefactos Python y datos locales
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.db
+*.sqlite3
