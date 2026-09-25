@@ -1,29 +1,32 @@
 import { reactive, computed } from 'vue'
 import { authApi } from '@/api/endpoints'
 
-const STORAGE = 'tfinder-sesion'
+const STORAGE_KEY = 'tfinder-sesion'
 
-const state = reactive({ access: null, refresh: null, user: null })
-
-function leerGuardado() {
+function leerGuardada() {
   try {
-    const guardado = localStorage.getItem(STORAGE)
-    if (guardado) Object.assign(state, JSON.parse(guardado))
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return { access: null, refresh: null, user: null }
+    const datos = JSON.parse(raw)
+    return {
+      access: typeof datos.access === 'string' ? datos.access : null,
+      refresh: typeof datos.refresh === 'string' ? datos.refresh : null,
+      user: typeof datos.user === 'object' && datos.user !== null ? datos.user : null
+    }
   } catch {
-    /* almacenamiento no disponible */
+    return { access: null, refresh: null, user: null }
   }
 }
 
+const state = reactive(leerGuardada())
+
 function persistir() {
   try {
-    localStorage.setItem(
-      STORAGE,
-      JSON.stringify({
-        access: state.access,
-        refresh: state.refresh,
-        user: state.user
-      })
-    )
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      access: state.access,
+      refresh: state.refresh,
+      user: state.user
+    }))
   } catch {
     /* almacenamiento no disponible */
   }
@@ -55,6 +58,14 @@ function perfilDe(email, rol) {
   }
 }
 
+export function currentAccessToken() {
+  return state.access
+}
+
+export function currentRole() {
+  return mapaRol(state.user?.rol)
+}
+
 export async function login(credentials) {
   const { datos } = await authApi.login(credentials)
   state.access = datos.access_token
@@ -65,11 +76,25 @@ export async function login(credentials) {
   return state.user
 }
 
+export async function register(credentials) {
+  const { datos } = await authApi.register(credentials)
+  state.access = datos.access_token
+  state.refresh = datos.refresh_token
+  const { datos: perfil } = await authApi.me()
+  state.user = perfilDe(perfil.email, perfil.rol)
+  persistir()
+  return state.user
+}
+
+export async function recuperar(email) {
+  return authApi.recuperar(email)
+}
+
 export async function logout() {
   try {
     await authApi.logout()
   } catch {
-    /* red caída: igual limpiamos */
+    /* red caída: igual limpiamos la sesión local */
   }
   clearSession()
 }
@@ -79,18 +104,16 @@ export function clearSession() {
   state.refresh = null
   state.user = null
   try {
-    localStorage.removeItem(STORAGE)
+    localStorage.removeItem(STORAGE_KEY)
   } catch {
     /* almacenamiento no disponible */
   }
 }
 
-leerGuardado()
-
 export function useAuth() {
-  const role = computed(() => mapaRol(state.user?.rol))
+  const role = computed(() => currentRole())
   const user = computed(() => state.user)
-  const isAuthenticated = computed(() => Boolean(state.access))
+  const isAuthenticated = computed(() => currentRole() !== 'guest')
   const isAdmin = computed(() => state.user?.rol === 'admin')
 
   function can(required) {
@@ -98,13 +121,5 @@ export function useAuth() {
     return mapaRol(state.user?.rol) === required
   }
 
-  return { role, user, isAuthenticated, isAdmin, login, logout, can }
-}
-
-export function currentRole() {
-  return mapaRol(state.user?.rol)
-}
-
-export function currentAccessToken() {
-  return state.access
+  return { role, user, isAuthenticated, isAdmin, can, login, logout, register, recuperar, clearSession }
 }

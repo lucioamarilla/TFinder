@@ -1,12 +1,10 @@
-<script setup>
-import { ref, reactive, computed } from 'vue'
+<script setup>import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
-import { authApi } from '@/api/endpoints'
 
 const router = useRouter()
-const { login } = useAuth()
+const { register } = useAuth()
 const toast = useToast()
 
 const form = reactive({ usuario: '', email: '', password: '', confirmacion: '' })
@@ -15,38 +13,39 @@ const enviando = ref(false)
 const errorGeneral = ref('')
 
 const emailValido = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
-const passwordsCoinciden = computed(() => form.password === form.confirmacion)
 const passwordLarga = computed(() => form.password.length >= 8)
-
-function validar() {
-  if (!form.usuario.trim() || !form.email.trim() || !form.password || !form.confirmacion) {
-    return 'Completa todos los campos para inscribirte en las crónicas.'
-  }
-  if (!emailValido.value) return 'El correo electrónico no parece válido.'
-  if (!passwordLarga.value) return 'La contraseña debe tener al menos 8 caracteres.'
-  if (!passwordsCoinciden.value) return 'Las contraseñas no coinciden. Comprueba los caracteres ingresados.'
-  if (!acepta.value) return 'Debes aceptar las normas de la comunidad TFinder para registrarte.'
-  return ''
-}
+const passwordsCoinciden = computed(() => form.password === form.confirmacion)
 
 async function enviar() {
-  errorGeneral.value = validar()
-  if (errorGeneral.value) return
+  errorGeneral.value = ''
+  if (!form.usuario.trim() || !form.email.trim() || !form.password || !form.confirmacion) {
+    errorGeneral.value = 'Completa todos los campos para inscribirte en las crónicas.'
+    return
+  }
+  if (!emailValido.value) {
+    errorGeneral.value = 'El correo no parece válido.'
+    return
+  }
+  if (!passwordLarga.value) {
+    errorGeneral.value = 'La contraseña debe tener al menos 8 caracteres.'
+    return
+  }
+  if (!passwordsCoinciden.value) {
+    errorGeneral.value = 'Las contraseñas no coinciden. Comprobá los caracteres ingresados.'
+    return
+  }
+  if (!acepta.value) {
+    errorGeneral.value = 'Debés aceptar las normas de la comunidad TFinder para registrarte.'
+    return
+  }
   enviando.value = true
   try {
-    await authApi.register({
-      email: form.email.trim(),
-      password: form.password,
-      nombre: form.usuario.trim()
-    })
-    const perfil = await login({ email: form.email.trim(), password: form.password })
+    const perfil = await register({ nombre: form.usuario.trim(), email: form.email.trim(), password: form.password })
     toast.ok(`Tu nombre ya figura en las crónicas, ${perfil.nombre}.`)
     router.push(perfil.rol === 'admin' ? '/admin/moderacion' : '/dashboard')
   } catch (e) {
-    errorGeneral.value =
-      e?.codigo === 400
-        ? 'Ese correo ya está registrado.'
-        : (e?.mensaje ?? 'No pudimos inscribirte. Intentá de nuevo.')
+    const msg = e?.mensaje || e?.message
+    errorGeneral.value = typeof msg === 'string' && msg ? msg : 'No pudimos inscribirte en las crónicas. Probá con otro nombre u otro correo.'
   } finally {
     enviando.value = false
   }

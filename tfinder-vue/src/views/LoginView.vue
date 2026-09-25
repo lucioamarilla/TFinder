@@ -1,5 +1,4 @@
-<script setup>
-import { ref, reactive, computed } from 'vue'
+<script setup>import { ref, reactive, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
@@ -28,11 +27,11 @@ function redirigir(rol) {
 async function enviar() {
   errorGeneral.value = ''
   if (!form.email.trim() || !form.password) {
-    errorGeneral.value = 'Completa tu correo electrónico y contraseña para abrir tu grimorio.'
+    errorGeneral.value = 'Completa tu correo y contraseña para abrir tu grimorio.'
     return
   }
   if (!emailValido.value) {
-    errorGeneral.value = 'El correo electrónico no parece válido.'
+    errorGeneral.value = 'El correo no parece válido. Revisá los caracteres escritos.'
     return
   }
   enviando.value = true

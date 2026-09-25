@@ -1,12 +1,13 @@
-<script setup>
-import { ref, reactive, computed } from 'vue'
+<script setup>import { ref, reactive, computed } from 'vue'
+import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
-import { api } from '@/api/http'
 
+const { recuperar } = useAuth()
 const toast = useToast()
+
 const form = reactive({ email: '' })
-const enviado = ref(false)
 const enviando = ref(false)
+const enviado = ref(false)
 const errorGeneral = ref('')
 
 const emailValido = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
@@ -14,23 +15,21 @@ const emailValido = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.
 async function enviar() {
   errorGeneral.value = ''
   if (!form.email.trim()) {
-    errorGeneral.value = 'Indica el correo con el que forjaste tu cuenta en TFinder.'
+    errorGeneral.value = 'Indicá el correo con el que forjaste tu cuenta en TFinder.'
     return
   }
   if (!emailValido.value) {
-    errorGeneral.value = 'El correo electrónico no parece válido.'
+    errorGeneral.value = 'El correo no parece válido.'
     return
   }
   enviando.value = true
   try {
-    await api('notif', '/api/v1/auth/recuperar', {
-      metodo: 'POST',
-      cuerpo: { email: form.email.trim() }
-    })
+await recuperar({ email: form.email.trim() })
     enviado.value = true
-    toast.ok('Revisá tu casilla para continuar.')
-  } catch {
-    errorGeneral.value = 'El servicio de correo no respondió. Intentá de nuevo en unos segundos.'
+    toast.ok('Mensajero enviado: revisá tu casilla y seguí los pasos para reescribir tu contraseña.')
+  } catch (e) {
+    const msg = e?.mensaje || e?.message
+    errorGeneral.value = typeof msg === 'string' && msg ? msg : 'No pudimos enviar el correo. Comprobá que la casilla esté registrada y volvé a intentar.'
   } finally {
     enviando.value = false
   }

@@ -36,3 +36,7 @@ redisdata/
 # Sistema operativo
 .DS_Store
 context/
+
+# Scripts de arranque locales
+dev.cmd
+dev.ps1
