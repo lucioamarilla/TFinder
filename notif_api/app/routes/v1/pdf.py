@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 
+from notif_api.app.middleware.auth import usuario_actual
 from notif_api.app.models.notif import obtener_documento
 
 router = APIRouter(prefix="/api/v1/pdf", tags=["pdf"])
@@ -16,7 +17,7 @@ def _serializar_documento(doc: dict) -> dict:
     }
 
 
-@router.get("/{documento_id}")
+@router.get("/{documento_id}", dependencies=[Depends(usuario_actual)])
 def descargar(documento_id: str):
     doc = obtener_documento(documento_id)
     if doc is None or doc["estado"] != "listo" or not doc.get("ruta"):
@@ -28,7 +29,7 @@ def descargar(documento_id: str):
     )
 
 
-@router.get("/{documento_id}/estado")
+@router.get("/{documento_id}/estado", dependencies=[Depends(usuario_actual)])
 def estado(documento_id: str):
     doc = obtener_documento(documento_id)
     if doc is None:

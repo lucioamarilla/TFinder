@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status
 
 from mesas_api.app.controllers import auth_controller
 from mesas_api.app.middleware.auth import requerir_roles, usuario_actual
+from mesas_api.app.models.auth_model import ROL_USUARIO
 from mesas_api.app.schemas import AuthLogin, AuthRefresh, AuthRegistro
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -9,6 +10,9 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(data: AuthRegistro):
+    # El registro es publico: el rol siempre es "usuario". Los roles
+    # "gm"/"admin" se otorgan fuera de esta via (seed o administracion).
+    data.rol = ROL_USUARIO
     return auth_controller.registrar(data)
 
 

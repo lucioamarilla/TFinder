@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from typing import Optional
 
 from notif_api.app.controllers.event_log import listar_eventos
+from notif_api.app.middleware.auth import requerir_roles
 from notif_api.app.schemas import EventOut
 
 router = APIRouter(prefix="/api/v1")
 
 
-@router.get("/event-log", response_model=list[EventOut])
+@router.get("/event-log", response_model=list[EventOut], dependencies=[Depends(requerir_roles("admin"))])
 def listar_eventos_endpoint(
     entidad_tipo: Optional[str] = Query(default=None, alias="entidad_tipo"),
     entidad_id: Optional[str] = Query(default=None, alias="entidad_id"),

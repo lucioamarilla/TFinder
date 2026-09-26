@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from notif_api.app.middleware.auth import requerir_roles
 from notif_api.app.models.notif import (
     actualizar_estado_email,
     listar_emails,
@@ -8,14 +9,15 @@ from notif_api.app.models.notif import (
 from notif_api.app.services.email_service import _enviar_por_smtp
 
 router = APIRouter(prefix="/api/v1/emails", tags=["emails"])
+_admin = Depends(requerir_roles("admin"))
 
 
-@router.get("")
+@router.get("", dependencies=[_admin])
 def emails(limite: int = 50):
     return listar_emails(limite)
 
 
-@router.post("/{email_id}/reintentar")
+@router.post("/{email_id}/reintentar", dependencies=[_admin])
 def reintentar(email_id: int):
     email = obtener_email(email_id)
     if email is None:
