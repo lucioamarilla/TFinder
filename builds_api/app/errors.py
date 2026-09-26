@@ -1,37 +1,17 @@
-import logging
+"""Errores de builds-api. Delega el envelope canonico en app.infra.errors."""
 
-from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.infra.errors import body_error as _body_error
+from app.infra.errors import manejar_http, manejar_validacion
 from builds_api.app.controllers.builds import BuildNotFoundError
 
-logger = logging.getLogger("tfinder.builds")
-
-
-def _body_error(codigo, mensaje):
-    return {"error": {"codigo": codigo, "mensaje": mensaje}}
+__all__ = [
+    "manejar_http",
+    "manejar_no_encontrado",
+    "manejar_validacion",
+]
 
 
 def manejar_no_encontrado(request, exc: BuildNotFoundError):
     return JSONResponse(status_code=404, content=_body_error(404, str(exc)))
-
-
-def manejar_validacion(request, exc: RequestValidationError):
-    piezas = []
-    for detalle in exc.errors():
-        loc = detalle.get("loc", [])
-        campo = ".".join(str(p) for p in loc)
-        msg = detalle.get("msg", "Valor invalido")
-        piezas.append(f"{campo}: {msg}" if campo else msg)
-    return JSONResponse(
-        status_code=400,
-        content=_body_error(400, "; ".join(piezas) or "Datos de entrada invalidos"),
-    )
-
-
-def manejar_error_interno(request, exc: Exception):
-    logger.exception("Error no controlado en %s %s", request.method, request.url.path)
-    return JSONResponse(
-        status_code=500,
-        content=_body_error(500, "Error interno del servidor"),
-    )

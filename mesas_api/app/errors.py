@@ -1,9 +1,13 @@
-import logging
+"""Errores de mesas-api. Reexporta el envelope canonico de app.infra.errors.
 
-from fastapi import HTTPException
-from fastapi.exceptions import RequestValidationError
+Los handlers de dominio (MesaNotFoundError, CupoAgotadoError, QR) son propios de
+este servicio; la forma del cuerpo y los handlers genericos son compartidos.
+"""
+
 from fastapi.responses import JSONResponse
 
+from app.infra.errors import body_error as _body_error
+from app.infra.errors import manejar_error_interno, manejar_http, manejar_validacion
 from mesas_api.app.controllers.mesas import MesaNotFoundError
 from mesas_api.app.controllers.sesiones_controller import SesionNotFoundError
 from mesas_api.app.controllers.solicitudes_controller import (
@@ -13,19 +17,17 @@ from mesas_api.app.controllers.solicitudes_controller import (
 )
 from mesas_api.app.services.qr_asistencia import _Conflict, _Invalid
 
-logger = logging.getLogger("tfinder.mesas")
-
-
-def _body_error(codigo, mensaje):
-    return {"error": {"codigo": codigo, "mensaje": mensaje}}
-
-
-def manejar_http(request, exc: HTTPException):
-    detalle = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=_body_error(exc.status_code, detalle),
-    )
+__all__ = [
+    "manejar_conflicto",
+    "manejar_error_interno",
+    "manejar_http",
+    "manejar_mesa_inexistente",
+    "manejar_no_encontrado",
+    "manejar_qr_conflicto",
+    "manejar_qr_invalido",
+    "manejar_sesion_inexistente",
+    "manejar_validacion",
+]
 
 
 def manejar_no_encontrado(request, exc: MesaNotFoundError):
@@ -50,24 +52,3 @@ def manejar_qr_conflicto(request, exc: _Conflict):
 
 def manejar_qr_invalido(request, exc: _Invalid):
     return JSONResponse(status_code=400, content=_body_error(400, str(exc)))
-
-
-def manejar_validacion(request, exc: RequestValidationError):
-    piezas = []
-    for detalle in exc.errors():
-        loc = detalle.get("loc", [])
-        campo = ".".join(str(p) for p in loc)
-        msg = detalle.get("msg", "Valor invalido")
-        piezas.append(f"{campo}: {msg}" if campo else msg)
-    return JSONResponse(
-        status_code=400,
-        content=_body_error(400, "; ".join(piezas) or "Datos de entrada invalidos"),
-    )
-
-
-def manejar_error_interno(request, exc: Exception):
-    logger.exception("Error no controlado en %s %s", request.method, request.url.path)
-    return JSONResponse(
-        status_code=500,
-        content=_body_error(500, "Error interno del servidor"),
-    )

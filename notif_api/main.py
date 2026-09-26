@@ -3,15 +3,15 @@ from threading import Thread
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
 
+from app.infra.errors import registrar_manejadores
 from app.infra.logge import logger
 from app.infra.ready import evaluar_ready
+from app.middleware.error_envelope import ErrorEnvelopeMiddleware
 from app.middleware.log_context import CorrelationMiddleware
 from notif_api.app.consumers import mesa as mesa_consumer
 from notif_api.app.consumers import sesion as sesion_consumer
 from notif_api.app.db import abrir_pool, cerrar_pool, get_pool
-from notif_api.app.errors import manejar_error_interno, manejar_validacion
 from notif_api.app.init_db import init_db
 from notif_api.app.routes.v1.auth import router as auth_router
 from notif_api.app.routes.v1.dlq import router as dlq_router
@@ -20,6 +20,7 @@ from notif_api.app.routes.v1.event_log import router as event_log_router
 from notif_api.app.routes.v1.notificaciones import router as notificaciones_router
 from notif_api.app.routes.v1.pdf import router as pdf_router
 from notif_api.app.workers import pdf as pdf_worker
+from notif_api.app.seed_demo import seed_demo_if_enabled as seed_demo_notif
 
 load_dotenv()
 
@@ -28,6 +29,7 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     abrir_pool()
     init_db()
+    seed_demo_notif()
     logger.info("servicio iniciado")
     Thread(target=mesa_consumer.run, daemon=True).start()
     Thread(target=sesion_consumer.run, daemon=True).start()
@@ -37,9 +39,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="TFinder · Notif API", version="0.6.0", lifespan=lifespan)
+app.add_middleware(ErrorEnvelopeMiddleware)
 app.add_middleware(CorrelationMiddleware)
-app.add_exception_handler(RequestValidationError, manejar_validacion)
-app.add_exception_handler(Exception, manejar_error_interno)
+registrar_manejadores(app, "notif")
 app.include_router(notificaciones_router)
 app.include_router(auth_router)
 app.include_router(event_log_router)

@@ -2,17 +2,18 @@ from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
 
+from app.infra.errors import registrar_manejadores
 from app.infra.logge import logger
 from app.infra.ready import evaluar_ready
+from app.middleware.error_envelope import ErrorEnvelopeMiddleware
 from app.middleware.log_context import CorrelationMiddleware
 from feed_api.app.db import abrir_pool, cerrar_pool, get_pool
-from feed_api.app.errors import manejar_error_interno, manejar_validacion
 from feed_api.app.init_db import init_db
 from feed_api.app.routes.v1.diario import router as diario_router
 from feed_api.app.routes.v1.feed import router as feed_router
 from feed_api.app.routes.v1.wiki import router as wiki_router
+from feed_api.app.seed_demo import seed_demo_if_enabled as seed_demo_feed
 
 load_dotenv()
 
@@ -21,15 +22,16 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     abrir_pool()
     init_db()
+    seed_demo_feed()
     logger.info("servicio iniciado")
     yield
     cerrar_pool()
 
 
 app = FastAPI(title="TFinder · Feed API", version="0.3.0", lifespan=lifespan)
+app.add_middleware(ErrorEnvelopeMiddleware)
 app.add_middleware(CorrelationMiddleware)
-app.add_exception_handler(RequestValidationError, manejar_validacion)
-app.add_exception_handler(Exception, manejar_error_interno)
+registrar_manejadores(app, "feed")
 app.include_router(feed_router)
 app.include_router(wiki_router)
 app.include_router(diario_router)
