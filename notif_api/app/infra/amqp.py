@@ -30,7 +30,14 @@ def declarar(conn=None):
     cola(COLA_MESA, "mesa.*")
     cola(COLA_SESION, "sesion.*")
     cola(COLA_PDF, "doc.pdf.*")
+
+    # El binding al DLX es obligatorio: las colas de arriba declaran
+    # x-dead-letter-exchange, asi que un nack(requeue=False) o un reject
+    # enrutan el mensaje a DLX. Sin este binding el exchange no tiene destino
+    # y RabbitMQ descarta el mensaje en silencio. El routing key "#" atrapa
+    # cualquier tipo de evento.
     canal.queue_declare(queue=COLA_DLQ, durable=True)
+    canal.queue_bind(queue=COLA_DLQ, exchange=DLX, routing_key="#")
     if cerrar:
         conn.close()
     return conn
