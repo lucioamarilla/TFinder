@@ -1,8 +1,12 @@
 """Caché con invalidación (B02): 1ª llamada a PostgreSQL, 2ª servida de Redis."""
 
+import pytest
+
 from unittest.mock import patch
 
 from tests.conftest import crear_mesa
+
+pytestmark = pytest.mark.integration
 
 
 def test_listado_usa_db_solo_en_miss_y_write_invalida(client, token_gm):

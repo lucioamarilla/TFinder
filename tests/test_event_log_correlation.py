@@ -10,6 +10,8 @@ from notif_api.app.db import get_connection
 from notif_api.app.init_db import init_db as init_db_notif
 from notif_api.main import app
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(scope="module")
 def notif_db():
@@ -41,13 +43,13 @@ def _insertar(cid, tipo, event_id):
         )
 
 
-def test_filtro_por_correlation_id(event_log_limpio):
+def test_filtro_por_correlation_id(event_log_limpio, headers_admin):
     _insertar(CID_A, "mesa.solicitada", "ev-a-0001")
     _insertar(CID_A, "mesa.aceptada", "ev-a-0002")
     _insertar(CID_B, "mesa.solicitada", "ev-b-0001")
 
     client = TestClient(app)
-    r = client.get(f"/api/v1/event-log?correlation_id={CID_A}")
+    r = client.get(f"/api/v1/event-log?correlation_id={CID_A}", headers=headers_admin)
     assert r.status_code == 200
     eventos = r.json()
     assert len(eventos) == 2
@@ -55,9 +57,22 @@ def test_filtro_por_correlation_id(event_log_limpio):
     assert {e["entidadTipo"] for e in eventos} == {"mesa.solicitada", "mesa.aceptada"}
 
 
-def test_filtro_sin_resultados(event_log_limpio):
+def test_filtro_sin_resultados(event_log_limpio, headers_admin):
     _insertar(CID_A, "mesa.solicitada", "ev-a-0001")
     client = TestClient(app)
-    r = client.get("/api/v1/event-log?correlation_id=ffffffffffffffff")
+    r = client.get(
+        "/api/v1/event-log?correlation_id=ffffffffffffffff", headers=headers_admin
+    )
     assert r.status_code == 200
     assert r.json() == []
+
+
+def test_event_log_requiere_admin(event_log_limpio):
+    client = TestClient(app)
+    assert client.get("/api/v1/event-log").status_code == 401
+
+
+def test_event_log_rechaza_rol_no_admin(event_log_limpio, token_gm):
+    client = TestClient(app)
+    r = client.get("/api/v1/event-log", headers={"Authorization": f"Bearer {token_gm}"})
+    assert r.status_code == 403

@@ -1,6 +1,10 @@
 """Idempotencia por Idempotency-Key (B05/B06): misma petición → mismo resultado."""
 
+import pytest
+
 from tests.conftest import crear_mesa
+
+pytestmark = pytest.mark.integration
 
 
 def test_misma_key_no_duplica_solicitud_ni_vacante(client, token_gm, token_jugador):

@@ -1,11 +1,15 @@
 """Carrera por la última vacante (B06): N concurrentes contra 1 cupo."""
 
+import pytest
+
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.testclient import TestClient
 
 from tests.conftest import crear_mesa
+
+pytestmark = pytest.mark.integration
 
 
 def _registrar_y_token(client, rol, idx):

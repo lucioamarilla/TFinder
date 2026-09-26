@@ -8,6 +8,7 @@ from notif_api.app.init_db import init_db as init_db_notif
 from notif_api.main import app
 
 NOTIF_TABLAS = "event_log, mensaje_dlq, documentos, notificaciones, emails"
+pytestmark = pytest.mark.integration
 
 
 @pytest.fixture(scope="module")
@@ -55,37 +56,53 @@ def _count_dlq():
         return conn.execute("SELECT count(*) AS n FROM mensaje_dlq").fetchone()["n"]
 
 
-def test_listar_dlq(notif_limpia):
+def test_listar_dlq(notif_limpia, headers_admin):
     _insertar_dlq()
     client = TestClient(app)
-    r = client.get("/api/v1/dlq")
+    r = client.get("/api/v1/dlq", headers=headers_admin)
     assert r.status_code == 200
     assert len(r.json()) >= 1
     assert r.json()[0]["cola"] == "dlq.general"
 
 
-def test_reintentar_dlq_lo_quita_de_la_tabla(notif_limpia):
+def test_reintentar_dlq_lo_quita_de_la_tabla(dlq_general_vacia, notif_limpia, headers_admin):
+    # dlq_general_vacia: el endpoint de retry REPUBLICA el payload al exchange
+    # real (ver notif_api/app/controllers/dlq.py), el notif-api de Docker lo
+    # consume, no reconoce "mesa.desconocida" y lo devuelve a dlq.general
+    # tras 3 reintentos. Sin purgar, cada corrida deja un mensaje residuo
+    # que después cuelga a tests/test_dlq.py.
     _insertar_dlq()
     antes = _count_dlq()
     client = TestClient(app)
-    r = client.post("/api/v1/dlq/1/reintentar")
+    r = client.post("/api/v1/dlq/1/reintentar", headers=headers_admin)
     assert r.status_code == 200
     assert r.json()["ok"] is True
     assert _count_dlq() == antes - 1
 
 
-def test_descartar_dlq(notif_limpia):
+def test_descartar_dlq(notif_limpia, headers_admin):
     _insertar_dlq()
     client = TestClient(app)
-    r = client.delete("/api/v1/dlq/1")
+    r = client.delete("/api/v1/dlq/1", headers=headers_admin)
     assert r.status_code == 200
     assert r.json()["ok"] is True
     assert _count_dlq() == 0
 
 
-def test_dlq_id_inexistente_404(notif_limpia):
+def test_dlq_id_inexistente_404(notif_limpia, headers_admin):
     client = TestClient(app)
-    r1 = client.post("/api/v1/dlq/999/reintentar")
-    r2 = client.delete("/api/v1/dlq/999")
+    r1 = client.post("/api/v1/dlq/999/reintentar", headers=headers_admin)
+    r2 = client.delete("/api/v1/dlq/999", headers=headers_admin)
     assert r1.status_code == 404
     assert r2.status_code == 404
+
+
+def test_dlq_requiere_token(notif_limpia):
+    client = TestClient(app)
+    assert client.get("/api/v1/dlq").status_code == 401
+
+
+def test_dlq_rechaza_rol_no_admin(notif_limpia, token_jugador):
+    client = TestClient(app)
+    r = client.get("/api/v1/dlq", headers={"Authorization": f"Bearer {token_jugador}"})
+    assert r.status_code == 403

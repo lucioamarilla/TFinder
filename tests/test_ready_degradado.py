@@ -1,9 +1,10 @@
 """ready/live (#34): /ready devuelve listo cuando todo OK y degradado si una dependencia falla."""
 
-from unittest.mock import patch
-
 import pytest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
+
+pytestmark = pytest.mark.integration
 
 # Los 4 servicios importan evaluar_ready desde el modulo compartido app.infra.ready.
 MODULOS = [

@@ -1,6 +1,10 @@
 """QR de asistencia single-use (B07): segunda validación rechazada con 409."""
 
+import pytest
+
 from tests.conftest import crear_mesa, crear_sesion
+
+pytestmark = pytest.mark.integration
 
 
 def test_qr_no_es_reutilizable(client, token_gm, token_jugador):
