@@ -41,7 +41,7 @@ def _procesar(mensaje: dict) -> bool:
         titulo=titulo,
         detalle=plantilla.format(mesa_id=mesa_id),
         entidad="sesion",
-        enlace={"/mesas/{id}".format(id=mesa_id): "ver mesa"},
+        enlace={"label": "ver mesa", "to": "/mesas/{id}".format(id=mesa_id)},
     )
     hub.publicar(
         usuario_id,
@@ -50,7 +50,7 @@ def _procesar(mensaje: dict) -> bool:
             "titulo": titulo,
             "detalle": plantilla.format(mesa_id=mesa_id),
             "entidad": "sesion",
-            "enlace": {"/mesas/{id}".format(id=mesa_id): "ver mesa"},
+            "enlace": {"label": "ver mesa", "to": "/mesas/{id}".format(id=mesa_id)},
         },
     )
     if email_r:
