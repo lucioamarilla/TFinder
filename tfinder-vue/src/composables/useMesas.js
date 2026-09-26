@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { mesasApi } from '@/api/endpoints'
+import { normalizarMesa } from '@/services/mesas'
 
 export function useMesas() {
   const mesas = ref([])
@@ -23,7 +24,8 @@ export function useMesas() {
     isLoading.value = true
     try {
       const resp = await mesasApi.listar()
-      mesas.value = resp?.datos ?? resp?.data ?? []
+      const filas = resp?.datos ?? resp?.data ?? []
+      mesas.value = filas.map(normalizarMesa)
       cacheTierLista.value = extenderTier(resp, cacheTierLista)
     } catch (e) {
       error.value = e?.mensaje || e?.message || 'No pudimos leer el archivo de mesas.'
@@ -36,7 +38,8 @@ export function useMesas() {
     isDetalleLoading.value = true
     try {
       const resp = await mesasApi.detalle(id)
-      const m = resp?.datos ?? resp?.data ?? null
+      const fila = resp?.datos ?? resp?.data ?? null
+      const m = fila ? normalizarMesa(fila) : null
       mesa.value = m
       cacheTierDetalle.value = extenderTier(resp, cacheTierDetalle)
       vacantes.value = m ? Math.max((m.plazas ?? 0) - (m.jugadores ?? 0), 0) : 0

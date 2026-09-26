@@ -6,7 +6,7 @@ export function ultimaMedicion() {
   return ultimaMedicionMs
 }
 
-function normalizar(m) {
+export function normalizarMesa(m) {
   return {
     id: m.id,
     nombre: m.nombre,
@@ -35,22 +35,22 @@ export async function getMesas() {
   const t0 = performance.now()
   const { datos } = await mesasApi.listar()
   ultimaMedicionMs = Math.round(performance.now() - t0)
-  return (datos ?? []).map(normalizar)
+  return (datos ?? []).map(normalizarMesa)
 }
 
 export async function getMesa(id) {
   const { datos } = await mesasApi.detalle(id)
-  return normalizar(datos)
+  return normalizarMesa(datos)
 }
 
 export async function crearMesa(entrada) {
   const { datos } = await mesasApi.crear(entrada)
-  return normalizar(datos)
+  return normalizarMesa(datos)
 }
 
 export async function actualizarMesa(id, cambios) {
   const { datos } = await mesasApi.actualizar(id, cambios)
-  return normalizar(datos)
+  return normalizarMesa(datos)
 }
 
 export async function eliminarMesa(id) {

@@ -6,6 +6,7 @@ import { getMembresias } from '@/services/membresias.js'
 import { getWiki } from '@/services/wiki.js'
 import { getSesiones } from '@/services/sesiones.js'
 import { getMiembros } from '@/services/jugadores.js'
+import { isFeatureEnabled } from '@/config/features'
 import { useToast } from '@/composables/useToast.js'
 
 const props = defineProps({ mesaId: { type: String, required: true } })
@@ -22,13 +23,17 @@ const ocupacion = ref({ miembros: 0, capacidad: 5 })
 const esGM = ref(false)
 
 const TABS = [
-  { segmento: 'gestion', etiqueta: 'Resumen', glyph: '◆', flora: true },
-  { segmento: 'wiki', etiqueta: 'Wiki', glyph: '', flora: false },
-  { segmento: 'calendario', etiqueta: 'Calendario & Votación', glyph: '', flora: false },
-  { segmento: 'sesiones', etiqueta: 'Sesiones', glyph: '', flora: false },
-  { segmento: 'jugadores', etiqueta: 'Jugadores', glyph: '', flora: false },
-  { segmento: 'builds', etiqueta: 'Builds', glyph: '', flora: false }
+  { segmento: 'gestion', feature: 'gestionMesa', etiqueta: 'Resumen', glyph: '◆', flora: true },
+  { segmento: 'wiki', feature: 'wiki', etiqueta: 'Wiki', glyph: '', flora: false },
+  { segmento: 'calendario', feature: 'calendario', etiqueta: 'Calendario & Votación', glyph: '', flora: false },
+  { segmento: 'sesiones', feature: 'sesiones', etiqueta: 'Sesiones', glyph: '', flora: false },
+  { segmento: 'jugadores', feature: 'jugadores', etiqueta: 'Jugadores', glyph: '', flora: false },
+  { segmento: 'builds', feature: 'builds', etiqueta: 'Builds', glyph: '', flora: false }
 ]
+
+// Solo se ofrecen las pestanas cuya funcion esta habilitada: asi una tab
+// nunca lleva a una pantalla que responda "Proximamente".
+const tabsVisibles = computed(() => TABS.filter((tab) => isFeatureEnabled(tab.feature)))
 
 const rutaBase = computed(() => `/mesas/${props.mesaId}`)
 
@@ -170,7 +175,7 @@ provide('mesaGestion', { mesa, cargando, wikiCount, sesionesCount, ocupacion, es
     <!-- Tabs horizontales -->
     <nav class="flex border-x border-b border-[#C2A980] bg-[#E8DCC8]/90 overflow-x-auto shadow-sm">
       <RouterLink
-        v-for="tab in TABS"
+        v-for="tab in tabsVisibles"
         :key="tab.segmento"
         :to="tab.segmento === 'gestion' ? `${rutaBase}/gestion` : `${rutaBase}/${tab.segmento}`"
         :class="tabActiva(tab) ? 'tab-active' : 'tab-inactive'"

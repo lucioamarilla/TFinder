@@ -10,6 +10,17 @@ import { useNotifications } from '@/composables/useNotifications'
 const router = useRouter()
 const { unreadCount, loadCount } = useNotifications()
 
+const AVATARES = {
+  'Guía de Build': 'bg-[#D4AF37] text-[#1A1A1A] border-[#8B5A2B]',
+  'Debate Táctico': 'bg-[#9C6734] text-[#FDF8EE] border-[#573312]',
+  'Debate de Reglas': 'bg-[#9C6734] text-[#FDF8EE] border-[#573312]',
+  'Entrada de Wiki': 'bg-[#6B8E23] text-[#FDF8EE] border-[#4F6A19]',
+  'Crónica de Sesión': 'bg-[#8B1A1A] text-[#FDF8EE] border-[#5E0F0F]',
+  'Pregunta de Reglas OGL': 'bg-[#8B5A2B] text-[#FDF8EE] border-[#573312]'
+}
+
+const avatarDe = (post) => AVATARES[post.etiqueta] || AVATARES['Debate Táctico']
+
 const membresias = ref([])
 const actividad = ref([])
 const eventos = ref([])
@@ -208,8 +219,8 @@ onMounted(() => load())
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-2">
                     <div
-                      class="w-6 h-6 rounded-full border border-[#8B5A2B] flex items-center justify-center text-[10px] font-mason font-bold"
-                      :style="{ backgroundColor: post.avatarBg, color: post.avatarText }"
+                      class="w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-mason font-bold"
+                      :class="avatarDe(post)"
                     >
                       {{ post.iniciales }}
                     </div>
@@ -217,7 +228,7 @@ onMounted(() => load())
                   </div>
                   <span class="font-tarzana text-[0.7rem] text-[#8B7D6B]">{{ post.tiempo }}</span>
                 </div>
-                <p class="font-minion text-[0.82rem] text-[#1A1A1A] leading-snug line-clamp-2 italic">"{{ post.resumen }}"</p>
+                <p class="font-minion text-[0.82rem] text-[#1A1A1A] leading-snug line-clamp-2 italic">"{{ post.cuerpo }}"</p>
                 <RouterLink to="/feed" class="inline-block font-minion font-semibold text-[0.78rem] text-[#8B5A2B] hover:underline">
                   Leer más en Feed →
                 </RouterLink>

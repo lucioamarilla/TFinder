@@ -57,6 +57,7 @@
 }
 .sim-bell{ position:relative; display:inline-flex; color:#E8DCC8; transition:color .15s; text-decoration:none; }
 .sim-bell:hover, .sim-bell.activo{ color:var(--sim-oro); }
+.sim-bell-off{ opacity:.5; }
 .sim-bell .sim-count{
   position:absolute; top:-5px; right:-8px; min-width:16px; height:16px; box-sizing:border-box;
   border-radius:999px; background:var(--sim-granate); color:#FDF8EE;

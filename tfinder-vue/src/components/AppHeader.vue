@@ -1,19 +1,23 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { useNotifications } from '@/composables/useNotifications'
 import { useShell } from '@/composables/useShell'
+import { useNotifications } from '@/composables/useNotifications'
 import { NAV } from '@/config/nav'
-import { onMounted } from 'vue'
+import { comingSoonPath, isFeatureEnabled } from '@/config/features'
 
 const router = useRouter()
 const { role, user, logout } = useAuth()
-const { unreadCount, loadCount } = useNotifications()
 const { mobileOpen: menuOpen, toggleMenu, closeMenu } = useShell()
+const { unreadCount, desconectado, arrancar, detener } = useNotifications()
 
 const nav = computed(() => NAV[role.value])
-const home = computed(() => (role.value === 'guest' ? '/' : role.value === 'admin' ? '/admin/moderacion' : '/dashboard'))
+const home = computed(() => (role.value === 'guest' ? '/' : '/mesas'))
+
+function navTarget(item) {
+  return item.feature && !isFeatureEnabled(item.feature) ? comingSoonPath(item.feature) : item.to
+}
 
 function onLogout() {
   logout()
@@ -22,7 +26,11 @@ function onLogout() {
 }
 
 onMounted(() => {
-  if (role.value !== 'guest') loadCount()
+  if (role.value !== 'guest') arrancar()
+})
+
+onBeforeUnmount(() => {
+  detener()
 })
 </script>
 
@@ -34,11 +42,12 @@ onMounted(() => {
       <RouterLink
         v-for="l in nav"
         :key="l.to"
-        :to="l.to"
+        :to="navTarget(l)"
         :class="l.cta ? 'sim-cta' : ''"
         active-class="activo"
       >
         {{ l.label }}
+        <span v-if="l.feature && !isFeatureEnabled(l.feature)" class="ml-1 text-[0.65rem] uppercase opacity-80">Próximamente</span>
       </RouterLink>
     </nav>
 
@@ -46,14 +55,23 @@ onMounted(() => {
       <span v-if="role === 'guest'" class="sim-badge">PF1e · OGL v1.0a</span>
       <template v-else>
         <span class="sim-badge">+ PF1e Compatible OGL</span>
-        <RouterLink class="sim-bell" to="/notificaciones" title="Notificaciones">
+        <RouterLink
+          class="sim-bell"
+          :to="navTarget({ to: '/notificaciones', feature: 'notificaciones' })"
+          :title="isFeatureEnabled('notificaciones') ? 'Notificaciones' : 'Notificaciones · Próximamente'"
+          :class="{ 'sim-bell-off': desconectado }"
+        >
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
-          <span v-if="unreadCount > 0" class="sim-count">{{ unreadCount }}</span>
+          <span
+            v-if="isFeatureEnabled('notificaciones') && unreadCount > 0"
+            class="sim-count"
+            :aria-label="`${unreadCount} avisos sin leer`"
+          >{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
         </RouterLink>
-        <RouterLink class="sim-perfil" to="/perfil" active-class="activo">
+        <RouterLink class="sim-perfil" :to="comingSoonPath('perfil')" active-class="activo">
           <span class="sim-avatar" :class="{ activo: $route.path === '/perfil' }">{{ user?.iniciales }}</span>
           <span class="sim-nombre"><b>{{ user?.nombre }}</b><i>{{ user?.titulo }}</i></span>
         </RouterLink>

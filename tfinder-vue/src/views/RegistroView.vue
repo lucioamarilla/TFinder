@@ -42,7 +42,7 @@ async function enviar() {
   try {
     const perfil = await register({ nombre: form.usuario.trim(), email: form.email.trim(), password: form.password })
     toast.ok(`Tu nombre ya figura en las crónicas, ${perfil.nombre}.`)
-    router.push(perfil.rol === 'admin' ? '/admin/moderacion' : '/dashboard')
+    router.push('/mesas')
   } catch (e) {
     const msg = e?.mensaje || e?.message
     errorGeneral.value = typeof msg === 'string' && msg ? msg : 'No pudimos inscribirte en las crónicas. Probá con otro nombre u otro correo.'

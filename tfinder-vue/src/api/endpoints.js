@@ -5,7 +5,7 @@ export const authApi = {
   login: (b) => api('mesas', '/api/v1/auth/login', { metodo: 'POST', cuerpo: b }),
   logout: () => api('mesas', '/api/v1/auth/logout', { metodo: 'POST' }),
   me: () => api('mesas', '/api/v1/auth/me'),
-  recuperar: (b) => api('mesas', '/api/v1/auth/recuperar', { metodo: 'POST', cuerpo: b })
+  recuperar: (b) => api('notif', '/api/v1/auth/recuperar', { metodo: 'POST', cuerpo: b })
 }
 
 export const mesasApi = {
@@ -36,7 +36,8 @@ export const matchmakingApi = {
 }
 
 export const notifApi = {
-  notificaciones: () => api('notif', '/api/v1/notificaciones'),
+  notificaciones: (soloNoLeidas = false) =>
+    api('notif', `/api/v1/notificaciones${soloNoLeidas ? '?solo_no_leidas=true' : ''}`),
   marcarLeida: (id) =>
     api('notif', `/api/v1/notificaciones/${id}/leida`, { metodo: 'PATCH' }),
   eventLog: () => api('notif', '/api/v1/event-log'),

@@ -12,7 +12,13 @@ const rolTab = ref('gm')
 const busqueda = ref('')
 const estadoFiltro = ref('Todas')
 
-const opcionesEstado = ['Todas', 'Abiertas', 'En Pausa', 'Cerradas']
+// El valor es el estado real del dato; la etiqueta es solo presentacion.
+const opcionesEstado = [
+  { valor: 'Todas', etiqueta: 'Todas' },
+  { valor: 'Abierta', etiqueta: 'Abiertas' },
+  { valor: 'En Pausa', etiqueta: 'En Pausa' },
+  { valor: 'Cerrada', etiqueta: 'Cerradas' }
+]
 
 async function load() {
   isLoading.value = true
@@ -151,7 +157,7 @@ onMounted(() => load())
             </div>
             <div class="relative shrink-0">
               <select v-model="estadoFiltro" class="text-xs font-tarzana py-1.5 pl-3 pr-7 bg-[#FAF3E0] border border-[#C2A980] text-[#8B7D6B] rounded-sm focus:ring-1 focus:ring-[#D4AF37] focus:border-[#D4AF37] outline-none cursor-pointer">
-                <option v-for="opcion in opcionesEstado" :key="opcion" :value="opcion">Estado: {{ opcion }}</option>
+                <option v-for="opcion in opcionesEstado" :key="opcion.valor" :value="opcion.valor">Estado: {{ opcion.etiqueta }}</option>
               </select>
             </div>
           </div>

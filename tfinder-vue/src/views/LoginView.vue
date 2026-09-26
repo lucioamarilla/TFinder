@@ -15,13 +15,13 @@ const errorGeneral = ref('')
 
 const emailValido = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
 
-function redirigir(rol) {
+function redirigir() {
   const redirect = route.query.redirect
   if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
     router.push(redirect)
     return
   }
-  router.push(rol === 'admin' ? '/admin/moderacion' : '/dashboard')
+  router.push('/mesas')
 }
 
 async function enviar() {
@@ -38,7 +38,7 @@ async function enviar() {
   try {
     const perfil = await login({ email: form.email.trim(), password: form.password })
     toast.ok(`¡Bienvenido de vuelta, ${perfil.nombre}!`)
-    redirigir(perfil.rol)
+    redirigir()
   } catch (e) {
     errorGeneral.value = e?.mensaje ?? 'No pudimos abrir tu grimorio. Revisá tus credenciales.'
   } finally {
