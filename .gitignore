@@ -40,3 +40,6 @@ context/
 # Scripts de arranque locales
 dev.cmd
 dev.ps1
+
+# Archivos de bloqueo de LibreOffice (se crean al abrir un .md/.odt en el editor)
+.~lock.*#

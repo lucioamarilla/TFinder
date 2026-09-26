@@ -9,15 +9,19 @@ Gestión de mesas de Pathfinder 1.ª edición como **sistema distribuido**: cuat
 - Backend completo: B01–B11 cerrados, rama `AE2-Backend`, tags `2.0.0` (alfa) y `2.1.0` (beta).
 - Suite pytest reproducible: `5 passed` (`tests/`).
 - Evidencias del checklist del enunciado: [AE2/evidencias/EVIDENCIAS.md](evidencias/EVIDENCIAS.md).
+- Auditoría, estado real y plan de cierre: [docs/AUDITORIA_CIERRE_AE2.md](../docs/AUDITORIA_CIERRE_AE2.md).
 - Decisiones de arquitectura: [docs/ADR](https://github.com/lucioamarilla/TFinder/tree/AE2-Backend/docs/ADR).
 - Frontend (`tfinder-vue`): pautado F01–F09 (github issues #26–#34).
 
 ## Cómo correr todo desde cero
 
 ```bash
-docker compose up -d --build mesas-api builds-api feed-api notif-api
+docker compose up -d --build
 ```
 
+- Frontend Vue + Nginx disponible en `http://localhost:5173`.
+- Las cuatro bases se cargan con datos demo idempotentes; usar `docker compose down -v` para regenerarlos.
+- Usuarios demo: `admin@tfinder.dev`, `gm@tfinder.dev`, `jugador1@tfinder.dev`, `jugador2@tfinder.dev` y `jugador3@tfinder.dev`; contraseña `DemoTFinder123!`.
 - **PostgreSQL** (4 bases + 4 de test) en `postgres:16-alpine`; esquemas creados por cada servicio en su arranque.
 - **Redis**, **RabbitMQ** e **infraestructura** listas vía compose; puerto AMQP externo `5673`, panel RabbitMQ `15673`.
 - Host: mesas `8001`, builds `8002`, feed `8003`, notif `8004`, Redis `6390`, MailHog UI `8025`.

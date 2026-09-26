@@ -145,11 +145,32 @@ uvicorn notif_api.main:app --port 8004    # notificaciones/event-log
 O dentro de contenedores:
 
 ```bash
-docker compose up -d --build mesas-api builds-api feed-api notif-api
+docker compose up -d --build
 ```
 
+- Frontend Vue servido por Nginx en `http://localhost:5173`.
+- El frontend usa proxies same-origin hacia las cuatro APIs.
 - Al arrancar, cada servicio abre su pool `psycopg_pool` contra su `*_db`, crea sus tablas (`schema.sql` idempotente) y aplica sus índices.
 - Documentación interactiva de cada servicio en `http://localhost:<puerto>/docs`.
+
+### Datos demo
+
+Al levantar Compose se inicializan datos de demostración idempotentes en las cuatro bases. Para regenerarlos desde cero:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+Usuarios disponibles con contraseña `DemoTFinder123!`:
+
+- `admin@tfinder.dev`
+- `gm@tfinder.dev`
+- `jugador1@tfinder.dev`
+- `jugador2@tfinder.dev`
+- `jugador3@tfinder.dev`
+
+Para desactivarlos: `DEMO_SEED_ENABLED=false`.
 
 ## Modelo de datos — entidad Mesa
 

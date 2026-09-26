@@ -1,0 +1,165 @@
+name: CI
+
+on:
+  push:
+    branches: [AE2-Backend, main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+
+  backend-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -m unit --cov=. --cov-report=term-missing
+
+  backend-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: tfinder
+          POSTGRES_PASSWORD: tfinder
+          POSTGRES_DB: mesas_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tfinder -d mesas_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6390:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      rabbitmq:
+        image: rabbitmq:3.13-management-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: tfinder
+          RABBITMQ_DEFAULT_PASS: tfinder
+        ports:
+          - 5673:5672
+          - 15673:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      MESAS_DATABASE_URL: postgresql://tfinder:tfinder@localhost:5432/mesas_db_test
+      BUILDS_DATABASE_URL: postgresql://tfinder:tfinder@localhost:5432/builds_db_test
+      FEED_DATABASE_URL: postgresql://tfinder:tfinder@localhost:5432/feed_db_test
+      NOTIF_DATABASE_URL: postgresql://tfinder:tfinder@localhost:5432/notif_db_test
+      REDIS_URL: redis://localhost:6390/15
+      RABBITMQ_URL: amqp://tfinder:tfinder@localhost:5673/
+      JWT_SECRET: ci-test-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements-dev.txt
+      - name: Crear bases de test
+        run: |
+          python - <<'PY'
+          import psycopg
+          for database in ("mesas_db_test", "builds_db_test", "feed_db_test", "notif_db_test"):
+              with psycopg.connect("postgresql://tfinder:tfinder@localhost:5432/postgres", autocommit=True) as connection:
+                  try:
+                      connection.execute(f"CREATE DATABASE {database}")
+                  except psycopg.errors.DuplicateDatabase:
+                      pass
+          PY
+      - run: pytest -m integration -v
+
+  frontend-lint-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tfinder-vue
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tfinder-vue/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run type-check
+
+  frontend-unit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tfinder-vue
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tfinder-vue/package-lock.json
+      - run: npm ci
+      - run: npm run test:unit -- --run
+
+  frontend-integration:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tfinder-vue
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tfinder-vue/package-lock.json
+      - run: npm ci
+      - run: npm run test:integration -- --run
+
+  ci:
+    if: always()
+    needs:
+      - backend-lint
+      - backend-unit
+      - backend-integration
+      - frontend-lint-typecheck
+      - frontend-unit
+      - frontend-integration
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.backend-lint.result }}" = success
+      - run: test "${{ needs.backend-unit.result }}" = success
+      - run: test "${{ needs.backend-integration.result }}" = success
+      - run: test "${{ needs.frontend-lint-typecheck.result }}" = success
+      - run: test "${{ needs.frontend-unit.result }}" = success
+      - run: test "${{ needs.frontend-integration.result }}" = success

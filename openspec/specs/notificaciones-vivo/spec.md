@@ -23,6 +23,10 @@ El `AppHeader` y `NotificacionesView` DEBEN dejar de leer el JSON mock y consumi
 ### Requirement: Enlace navega a la ruta real
 El `enlace` que llega como dict `{"/mesas/N": "ver mesa"}` DEBE traducirse a la ruta del front y `abrir()` DEBE navegar a ella (`router.push('/mesas/N')`).
 
+#### Scenario: Abrir enlace de mesa
+- **WHEN** el usuario activa el enlace `/mesas/7` de una notificación
+- **THEN** el router navega a `/mesas/7` y la vista correspondiente se muestra
+
 ### Requirement: Degradación offline
 Si `notif-api` está caído, el front MUST NOT romperse: badge en gris (sin número), aviso discreto "sin conexión a avisos" y al restaurar el servicio el polling DEBE volver a autopoblar.
 
