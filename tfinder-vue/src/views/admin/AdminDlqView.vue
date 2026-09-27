@@ -12,6 +12,8 @@ const cargando = ref(true)
 const fallo = ref(null)
 const enAccion = ref(null)
 const abierto = ref(null)
+const drenando = ref(false)
+const progreso = ref(null)
 
 async function cargar() {
   cargando.value = true
@@ -20,7 +22,7 @@ async function cargar() {
     const data = await getDlq()
     mensajes.value = data.mensajes
   } catch (e) {
-    fallo.value = e.message || 'La cola de mensajes fallidos no respondió.'
+    fallo.value = e.mensaje || e.message || 'Sin datos del operador: la cola de mensajes fallidos no respondió.'
   } finally {
     cargando.value = false
   }
@@ -28,17 +30,16 @@ async function cargar() {
 
 function inspeccionar(mensaje) {
   abierto.value = abierto.value === mensaje.id ? null : mensaje.id
-  toast.info('Payload inspeccionado (simulado).')
 }
 
 async function reintentar(mensaje) {
   enAccion.value = mensaje.id
   try {
-    await reintentarMensaje(mensaje.id)
+    const res = await reintentarMensaje(mensaje.id)
     mensajes.value = mensajes.value.filter((m) => m.id !== mensaje.id)
-    toast.ok('Mensaje reintentado con éxito.')
+    toast.ok(`Mensaje ${res.id} republicado en «${res.cola ?? mensaje.cola}».`)
   } catch (e) {
-    toast.error(e.message)
+    toast.error(e.mensaje || e.message)
   } finally {
     enAccion.value = null
   }
@@ -51,7 +52,7 @@ async function descartar(mensaje) {
     mensajes.value = mensajes.value.filter((m) => m.id !== mensaje.id)
     toast.info('Mensaje descartado de la cola.')
   } catch (e) {
-    toast.error(e.message)
+    toast.error(e.mensaje || e.message)
   } finally {
     enAccion.value = null
   }
@@ -62,17 +63,36 @@ async function drenar() {
     toast.info('La cola ya está vacía.')
     return
   }
+  drenando.value = true
+  progreso.value = { hechos: 0, total: mensajes.value.length }
   try {
-    await drenarCola()
-    mensajes.value = []
-    toast.ok('Cola drenada correctamente.')
+    // drenarCola() descarta uno por uno; si un DELETE falla, paramos y recargamos
+    // para no mostrar una cola que ya no coincide con la del backend.
+    const res = await drenarCola({
+      alProgresar: ({ hechos, total, id }) => {
+        progreso.value = { hechos, total }
+        mensajes.value = mensajes.value.filter((m) => m.id !== id)
+      }
+    })
+    toast.ok(`Cola drenada: ${res.hechos} de ${res.total} mensajes descartados.`)
   } catch (e) {
-    toast.error(e.message)
+    toast.error(e.mensaje || e.message)
+    await cargar()
+  } finally {
+    drenando.value = false
+    progreso.value = null
   }
 }
 
 function exportar() {
-  toast.info('Métricas de la cola exportadas.')
+  const contenido = JSON.stringify(mensajes.value, null, 2)
+  const url = URL.createObjectURL(new Blob([contenido], { type: 'application/json' }))
+  const enlace = document.createElement('a')
+  enlace.href = url
+  enlace.download = 'tfinder-dlq.json'
+  enlace.click()
+  URL.revokeObjectURL(url)
+  toast.ok(`${mensajes.value.length} mensajes exportados a JSON.`)
 }
 
 onMounted(cargar)
@@ -92,7 +112,7 @@ onMounted(cargar)
     <header class="mb-6">
       <h1 class="font-mason text-3xl font-bold text-[#8B5A2B] tracking-wide">✦ Cola de Mensajes Fallidos (DLQ)</h1>
       <p class="font-minion italic text-[#5C4633] mt-1">
-        Mensajes que no pudieron procesarse. Reintentar, descartar o inspeccionar el payload.
+        Mensajes que <code class="font-mono not-italic">notif-api</code> no pudo procesar. Reintentar, descartar o inspeccionar el payload real.
       </p>
     </header>
 
@@ -101,6 +121,18 @@ onMounted(cargar)
     <ErrorState v-else-if="fallo" title="La cola no pudo abrirse" :message="fallo" @retry="cargar" />
 
     <template v-else>
+      <div v-if="drenando" class="card-parchment rounded-sm p-4 mb-4" role="status" aria-live="polite">
+        <p class="font-tarzana text-xs uppercase tracking-widest text-[#8B5A2B]">
+          Drenando… {{ progreso.hechos }} de {{ progreso.total }} mensajes descartados
+        </p>
+        <div class="h-2 bg-[#E5D6BC] rounded-full mt-2 overflow-hidden">
+          <div
+            class="h-full bg-[#D4AF37] rounded-full transition-[width]"
+            :style="{ width: (progreso.total ? (progreso.hechos / progreso.total) * 100 : 0) + '%' }"
+          ></div>
+        </div>
+      </div>
+
       <div class="card-parchment rounded-sm overflow-hidden mb-5">
         <div class="overflow-x-auto">
           <table class="w-full font-tarzana text-sm">
@@ -108,22 +140,24 @@ onMounted(cargar)
               <tr class="text-left">
                 <th scope="col" class="px-4 py-3">Mensaje</th>
                 <th scope="col" class="px-4 py-3">Cola</th>
-                <th scope="col" class="px-4 py-3">Reintentos</th>
+                <th scope="col" class="px-4 py-3">Error</th>
+                <th scope="col" class="px-4 py-3">Fecha</th>
                 <th scope="col" class="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody class="text-[#3A2E1F]">
               <template v-for="mensaje in mensajes" :key="mensaje.id">
                 <tr class="border-b border-[#E5D6BC] last:border-0">
-                  <td class="px-4 py-3 font-bold text-[#1A1A1A]">{{ mensaje.nombre }}</td>
+                  <td class="px-4 py-3 font-bold text-[#1A1A1A]">{{ mensaje.tipo }}</td>
                   <td class="px-4 py-3 text-[#5C5346]">{{ mensaje.cola }}</td>
-                  <td class="px-4 py-3">{{ mensaje.reintentos }}</td>
+                  <td class="px-4 py-3 font-mono text-xs text-[#8B1A1A] break-all max-w-xs">{{ mensaje.error || '—' }}</td>
+                  <td class="px-4 py-3 text-xs text-[#5C5346] whitespace-nowrap">{{ mensaje.fecha }}</td>
                   <td class="px-4 py-3">
                     <div class="flex flex-wrap items-center justify-end gap-2">
                       <button
                         type="button"
                         class="min-h-[44px] px-3 py-1 font-tarzana text-xs font-bold rounded-sm bg-[#D4AF37] text-[#1A1A1A] hover:brightness-110 transition disabled:opacity-60"
-                        :disabled="enAccion === mensaje.id"
+                        :disabled="enAccion === mensaje.id || drenando"
                         @click="reintentar(mensaje)"
                       >
                         Reintentar
@@ -131,14 +165,15 @@ onMounted(cargar)
                       <button
                         type="button"
                         class="min-h-[44px] px-3 py-1 font-tarzana text-xs rounded-sm border border-[#8B7D6B] text-[#8B7D6B] hover:bg-[#8B7D6B]/10 transition"
+                        :aria-expanded="abierto === mensaje.id"
                         @click="inspeccionar(mensaje)"
                       >
-                        Inspeccionar
+                        {{ abierto === mensaje.id ? 'Ocultar payload' : 'Inspeccionar' }}
                       </button>
                       <button
                         type="button"
                         class="min-h-[44px] px-3 py-1 font-tarzana text-xs rounded-sm border border-[#8B1A1A] text-[#8B1A1A] hover:bg-[#8B1A1A]/10 transition disabled:opacity-60"
-                        :disabled="enAccion === mensaje.id"
+                        :disabled="enAccion === mensaje.id || drenando"
                         @click="descartar(mensaje)"
                       >
                         Descartar
@@ -147,14 +182,14 @@ onMounted(cargar)
                   </td>
                 </tr>
                 <tr v-if="abierto === mensaje.id" class="border-b border-[#E5D6BC] bg-[#F8F2E4]">
-                  <td colspan="4" class="px-4 py-3">
-                    <p class="font-tarzana text-[10px] uppercase tracking-widest text-[#8B7D6B] mb-1">Payload</p>
-                    <pre class="font-mono text-xs text-[#1A1A1A] whitespace-pre-wrap break-all">{{ mensaje.payload }}</pre>
+                  <td colspan="5" class="px-4 py-3">
+                    <p class="font-tarzana text-[10px] uppercase tracking-widest text-[#8B7D6B] mb-1">Payload (id {{ mensaje.id }})</p>
+                    <pre class="font-mono text-xs text-[#1A1A1A] whitespace-pre-wrap break-all">{{ JSON.stringify(mensaje.payload, null, 2) }}</pre>
                   </td>
                 </tr>
               </template>
               <tr v-if="mensajes.length === 0">
-                <td colspan="4" class="px-4 py-10 text-center">
+                <td colspan="5" class="px-4 py-10 text-center">
                   <p class="font-mason text-lg text-[#8B5A2B] font-bold">La cola está vacía</p>
                   <p class="font-minion italic text-sm text-[#8B7D6B] mt-1">No quedan mensajes fallidos por procesar.</p>
                 </td>
@@ -165,11 +200,21 @@ onMounted(cargar)
       </div>
 
       <div class="flex flex-wrap gap-2">
-        <button type="button" class="min-h-[44px] px-4 py-2 bg-[#D4AF37] text-[#1A1A1A] font-tarzana text-xs font-bold uppercase tracking-wider rounded-sm hover:brightness-110 transition" @click="drenar">
-          Drenar cola
+        <button
+          type="button"
+          class="min-h-[44px] px-4 py-2 bg-[#D4AF37] text-[#1A1A1A] font-tarzana text-xs font-bold uppercase tracking-wider rounded-sm hover:brightness-110 transition disabled:opacity-60"
+          :disabled="drenando || mensajes.length === 0"
+          @click="drenar"
+        >
+          {{ drenando ? 'Drenando…' : `Drenar cola (${mensajes.length})` }}
         </button>
-        <button type="button" class="min-h-[44px] px-4 py-2 border border-[#8B5A2B] text-[#8B5A2B] font-tarzana text-xs font-bold uppercase tracking-wider rounded-sm hover:bg-[#8B5A2B]/10 transition" @click="exportar">
-          Exportar métricas
+        <button
+          type="button"
+          class="min-h-[44px] px-4 py-2 border border-[#8B5A2B] text-[#8B5A2B] font-tarzana text-xs font-bold uppercase tracking-wider rounded-sm hover:bg-[#8B5A2B]/10 transition disabled:opacity-60"
+          :disabled="mensajes.length === 0"
+          @click="exportar"
+        >
+          Exportar mensajes
         </button>
       </div>
     </template>

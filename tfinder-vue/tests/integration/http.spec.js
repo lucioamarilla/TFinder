@@ -51,4 +51,29 @@ describe('cliente HTTP', () => {
     })
     expect(ApiError).toBeDefined()
   })
+
+  it('devuelve el body de un 503 cuando está en aceptarEstados', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({ estado: 'degradado', dependencias: { postgres: true, redis: false, rabbitmq: true } }),
+      headers: { forEach: () => {} }
+    }))
+
+    const resultado = await api('mesas', '/ready', { aceptarEstados: [503] })
+
+    expect(resultado.status).toBe(503)
+    expect(resultado.datos).toEqual({ estado: 'degradado', dependencias: { postgres: true, redis: false, rabbitmq: true } })
+  })
+
+  it('sigue lanzando ApiError en un 503 no aceptado', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({ estado: 'degradado' }),
+      headers: { forEach: () => {} }
+    }))
+
+    await expect(api('mesas', '/ready')).rejects.toBeInstanceOf(ApiError)
+  })
 })

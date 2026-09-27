@@ -35,16 +35,33 @@ export const matchmakingApi = {
     api('mesas', `/api/v1/mesas/${mesaId}/solicitudes`, { metodo: 'POST', cuerpo })
 }
 
+function consulta(params) {
+  const pares = Object.entries(params || {}).filter(([, v]) => v !== null && v !== undefined && v !== '')
+  return pares.length ? `?${pares.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')}` : ''
+}
+
 export const notifApi = {
   notificaciones: (soloNoLeidas = false) =>
     api('notif', `/api/v1/notificaciones${soloNoLeidas ? '?solo_no_leidas=true' : ''}`),
   marcarLeida: (id) =>
     api('notif', `/api/v1/notificaciones/${id}/leida`, { metodo: 'PATCH' }),
-  eventLog: () => api('notif', '/api/v1/event-log')
+  eventLog: (filtro = {}) =>
+    api('notif', `/api/v1/event-log${consulta({ correlation_id: filtro.correlationId, entidad_tipo: filtro.entidadTipo, entidad_id: filtro.entidadId })}`)
 }
 
 export const pdfApi = {
   solicitarBuild: (buildId) => api('builds', `/api/v1/builds/${buildId}/pdf`, { metodo: 'POST' }),
   estado: (docId) => api('notif', `/api/v1/pdf/${docId}/estado`),
   descargar: (docId) => apiBlob('notif', `/api/v1/pdf/${docId}`)
+}
+
+// /live y /ready son públicos en los 4 servicios. /ready responde 503 cuando
+// alguna dependencia (pg/redis/rabbitmq) está caída, pero con el detalle de
+// cuáles en el body: por eso es el único endpoint que usa aceptarEstados.
+export const adminApi = {
+  live: (servicio) => api(servicio, '/live'),
+  ready: (servicio) => api(servicio, '/ready', { aceptarEstados: [503] }),
+  dlq: (limite) => api('notif', `/api/v1/dlq${consulta({ limite })}`),
+  reintentarDlq: (id) => api('notif', `/api/v1/dlq/${id}/reintentar`, { metodo: 'POST' }),
+  descartarDlq: (id) => api('notif', `/api/v1/dlq/${id}`, { metodo: 'DELETE' })
 }

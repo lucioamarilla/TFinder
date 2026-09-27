@@ -38,7 +38,7 @@ function errorDe(respuesta, datos) {
   return datos?.error ?? { codigo: respuesta.status, mensaje: `HTTP ${respuesta.status}` }
 }
 
-const OPCIONES_POR_DEFECTO = { metodo: 'GET', cuerpo: null, idempotenciaKey: null, timeoutMs: TIMEOUT_MS }
+const OPCIONES_POR_DEFECTO = { metodo: 'GET', cuerpo: null, idempotenciaKey: null, timeoutMs: TIMEOUT_MS, aceptarEstados: null }
 
 async function enviar(servicio, ruta, opciones) {
   const { metodo, cuerpo, idempotenciaKey, timeoutMs } = { ...OPCIONES_POR_DEFECTO, ...opciones }
@@ -85,6 +85,7 @@ async function enviar(servicio, ruta, opciones) {
 }
 
 export async function api(servicio, ruta, opciones = {}) {
+  const { aceptarEstados } = { ...OPCIONES_POR_DEFECTO, ...opciones }
   const { respuesta, solicitado } = await enviar(servicio, ruta, opciones)
 
   let datos = null
@@ -94,7 +95,12 @@ export async function api(servicio, ruta, opciones = {}) {
     /* 204 o sin cuerpo */
   }
 
-  if (!respuesta.ok) {
+  // Un 503 puede venir con el body que el cliente necesita leer (ej. /ready
+  // responde degradado con el detalle de dependencias). Por defecto no cambia
+  // nada: sin la opción, cualquier no-2xx sigue lanzando ApiError.
+  const aceptado = respuesta.ok || (Array.isArray(aceptarEstados) && aceptarEstados.includes(respuesta.status))
+
+  if (!aceptado) {
     const err = errorDe(respuesta, datos)
     throw new ApiError(err.codigo, err.mensaje, err.detalles ?? null)
   }

@@ -1,10 +1,10 @@
+import { adminApi, notifApi } from '@/api/endpoints'
+import { formatearFecha } from '@/services/notificaciones'
 import moderacionData from '@/data/admin/moderacion.json'
 import usuariosData from '@/data/admin/usuarios.json'
 import estadisticasData from '@/data/admin/estadisticas.json'
 import plataformaData from '@/data/admin/plataforma.json'
 import trazabilidadData from '@/data/admin/trazabilidad.json'
-import observabilidadData from '@/data/admin/observabilidad.json'
-import dlqData from '@/data/admin/dlq.json'
 import resilienciaData from '@/data/admin/resiliencia.json'
 import comparadorData from '@/data/admin/comparador.json'
 import prometheusData from '@/data/admin/prometheus.json'
@@ -16,9 +16,7 @@ const clon = (v) => JSON.parse(JSON.stringify(v))
 
 const casos = moderacionData.casos.map((c) => ({ ...c }))
 const cuentas = usuariosData.usuarios.map((u) => ({ ...u }))
-const mensajesDlq = dlqData.mensajes.map((m) => ({ ...m }))
 const ajustes = resilienciaData.ajustes.map((a) => ({ ...a }))
-let breakerEstado = resilienciaData.breakerEstado
 
 /* ── 7.1 Moderación ── */
 export async function getModeracion() {
@@ -106,67 +104,130 @@ export async function getTrazabilidad() {
   return clon(trazabilidadData)
 }
 
-/* ── 7.6 Observabilidad ── */
-export async function getObservabilidad() {
-  await latencia(450)
-  return clon(observabilidadData)
+/* ── 7.6 Observabilidad (real: /live y /ready de los 4 servicios) ── */
+const SERVICIOS = [
+  { id: 'mesas', nombre: 'mesas-api' },
+  { id: 'builds', nombre: 'builds-api' },
+  { id: 'feed', nombre: 'feed-api' },
+  { id: 'notif', nombre: 'notif-api' }
+]
+
+const DEPENDENCIAS = [
+  { clave: 'postgres', nombre: 'PostgreSQL' },
+  { clave: 'redis', nombre: 'Redis' },
+  { clave: 'rabbitmq', nombre: 'RabbitMQ' }
+]
+
+function tonoDe(live, estadoReady) {
+  if (!live) return 'gris'
+  return estadoReady === 'listo' ? 'verde' : estadoReady === 'degradado' ? 'ocre' : 'gris'
 }
 
-/* ── 7.7 DLQ ── */
+function dependenciasDe(mapa) {
+  return DEPENDENCIAS.map((d) => ({ ...d, ok: Boolean(mapa?.[d.clave]) }))
+}
+
+export async function estadoDe(servicioId) {
+  const meta = SERVICIOS.find((s) => s.id === servicioId) ?? { id: servicioId, nombre: servicioId }
+  const canal = { id: meta.id, nombre: meta.nombre, live: false, ready: 'sin_datos', dependencias: [], detalle: null }
+
+  try {
+    const { datos } = await adminApi.live(meta.id)
+    canal.live = datos?.estado === 'vivo'
+  } catch (e) {
+    canal.detalle = e.mensaje || e.message
+  }
+
+  try {
+    // /ready responde 503 con el detalle de dependencias cuando algo está caído;
+    // adminApi.ready lo acepta para que ese body sea legible.
+    const { datos } = await adminApi.ready(meta.id)
+    canal.ready = datos?.estado ?? 'sin_datos'
+    canal.dependencias = dependenciasDe(datos?.dependencias)
+  } catch (e) {
+    canal.detalle = e.mensaje || e.message
+  }
+
+  canal.tono = tonoDe(canal.live, canal.ready)
+  return canal
+}
+
+export async function getCanalesReales() {
+  return Promise.all(SERVICIOS.map((s) => estadoDe(s.id)))
+}
+
+export async function getEventosRecorridos(filtro = {}) {
+  const { datos } = await notifApi.eventLog(filtro)
+  return (datos ?? []).map((e) => ({
+    id: e.id,
+    ocurridoEn: formatearFecha(e.ocurridoEn) ?? '—',
+    entidad: e.entidadId ? `${e.entidadTipo} #${e.entidadId}` : (e.entidadTipo ?? '—'),
+    accion: e.accion ?? '—',
+    correlationId: e.correlationId ?? null,
+    metadata: e.metadata ?? null
+  }))
+}
+
+/* ── 7.7 DLQ (real: GET /dlq, POST /dlq/{id}/reintentar, DELETE /dlq/{id}) ── */
+function normalizarMensaje(m) {
+  let payload = m.payload
+  if (typeof payload === 'string') {
+    try {
+      payload = JSON.parse(payload)
+    } catch {
+      /* el backend puede mandar un payload que no es JSON */
+    }
+  }
+  return {
+    id: m.id,
+    cola: m.cola ?? '—',
+    tipo: payload?.tipo ?? m.cola ?? 'desconocido',
+    error: m.error ?? '',
+    fecha: formatearFecha(m.fecha) ?? '—',
+    payload
+  }
+}
+
 export async function getDlq() {
-  await latencia()
-  return { mensajes: clon(mensajesDlq) }
+  const { datos } = await adminApi.dlq()
+  return { mensajes: (datos ?? []).map(normalizarMensaje) }
 }
 
 export async function reintentarMensaje(id) {
-  await latencia(400)
-  const i = mensajesDlq.findIndex((m) => m.id === id)
-  if (i < 0) throw new Error('Ese mensaje ya salió de la cola de fallidos.')
-  const [m] = mensajesDlq.splice(i, 1)
-  return { id: m.id, nombre: m.nombre }
+  const { datos } = await adminApi.reintentarDlq(id)
+  return { id: datos?.id ?? id, cola: datos?.cola ?? null }
 }
 
 export async function descartarMensaje(id) {
-  await latencia()
-  const i = mensajesDlq.findIndex((m) => m.id === id)
-  if (i < 0) throw new Error('Ese mensaje ya salió de la cola de fallidos.')
-  const [m] = mensajesDlq.splice(i, 1)
-  return { id: m.id, nombre: m.nombre }
+  await adminApi.descartarDlq(id)
+  return { id }
 }
 
-export async function drenarCola() {
-  await latencia(450)
-  const total = mensajesDlq.length
-  mensajesDlq.splice(0, mensajesDlq.length)
-  return { total }
+export async function drenarCola({ alProgresar } = {}) {
+  const { mensajes } = await getDlq()
+  const total = mensajes.length
+  let hechos = 0
+  for (const mensaje of mensajes) {
+    await adminApi.descartarDlq(mensaje.id)
+    hechos += 1
+    alProgresar?.({ hechos, total, id: mensaje.id })
+  }
+  return { total, hechos }
 }
 
-/* ── 7.8 Resiliencia ── */
+/* ── 7.8 Resiliencia (derivada del estado real, no simulada) ── */
 export async function getResiliencia() {
-  await latencia()
-  return { breakerEstado, ajustes: clon(ajustes) }
-}
-
-export async function guardarResiliencia(limites) {
-  await latencia(450)
-  Object.entries(limites).forEach(([id, valor]) => {
-    const ajuste = ajustes.find((a) => a.id === id)
-    if (!ajuste) throw new Error(`No existe el parámetro de resiliencia «${id}».`)
-    const numero = Number(valor)
-    if (Number.isNaN(numero) || numero < ajuste.min || numero > ajuste.max) {
-      throw new Error(`El valor de «${ajuste.label}» debe estar entre ${ajuste.min} y ${ajuste.max}.`)
-    }
-    ajuste.valor = numero
-  })
-  return { breakerEstado, ajustes: clon(ajustes) }
-}
-
-export async function simularCaida() {
-  await latencia(400)
-  breakerEstado = 'ABIERTO'
-  const cb = ajustes.find((a) => a.id === 'cb-umbral')
-  if (cb) cb.badge = { texto: 'ABIERTO', tono: 'rojo' }
-  return { breakerEstado, ajustes: clon(ajustes) }
+  const [mesas, { mensajes }] = await Promise.all([estadoDe('mesas'), getDlq()])
+  return {
+    breakerEstado: mesas.tono === 'verde' ? 'CERRADO' : 'ABIERTO',
+    alcanzable: mesas.live,
+    servicio: mesas.nombre,
+    ready: mesas.ready,
+    detalle: mesas.detalle,
+    dependencias: mesas.dependencias,
+    dlqEnCola: mensajes.length,
+    ajustes: clon(ajustes)
+  }
 }
 
 /* ── 7.9 Comparador ── */

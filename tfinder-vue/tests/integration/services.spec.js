@@ -17,11 +17,19 @@ vi.mock('@/api/endpoints', () => ({
   },
   notifApi: {
     notificaciones: vi.fn(),
-    marcarLeida: vi.fn()
+    marcarLeida: vi.fn(),
+    eventLog: vi.fn()
+  },
+  adminApi: {
+    live: vi.fn(),
+    ready: vi.fn(),
+    dlq: vi.fn(),
+    reintentarDlq: vi.fn(),
+    descartarDlq: vi.fn()
   }
 }))
 
-const { mesasApi, authApi, notifApi } = await import('@/api/endpoints')
+const { mesasApi, authApi, notifApi, adminApi } = await import('@/api/endpoints')
 const { getMesas, crearMesa, eliminarMesa } = await import('@/services/mesas')
 const { useAuth, currentRole, clearSession } = await import('@/composables/useAuth')
 const { getCandidatos, enviarSolicitud } = await import('@/services/matchmaking')
@@ -65,15 +73,24 @@ describe('flujos de servicios con API simulada', () => {
     await expect(enviarSolicitud('no-existe')).rejects.toThrow('No encontramos')
   })
 
-  it('consulta administración y procesa DLQ', async () => {
+  it('consulta usuarios de administración y procesa la DLQ real', async () => {
     const usuarios = await getAdminUsuarios({ busqueda: 'a' })
     expect(usuarios.total).toBeGreaterThan(0)
+
+    adminApi.dlq.mockResolvedValue({
+      datos: [
+        { id: 7, cola: 'tfinder.notif.dlq', payload: { tipo: 'solicitud_creada', id: 3 }, error: 'Connection timed out', fecha: '2026-03-05T15:04:05Z' }
+      ]
+    })
     const dlq = await getDlq()
-    expect(Array.isArray(dlq.mensajes)).toBe(true)
-    if (dlq.mensajes.length > 0) {
-      const resultado = await reintentarMensaje(dlq.mensajes[0].id)
-      expect(resultado.id).toBe(dlq.mensajes[0].id)
-    }
+    expect(dlq.mensajes).toHaveLength(1)
+    expect(dlq.mensajes[0]).toMatchObject({ id: 7, tipo: 'solicitud_creada', cola: 'tfinder.notif.dlq', error: 'Connection timed out' })
+
+    adminApi.reintentarDlq.mockResolvedValue({ datos: { id: 7, cola: 'tfinder.notif.dlq' } })
+    expect((await reintentarMensaje(7)).id).toBe(7)
+    expect(adminApi.reintentarDlq).toHaveBeenCalledWith(7)
+
+    adminApi.reintentarDlq.mockRejectedValue(new Error('Ese mensaje ya salió de la cola de fallidos.'))
     await expect(reintentarMensaje('inexistente')).rejects.toThrow('cola de fallidos')
   })
 
