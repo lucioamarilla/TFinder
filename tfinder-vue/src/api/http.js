@@ -22,7 +22,26 @@ function tokenActual() {
   return currentAccessToken()
 }
 
-export async function api(servicio, ruta, { metodo = 'GET', cuerpo = null, idempotenciaKey = null, timeoutMs = TIMEOUT_MS } = {}) {
+function leerEncabezados(respuesta) {
+  const encabezados = {}
+  if (respuesta.headers?.forEach) {
+    respuesta.headers.forEach((v, k) => { encabezados[k.toLowerCase()] = v })
+  } else {
+    for (const [k, v] of Object.entries(respuesta.headers || {})) {
+      encabezados[(k || '').toLowerCase()] = v
+    }
+  }
+  return encabezados
+}
+
+function errorDe(respuesta, datos) {
+  return datos?.error ?? { codigo: respuesta.status, mensaje: `HTTP ${respuesta.status}` }
+}
+
+const OPCIONES_POR_DEFECTO = { metodo: 'GET', cuerpo: null, idempotenciaKey: null, timeoutMs: TIMEOUT_MS }
+
+async function enviar(servicio, ruta, opciones) {
+  const { metodo, cuerpo, idempotenciaKey, timeoutMs } = { ...OPCIONES_POR_DEFECTO, ...opciones }
   const nombreServicio = SERVICIOS_NOMBRES[servicio] ?? servicio
   const controlador = new AbortController()
   const timer = setTimeout(() => controlador.abort(), timeoutMs)
@@ -45,7 +64,6 @@ export async function api(servicio, ruta, { metodo = 'GET', cuerpo = null, idemp
       signal: controlador.signal
     })
   } catch (e) {
-    clearTimeout(timer)
     const esTimeout = e.name === 'AbortError'
     throw new ApiError(
       'timeout',
@@ -53,14 +71,21 @@ export async function api(servicio, ruta, { metodo = 'GET', cuerpo = null, idemp
         ? `El servicio ${nombreServicio} no respondió en ${timeoutMs} ms.`
         : `No se pudo conectar con el servicio ${nombreServicio}. Revisá que esté levantado.`
     )
+  } finally {
+    clearTimeout(timer)
   }
-  clearTimeout(timer)
 
   if (respuesta.status === 401) {
     clearSession()
     window.location.assign(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)
     throw new ApiError('unauthorized', 'Sesión expirada o inválida.')
   }
+
+  return { respuesta, solicitado }
+}
+
+export async function api(servicio, ruta, opciones = {}) {
+  const { respuesta, solicitado } = await enviar(servicio, ruta, opciones)
 
   let datos = null
   try {
@@ -70,18 +95,26 @@ export async function api(servicio, ruta, { metodo = 'GET', cuerpo = null, idemp
   }
 
   if (!respuesta.ok) {
-    const err = datos?.error ?? { codigo: respuesta.status, mensaje: `HTTP ${respuesta.status}` }
+    const err = errorDe(respuesta, datos)
     throw new ApiError(err.codigo, err.mensaje, err.detalles ?? null)
   }
 
-  const encabezados = {}
-  if (respuesta.headers?.forEach) {
-    respuesta.headers.forEach((v, k) => { encabezados[k.toLowerCase()] = v })
-  } else {
-    for (const [k, v] of Object.entries(respuesta.headers || {})) {
-      encabezados[(k || '').toLowerCase()] = v
+  return { status: respuesta.status, datos, idempotenciaKey: solicitado, encabezados: leerEncabezados(respuesta) }
+}
+
+export async function apiBlob(servicio, ruta, opciones = {}) {
+  const { respuesta, solicitado } = await enviar(servicio, ruta, opciones)
+
+  if (!respuesta.ok) {
+    let datos = null
+    try {
+      datos = await respuesta.json()
+    } catch {
+      /* cuerpo no-JSON */
     }
+    const err = errorDe(respuesta, datos)
+    throw new ApiError(err.codigo, err.mensaje, err.detalles ?? null)
   }
 
-  return { status: respuesta.status, datos, idempotenciaKey: solicitado, encabezados }
+  return { status: respuesta.status, blob: await respuesta.blob(), idempotenciaKey: solicitado, encabezados: leerEncabezados(respuesta) }
 }

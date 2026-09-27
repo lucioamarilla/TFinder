@@ -3,10 +3,14 @@ import { resolveGuard } from '@/router/guard'
 
 describe('funcionalidades próximas', () => {
   it('redirige una función deshabilitada', () => {
-    expect(resolveGuard({ meta: { roles: ['auth'], feature: 'builds' } }, 'auth')).toEqual({
+    expect(resolveGuard({ meta: { roles: ['auth'], feature: 'dashboard' } }, 'auth')).toEqual({
       name: 'proximamente',
-      params: { feature: 'builds' }
+      params: { feature: 'dashboard' }
     })
+  })
+
+  it('deja pasar una función habilitada', () => {
+    expect(resolveGuard({ meta: { roles: ['auth'], feature: 'builds' } }, 'auth')).toBe(true)
   })
 
   it('permite una función habilitada', () => {

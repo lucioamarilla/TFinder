@@ -167,12 +167,3 @@ export async function restaurarVersion(id, version) {
   build.display = build.nombre || build.display
   return clonar(build)
 }
-
-export async function exportarHistorial(id) {
-  const build = await getBuild(id)
-  return {
-    nombre: build.nombre || build.display,
-    id,
-    versiones: (build.historial || []).map((h) => ({ version: h.version, fecha: h.fecha, autor: h.autor, resumen: h.resumen }))
-  }
-}

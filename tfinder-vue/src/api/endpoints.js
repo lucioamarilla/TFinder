@@ -1,4 +1,4 @@
-import { api } from '@/api/http'
+import { api, apiBlob } from '@/api/http'
 
 export const authApi = {
   register: (b) => api('mesas', '/api/v1/auth/register', { metodo: 'POST', cuerpo: b }),
@@ -40,6 +40,11 @@ export const notifApi = {
     api('notif', `/api/v1/notificaciones${soloNoLeidas ? '?solo_no_leidas=true' : ''}`),
   marcarLeida: (id) =>
     api('notif', `/api/v1/notificaciones/${id}/leida`, { metodo: 'PATCH' }),
-  eventLog: () => api('notif', '/api/v1/event-log'),
-  pdf: (docId) => api('notif', `/api/v1/pdf/${docId}`)
+  eventLog: () => api('notif', '/api/v1/event-log')
+}
+
+export const pdfApi = {
+  solicitarBuild: (buildId) => api('builds', `/api/v1/builds/${buildId}/pdf`, { metodo: 'POST' }),
+  estado: (docId) => api('notif', `/api/v1/pdf/${docId}/estado`),
+  descargar: (docId) => apiBlob('notif', `/api/v1/pdf/${docId}`)
 }

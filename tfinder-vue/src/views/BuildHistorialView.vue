@@ -1,8 +1,10 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast.js'
-import { getHistorial, restaurarVersion, exportarHistorial } from '@/services/builds.js'
+import { pdfApi } from '@/api/endpoints'
+import { getHistorial, restaurarVersion } from '@/services/builds.js'
+import { usePdfDescarga } from '@/composables/usePdfDescarga.js'
 
 const props = defineProps({ id: { type: String, required: true } })
 
@@ -71,9 +73,24 @@ async function restaurar(version) {
   await cargar()
 }
 
-async function exportar() {
-  const res = await exportarHistorial(props.id)
-  toast.ok(`Historial de «${res.nombre}» exportado (.PDF).`)
+const { fase, mensaje, listo, ocupado, etiqueta, exportar, descargar, cancelar } = usePdfDescarga(
+  () => pdfApi.solicitarBuild(props.id),
+  'Exportar historial'
+)
+
+watch(fase, (valor) => {
+  if (valor === 'listo') toast.ok('El PDF del historial está listo.')
+  if (valor === 'error') toast.error(mensaje.value)
+})
+
+watch(() => props.id, cancelar)
+
+async function exportarHistorial() {
+  if (listo.value) {
+    await descargar()
+    return
+  }
+  await exportar()
 }
 </script>
 
@@ -88,7 +105,14 @@ async function exportar() {
     </div>
 
     <div class="flex flex-wrap gap-2 mb-6">
-      <button type="button" class="px-5 py-2.5 bg-[#D4AF37] text-[#1A1A1A] font-tarzana text-xs font-bold rounded-sm hover:brightness-110 transition" @click="exportar">Exportar historial</button>
+      <button
+        type="button"
+        :disabled="ocupado"
+        class="px-5 py-2.5 bg-[#D4AF37] text-[#1A1A1A] font-tarzana text-xs font-bold rounded-sm hover:brightness-110 transition disabled:opacity-60 disabled:cursor-not-allowed"
+        @click="exportarHistorial"
+      >
+        {{ etiqueta }}
+      </button>
       <button
         v-if="activa && anterior"
         type="button"

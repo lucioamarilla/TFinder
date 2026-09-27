@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast.js'
+import { pdfApi } from '@/api/endpoints'
+import { usePdfDescarga } from '@/composables/usePdfDescarga.js'
 import { getBuild, vincularBuild } from '@/services/builds.js'
 import { getMesas } from '@/services/mesas.js'
 import ModalAsociarBuild from '@/components/modals/ModalAsociarBuild.vue'
@@ -63,6 +65,25 @@ async function vincular(mesaId) {
   toast.ok(`Build vinculado a «${destino?.nombre || 'la mesa'}».`)
   if (res.mesaAnterior) toast.info(`Se desvinculó de la mesa anterior.`)
 }
+
+const { fase, mensaje, listo, ocupado, etiqueta, exportar, descargar, cancelar } = usePdfDescarga(() =>
+  pdfApi.solicitarBuild(props.id)
+)
+
+watch(fase, (valor) => {
+  if (valor === 'listo') toast.ok('Tu PDF está listo para descargar.')
+  if (valor === 'error') toast.error(mensaje.value)
+})
+
+watch(() => props.id, cancelar)
+
+async function exportarPdf() {
+  if (listo.value) {
+    await descargar()
+    return
+  }
+  await exportar()
+}
 </script>
 
 <template>
@@ -93,6 +114,24 @@ async function vincular(mesaId) {
         <RouterLink :to="`/builds/${build.id}/historial`" class="font-tarzana text-xs font-bold text-[#8B5A2B] hover:underline uppercase tracking-wider">
           Historial y versionado →
         </RouterLink>
+        <div class="flex items-center gap-2">
+          <button
+            v-if="fase === 'en_cola' || fase === 'enviando'"
+            type="button"
+            class="font-tarzana text-xs font-bold text-[#8B7D6B] hover:text-[#5C4633] uppercase tracking-wider"
+            @click="cancelar"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            :disabled="ocupado"
+            class="px-4 py-2 bg-[#D4AF37] text-[#1A1A1A] font-tarzana text-xs font-bold rounded-sm hover:brightness-110 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            @click="exportarPdf"
+          >
+            {{ etiqueta }}
+          </button>
+        </div>
       </div>
 
       <div class="relative bg-[#FDF8EE] border-2 border-[#C2A980] rounded-sm p-6 md:p-8 shadow-xl">

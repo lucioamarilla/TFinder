@@ -10,7 +10,7 @@ export const FEATURES = {
   sesiones: { label: 'Sesiones y diario', available: false },
   qr: { label: 'Asistencia por QR', available: true },
   jugadores: { label: 'Gestión de jugadores', available: false },
-  builds: { label: 'Builds', available: false },
+  builds: { label: 'Builds', available: true },
   feed: { label: 'Feed Social', available: false },
   directorio: { label: 'Directorio de aventureros', available: false },
   notificaciones: { label: 'Notificaciones', available: true },
@@ -18,7 +18,7 @@ export const FEATURES = {
   encuentros: { label: 'Encuentros', available: true },
   tags: { label: 'Tags', available: false },
   recuperacion: { label: 'Recuperación de contraseña', available: true },
-  admin: { label: 'Administración', available: false }
+  admin: { label: 'Administración', available: true }
 }
 
 export function isFeatureEnabled(feature) {
