@@ -1,19 +1,27 @@
 import { ref } from 'vue'
-import { getNoLeidas } from '@/services/notificaciones'
+import { getNotificaciones } from '@/services/notificaciones'
 
 const INTERVALO_MS = 5000
 
+const lista = ref([])
 const unreadCount = ref(0)
 const desconectado = ref(false)
+const ultimoError = ref(null)
 let timer = null
 let suscriptores = 0
 
 async function refrescar() {
   try {
-    unreadCount.value = await getNoLeidas()
+    lista.value = await getNotificaciones()
+    unreadCount.value = lista.value.filter((n) => !n.leida).length
     desconectado.value = false
-  } catch {
+    ultimoError.value = null
+    return true
+  } catch (e) {
     desconectado.value = true
+    ultimoError.value = e?.message || 'No pudimos abrir el centro de avisos.'
+    unreadCount.value = 0
+    return false
   }
 }
 
@@ -32,19 +40,5 @@ function detener() {
 }
 
 export function useNotifications() {
-  async function loadCount() {
-    try {
-      unreadCount.value = await getNoLeidas()
-      desconectado.value = false
-    } catch {
-      desconectado.value = true
-      unreadCount.value = 0
-    }
-  }
-
-  function setUnread(value) {
-    unreadCount.value = value
-  }
-
-  return { unreadCount, desconectado, loadCount, setUnread, arrancar, detener }
+  return { lista, unreadCount, desconectado, ultimoError, refrescar, arrancar, detener }
 }

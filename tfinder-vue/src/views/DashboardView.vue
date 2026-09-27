@@ -8,7 +8,7 @@ import { getFeedPosts } from '@/services/feed'
 import { useNotifications } from '@/composables/useNotifications'
 
 const router = useRouter()
-const { unreadCount, loadCount } = useNotifications()
+const { unreadCount, refrescar } = useNotifications()
 
 const AVATARES = {
   'Guía de Build': 'bg-[#D4AF37] text-[#1A1A1A] border-[#8B5A2B]',
@@ -42,7 +42,7 @@ async function load() {
     actividad.value = a
     eventos.value = e
     posts.value = p
-    loadCount()
+    refrescar()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Ocurrió un error inesperado.'
   } finally {

@@ -1,13 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getNotificaciones, marcarLeida, marcarTodasLeidas } from '@/services/notificaciones.js'
+import { marcarLeida, marcarTodasLeidas } from '@/services/notificaciones.js'
 import { useNotifications } from '@/composables/useNotifications'
 import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
 const toast = useToast()
-const { unreadCount, loadCount } = useNotifications()
+const { lista, unreadCount, desconectado, ultimoError, refrescar } = useNotifications()
 
 const FILTROS = [
   { id: 'todas', label: 'Todas' },
@@ -26,9 +26,7 @@ const ICONOS = {
 }
 
 const filtro = ref('todas')
-const lista = ref([])
 const cargando = ref(true)
-const fallo = ref(null)
 const procesando = ref(false)
 
 const filtradas = computed(() =>
@@ -41,26 +39,15 @@ function contar(id) {
 
 async function cargar() {
   cargando.value = true
-  fallo.value = null
-  try {
-    lista.value = await getNotificaciones()
-  } catch (e) {
-    fallo.value = e.message || 'No pudimos abrir el centro de avisos.'
-  } finally {
-    cargando.value = false
-  }
-}
-
-function reemplazar(actualizada) {
-  const i = lista.value.findIndex((n) => n.id === actualizada.id)
-  if (i >= 0) lista.value.splice(i, 1, actualizada)
+  await refrescar()
+  cargando.value = false
 }
 
 async function abrir(notificacion) {
   if (!notificacion.leida) {
     try {
-      reemplazar(await marcarLeida(notificacion.id))
-      await loadCount()
+      await marcarLeida(notificacion.id)
+      await refrescar()
     } catch (e) {
       toast.error(e.message)
     }
@@ -75,8 +62,8 @@ async function marcarTodas() {
   }
   procesando.value = true
   try {
-    lista.value = await marcarTodasLeidas()
-    await loadCount()
+    await marcarTodasLeidas()
+    await refrescar()
     toast.ok('Todos los avisos del cónclave fueron marcados como leídos.')
   } catch (e) {
     toast.error(e.message)
@@ -142,6 +129,21 @@ onMounted(cargar)
       </div>
     </header>
 
+    <p
+      v-if="desconectado"
+      class="parchment-sheet border border-[#C2A980] rounded-sm px-4 py-3 mb-4 flex items-center justify-between gap-3"
+      role="status"
+      aria-live="polite"
+    >
+      <span class="font-minion text-sm text-[#6B5B4B]">
+        <b class="font-tarzana text-xs uppercase tracking-wider text-[#8B5A2B]">Sin conexión a avisos.</b>
+        Mostrando la última lista conocida; los avisos nuevos aparecerán solos cuando notif-api vuelva.
+      </span>
+      <button type="button" class="btn-gold px-3 py-1.5 font-tarzana text-xs font-bold uppercase tracking-wider" @click="cargar">
+        Reintentar
+      </button>
+    </p>
+
     <div v-if="cargando" class="space-y-3" role="status" aria-live="polite">
       <div v-for="n in 4" :key="n" class="card-parchment p-4 rounded-sm animate-pulse flex gap-3">
         <div class="w-8 h-8 rounded-full bg-[#C2A980]/40 flex-shrink-0"></div>
@@ -152,9 +154,9 @@ onMounted(cargar)
       </div>
     </div>
 
-    <div v-else-if="fallo" class="parchment-sheet border border-[#C2A980] rounded-sm py-16 text-center" role="alert">
+    <div v-else-if="desconectado && lista.length === 0" class="parchment-sheet border border-[#C2A980] rounded-sm py-16 text-center" role="alert">
       <p class="font-tarzana uppercase tracking-widest text-xs text-[#8B1A1A] font-bold mb-1">El centro de avisos está cerrado</p>
-      <p class="font-minion text-[#5A4A3A]">{{ fallo }}</p>
+      <p class="font-minion text-[#5A4A3A]">{{ ultimoError }}</p>
       <button type="button" class="btn-gold mt-4 px-6 py-2 font-tarzana font-bold uppercase tracking-wider text-sm" @click="cargar">Reintentar</button>
     </div>
 
@@ -205,14 +207,14 @@ onMounted(cargar)
       </li>
     </ul>
 
-    <div v-if="!cargando && !fallo" class="mt-6 pt-4 border-t border-[#C2A980] flex flex-col sm:flex-row items-center justify-between gap-3 font-tarzana text-xs text-[#8B7D6B]">
+    <div v-if="!cargando" class="mt-6 pt-4 border-t border-[#C2A980] flex flex-col sm:flex-row items-center justify-between gap-3 font-tarzana text-xs text-[#8B7D6B]">
       <span>Mostrando {{ filtradas.length }} avisos de los últimos 30 días de viaje</span>
       <button
         type="button"
         class="px-4 py-2 border border-[#C2A980] hover:border-[#8B5A2B] hover:text-[#8B5A2B] rounded transition-colors font-semibold"
-        @click="toast.info('No hay pergaminos más antiguos en el archivo.')"
+        @click="cargar"
       >
-        ❖ Cargar Notificaciones Anteriores
+        ↻ Recargar
       </button>
     </div>
   </main>
