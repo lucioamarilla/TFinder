@@ -4,14 +4,20 @@ Gestión de mesas de Pathfinder 1.ª edición como **sistema distribuido**: cuat
 
 **Integrantes:** Amarilla Lucio · Czajkowski Leonardo
 
+## Documentación de la entrega
+
+- **Informe técnico conjunto:** [docs/INFORME-AE2.md](../docs/INFORME-AE2.md) — arquitectura, contratos, asincronía, Redis, concurrencia, persistencia, testing y limitaciones.
+- **Alcance individual — backend B01–B12:** [docs/INFORME-AE2-AMARILLA-LUCIO.md](../docs/INFORME-AE2-AMARILLA-LUCIO.md) (issues #14–#25).
+- **Alcance individual — frontend F01–F09:** [docs/INFORME-AE2-CZAJKOWSKI-LEONARDO.md](../docs/INFORME-AE2-CZAJKOWSKI-LEONARDO.md) (issues #26–#34).
+
 ## Estado
 
-- Backend completo: B01–B11 cerrados, rama `AE2-Backend`, tags `2.0.0` (alfa) y `2.1.0` (beta).
-- Suite pytest reproducible: `5 passed` (`tests/`).
+- Backend completo: B01–B12 implementados y verificados, rama `AE2-Backend`, tags `2.0.0` (alfa) y `2.1.0` (beta).
+- Suite de pruebas reproducible: **130 de backend** (50 `unit`, 80 `integration`) y **22 de frontend** (15 `unit`, 7 `integration`).
 - Evidencias del checklist del enunciado: [AE2/evidencias/EVIDENCIAS.md](evidencias/EVIDENCIAS.md).
 - Auditoría, estado real y plan de cierre: [docs/AUDITORIA_CIERRE_AE2.md](../docs/AUDITORIA_CIERRE_AE2.md).
 - Decisiones de arquitectura: [docs/ADR](https://github.com/lucioamarilla/TFinder/tree/AE2-Backend/docs/ADR).
-- Frontend (`tfinder-vue`): pautado F01–F09 (github issues #26–#34).
+- Frontend (`tfinder-vue`): F01–F09 entregados (github issues #26–#34).
 
 ## Cómo correr todo desde cero
 

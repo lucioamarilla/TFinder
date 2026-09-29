@@ -1,0 +1,312 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "TFinder · de los controladores REST a la persistencia",
+    "output": "tfinder-request-persistencia.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "cliente",
+      "type": "external",
+      "label": "SPA Vue 3",
+      "sublabel": "proxy /mesas-api/ · :8001",
+      "pos": [
+        310,
+        40
+      ],
+      "size": [
+        150,
+        76
+      ]
+    },
+    {
+      "id": "middleware",
+      "type": "security",
+      "label": "Middleware",
+      "sublabel": "FastAPI · correlation_id",
+      "pos": [
+        550,
+        40
+      ],
+      "size": [
+        150,
+        76
+      ]
+    },
+    {
+      "id": "rutas",
+      "type": "backend",
+      "label": "Rutas REST",
+      "sublabel": "/api/v1/mesas",
+      "pos": [
+        790,
+        40
+      ],
+      "size": [
+        150,
+        76
+      ]
+    },
+    {
+      "id": "controllers",
+      "type": "backend",
+      "label": "Controllers",
+      "sublabel": "caso de uso y errores",
+      "pos": [
+        1030,
+        40
+      ],
+      "size": [
+        150,
+        76
+      ]
+    },
+    {
+      "id": "servicios",
+      "type": "backend",
+      "label": "Servicios",
+      "sublabel": "vacante · idem · caché",
+      "pos": [
+        1030,
+        250
+      ],
+      "size": [
+        150,
+        76
+      ]
+    },
+    {
+      "id": "modelos",
+      "type": "backend",
+      "label": "Modelos",
+      "sublabel": "SQL %s · dict_row",
+      "pos": [
+        790,
+        250
+      ],
+      "size": [
+        150,
+        76
+      ]
+    },
+    {
+      "id": "pool",
+      "type": "database",
+      "label": "Pool psycopg",
+      "sublabel": "min 1 · max 5 conexiones",
+      "pos": [
+        550,
+        250
+      ],
+      "size": [
+        150,
+        76
+      ]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL 16",
+      "sublabel": "mesas_db · schema.sql",
+      "pos": [
+        310,
+        250
+      ],
+      "size": [
+        150,
+        76
+      ]
+    },
+    {
+      "id": "rabbitmq",
+      "type": "messagebus",
+      "label": "RabbitMQ 3.13",
+      "sublabel": "tfinder.events · DLX",
+      "pos": [
+        790,
+        430
+      ],
+      "size": [
+        150,
+        76
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis 7",
+      "sublabel": "reserva · idem · sesión",
+      "pos": [
+        1030,
+        430
+      ],
+      "size": [
+        150,
+        76
+      ]
+    },
+    {
+      "id": "errores",
+      "type": "backend",
+      "label": "Error envelope",
+      "sublabel": "{codigo, mensaje}",
+      "pos": [
+        550,
+        430
+      ],
+      "size": [
+        150,
+        76
+      ]
+    },
+    {
+      "id": "arranque",
+      "type": "backend",
+      "label": "Arranque",
+      "sublabel": "init_db + seed demo",
+      "pos": [
+        310,
+        430
+      ],
+      "size": [
+        150,
+        76
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Proceso mesas-api · FastAPI sobre Uvicorn",
+      "wraps": [
+        "middleware",
+        "rutas",
+        "controllers",
+        "servicios",
+        "modelos",
+        "pool"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "entrada",
+      "from": "cliente",
+      "to": "middleware",
+      "label": "HTTPS + JSON"
+    },
+    {
+      "id": "autenticacion",
+      "from": "middleware",
+      "to": "rutas",
+      "label": "verifica el JWT"
+    },
+    {
+      "id": "delegacion",
+      "from": "rutas",
+      "to": "controllers",
+      "label": "endpoint REST"
+    },
+    {
+      "id": "reglas",
+      "from": "controllers",
+      "to": "servicios",
+      "label": "barrera de vacante · idem",
+      "labelDy": 24
+    },
+    {
+      "id": "persistencia",
+      "from": "servicios",
+      "to": "modelos",
+      "label": "lee o escribe"
+    },
+    {
+      "id": "conexion",
+      "from": "modelos",
+      "to": "pool",
+      "label": "get_connection()"
+    },
+    {
+      "id": "sql",
+      "from": "pool",
+      "to": "postgres",
+      "label": "consulta SQL"
+    },
+    {
+      "id": "coherencia",
+      "from": "servicios",
+      "to": "redis",
+      "label": "SET NX EX 60",
+      "labelDy": 24
+    },
+    {
+      "id": "eventos",
+      "from": "servicios",
+      "to": "rabbitmq",
+      "label": "publica mesa.*",
+      "variant": "dashed"
+    },
+    {
+      "id": "respuesta",
+      "from": "postgres",
+      "to": "cliente",
+      "label": "200 · 201 · 204",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "left",
+      "via": [
+        [
+          270,
+          288
+        ],
+        [
+          270,
+          78
+        ]
+      ]
+    },
+    {
+      "id": "fallo",
+      "from": "modelos",
+      "to": "errores",
+      "label": "excepción del dominio",
+      "variant": "dashed"
+    },
+    {
+      "id": "esquema",
+      "from": "arranque",
+      "to": "postgres",
+      "label": "schema.sql + índices",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "El camino de la request",
+      "items": [
+        "El navegador no llama a la API directo: Nginx hace de proxy same-origin hacia mesas-api",
+        "La ruta valida el body con Pydantic, fija el response_model y delega en el controller",
+        "Los modelos toman una conexión del pool y el INSERT relee la fila con RETURNING"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Reglas que viven en los servicios",
+      "items": [
+        "La vacante se protege con doble barrera: SET NX EX 60 en Redis y check-and-set en PostgreSQL",
+        "Idempotency-Key y la caché del listado se resuelven en Redis, no en la base"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Respuestas y errores",
+      "items": [
+        "Los éxitos son 200, 201 o 204; todo error sale como {\"error\": {\"codigo\", \"mensaje\"}}",
+        "publicar_solicitud() publica mesa.solicitada y la ruta responde 202 sin esperar al bus"
+      ]
+    }
+  ]
+}

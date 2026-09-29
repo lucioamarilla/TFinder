@@ -1,0 +1,173 @@
+# ===============================================================================
+#  TFinder AE2 - COMANDOS DE LA PRESENTACION DE 15 MINUTOS (todo en terminal)
+#  Cada linea se pega y se ejecuta sola. Verificado contra el stack el 2026-09-29.
+#
+#  Para el recorrido completo y con verificaciones automaticas, usar los scripts:
+#      bash scripts/demo/00-reset.sh
+#      bash scripts/demo/01-preparacion.sh
+#      ... en orden hasta 12-qr.sh
+#  Este archivo es para pegar UNA linea puntual a mano.
+#
+#  Los bloques NO llevan bucles: si un pegado mete un caracter raro, se rompe
+#  una sola linea y no el bloque entero.
+# ===============================================================================
+
+# --- BLOQUE 0: reset con datos limpios (2 min) ---------------------------------
+cd ~/Facultad/3er_ano/paradigmas_III/TFinder_AE2/TFinder
+docker compose down -v && docker compose up -d --build
+sleep 15
+
+# --- BLOQUE 1: helpers, servicios, frontend y tokens (2 min) --------------------
+tok() { curl -s -X POST "localhost:8001/api/v1/auth/$1" -H 'Content-Type: application/json' -d "$2" | jq -r '.access_token // ""'; }
+alta() { local e="$1" n="$2" t; t=$(tok login "{\"email\":\"$e\",\"password\":\"DemoTFinder123!\"}"); [ -n "$t" ] || t=$(tok register "{\"email\":\"$e\",\"password\":\"DemoTFinder123!\",\"nombre\":\"$n\"}"); printf '%s' "$t"; }
+cuenta() { docker compose exec -T postgres psql -U tfinder -d mesas_db -tAc "select id||'  '||email from usuarios where email='$1'"; }
+curl -s -w " [%{http_code}]\n" http://127.0.0.1:8001/ready http://127.0.0.1:8002/ready http://127.0.0.1:8003/ready http://127.0.0.1:8004/ready
+curl -s -o /dev/null -w "  frontend :5173 -> HTTP=%{http_code} bytes=%{size_download}\n" http://localhost:5173/
+curl -s -o /dev/null -w "  proxy    :5173/mesas-api -> HTTP=%{http_code} type=%{content_type}\n" http://localhost:5173/mesas-api/api/v1/mesas
+TOKEN=$(tok login '{"email":"gm@tfinder.dev","password":"DemoTFinder123!"}'); TOKEN_ADMIN=$(tok login '{"email":"admin@tfinder.dev","password":"DemoTFinder123!"}'); TOKEN_A=$(alta racedemo_a@tfinder.dev "Race A"); TOKEN_B=$(alta racedemo_b@tfinder.dev "Race B"); echo "  TOKEN=${#TOKEN} TOKEN_ADMIN=${#TOKEN_ADMIN} TOKEN_A=${#TOKEN_A} TOKEN_B=${#TOKEN_B}"
+curl -s localhost:8001/api/v1/auth/me -H "Authorization: Bearer $TOKEN"; echo
+curl -s -o /dev/null -w "  8002 -> %{http_code}\n" localhost:8002/api/v1/builds/1 -H "Authorization: Bearer $TOKEN"
+curl -s -o /dev/null -w "  8003 -> %{http_code}\n" localhost:8003/api/v1/feed -H "Authorization: Bearer $TOKEN"
+curl -s -o /dev/null -w "  8004 -> %{http_code}\n" localhost:8004/api/v1/notificaciones -H "Authorization: Bearer $TOKEN"
+#  lo que tiene que verse: los cuatro 200, :5173 en 200, y TOKEN=243 TOKEN_ADMIN=251 TOKEN_A=260 TOKEN_B=260
+
+# --- BLOQUE 2: estado de las mesas y topologia (20 s) ---------------------------
+curl -s localhost:8001/api/v1/mesas | jq -r '.[] | "  mesa \(.id): \(.nombre)  \(.jugadores_actuales)/\(.jugadores_max)  \(.estado)"'
+printf "  mesa 1 -> "; curl -s localhost:8001/api/v1/mesas/1/miembros -H "Authorization: Bearer $TOKEN" | jq -r '[.miembros[].email] | join(", ")'
+printf "  mesa 2 -> "; curl -s localhost:8001/api/v1/mesas/2/miembros -H "Authorization: Bearer $TOKEN" | jq -r '[.miembros[].email] | join(", ")'
+cuenta jugador3@tfinder.dev; cuenta gm@tfinder.dev
+docker compose exec -T rabbitmq rabbitmqctl list_queues -p / name durable messages_ready consumers 2>/dev/null | grep -vE 'Timeout|Listing queues|^$'
+docker compose exec -T rabbitmq rabbitmqctl list_bindings -p / source_name destination_name routing_key 2>/dev/null | grep -E '^tfinder'
+#  lo que tiene que verse: mesa 1 en 2/4, mesa 2 en 3/4, jugador3@=5, gm@=2, dlq.general con 0 consumidores
+
+# --- BLOQUE 3: checklist antes de hablar (30 s) ---------------------------------
+curl -s "localhost:8004/api/v1/dlq?limite=1" -H "Authorization: Bearer $TOKEN_ADMIN"; echo
+curl -s -o /dev/null -w "  token -> %{http_code}\n" localhost:8001/api/v1/auth/me -H "Authorization: Bearer $TOKEN"
+curl -s -o /dev/null -w "  frontend -> %{http_code}\n" http://localhost:5173/
+#  la cola de fallidos tiene que dar []
+
+# --- SLIDE 8: las cuatro bases (15 s) -------------------------------------------
+docker compose exec -T postgres psql -U tfinder -d postgres -c "\l" | grep -E " (mesas|builds|feed|notif)_db " | awk '{print $1}'
+#  builds_db / feed_db / mesas_db / notif_db.  El -d postgres es obligatorio.
+
+# --- SLIDE 9: las dos barreras de concurrencia (45 s) ----------------------------
+curl -s localhost:8001/api/v1/mesas/2 | jq -r '"  antes: \(.nombre) \(.jugadores_actuales)/\(.jugadores_max)"'
+curl -s -o /tmp/a.json -w '%{http_code}' -X POST localhost:8001/api/v1/mesas/2/solicitudes -H "Authorization: Bearer $TOKEN_A" -H "Idempotency-Key: keyA" -H 'Content-Type: application/json' -d '{}' > /tmp/a.code & curl -s -o /tmp/b.json -w '%{http_code}' -X POST localhost:8001/api/v1/mesas/2/solicitudes -H "Authorization: Bearer $TOKEN_B" -H "Idempotency-Key: keyB" -H 'Content-Type: application/json' -d '{}' > /tmp/b.code & wait
+echo "  A -> HTTP $(cat /tmp/a.code): $(jq -c . /tmp/a.json)"; echo "  B -> HTTP $(cat /tmp/b.code): $(jq -c . /tmp/b.json)"; curl -s localhost:8001/api/v1/mesas/2 | jq -r '"  despues: \(.jugadores_actuales)/\(.jugadores_max)"'
+#  --> un 201 y un 409, mesa en 4/4. CUAL GANA ES ALEATORIO. El 409 es el lock de Redis.
+curl -s -w "  [%{http_code}]\n" -X POST localhost:8001/api/v1/mesas/2/solicitudes -H "Authorization: Bearer $TOKEN" -H "Idempotency-Key: en-serie-$(date +%s)" -H 'Content-Type: application/json' -d '{}'
+#  --> {"error":{"codigo":409,"mensaje":"Cupo agotado: no quedan vacantes"}}  <- barrera 2, PostgreSQL
+echo -n "  reservas colgadas: "; docker compose exec -T redis redis-cli --scan --pattern 'reserva:*' | tr '\n' ' '; echo "(vacio = liberada)"
+
+# --- SLIDE 10: invalidacion explicita del cache (25 s) ---------------------------
+docker compose exec -T redis redis-cli DEL cache:mesas:list > /dev/null; curl -s -o /dev/null localhost:8001/api/v1/mesas; docker compose exec -T redis redis-cli --scan --pattern 'cache:*'; docker compose exec -T redis redis-cli TTL cache:mesas:list
+#  --> cache:mesas:list   y   60
+curl -s -o /dev/null -X POST localhost:8001/api/v1/mesas -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"nombre":"Mesa Demo Para Invalidar","sistema":"PF1e","jugadores_max":4}'
+echo -n "  cache tras escribir: "; docker compose exec -T redis redis-cli --scan --pattern 'cache:*' | tr '\n' ' '; echo "(vacio = se borro)"
+
+# --- SLIDE 11: topologia (20 s) --------------------------------------------------
+docker compose exec -T rabbitmq rabbitmqctl list_queues -p / name durable messages_ready consumers 2>/dev/null | grep -vE 'Timeout|Listing queues|^$'
+docker compose exec -T rabbitmq rabbitmqctl list_bindings -p / source_name destination_name routing_key 2>/dev/null | grep -E '^tfinder'
+#  tres colas con 1 consumidor cada una, y dlq.general con 0
+
+# --- SLIDE 11: PDF asincrono de punta a punta (45 s) -----------------------------
+DOC=$(curl -s -X POST localhost:8002/api/v1/builds/1/pdf -H "Authorization: Bearer $TOKEN" | jq -r '.documento_id // ("ERROR: " + (.error.mensaje // "?"))'); echo "  documento_id=$DOC"; sleep 2
+curl -s "localhost:8004/api/v1/pdf/$DOC/estado" -H "Authorization: Bearer $TOKEN"; echo
+curl -s -o doc.pdf -w "  HTTP=%{http_code} type=%{content_type} bytes=%{size_download}\n" "localhost:8004/api/v1/pdf/$DOC" -H "Authorization: Bearer $TOKEN"; file doc.pdf
+#  Si el estado todavia no es "listo", repetir la linea anterior hasta que lo sea.
+#  --> HTTP=200 type=application/pdf bytes=1257 / PDF document, 1 page(s)
+
+# --- SLIDE 12: modo degradado (25 s) ---------------------------------------------
+docker compose pause redis > /dev/null 2>&1; curl -s -w "  [%{http_code}]\n" localhost:8004/ready; curl -s -w "  [%{http_code}]\n" localhost:8004/live; docker compose unpause redis > /dev/null 2>&1
+#  --> {"estado":"degradado",...,"redis":false,...}  [503]  y  {"estado":"vivo"}  [200]
+#  El unpause va en la MISMA linea: si se olvida, todo lo que sigue da 401.
+
+# --- SLIDE 12: correlacion de punta a punta (30 s) -------------------------------
+CID="demo-corr-$(date +%H%M%S)"; curl -s -o /dev/null -w "  solicitud -> %{http_code}\n" -X POST localhost:8001/api/v1/mesas/3/solicitudes -H "Authorization: Bearer $TOKEN" -H "X-Correlation-Id: $CID" -H "Idempotency-Key: k-$CID" -H 'Content-Type: application/json' -d '{}'
+docker compose logs mesas-api --no-log-prefix 2>/dev/null | grep "$CID" | tail -2
+sleep 2; curl -s "localhost:8004/api/v1/event-log?correlation_id=$CID" -H "Authorization: Bearer $TOKEN_ADMIN" | jq -c .
+#  Usa la MESA 3 para no robarle el cupo a la slide 16.
+
+# --- SLIDE 13: rutas y vistas (10 s) ---------------------------------------------
+printf "  rutas:  "; grep -cE "^\s+\{ path: '" tfinder-vue/src/router/index.js; printf "  vistas: "; find tfinder-vue/src/views -name '*.vue' | wc -l
+
+# --- SLIDE 14: el mismo sobre de error en los cuatro servicios (30 s) -----------
+curl -s -w " [%{http_code}]\n" localhost:8001/api/v1/no-existe localhost:8002/api/v1/no-existe localhost:8003/api/v1/no-existe localhost:8004/api/v1/no-existe
+#  --> los cuatro: {"error": {"codigo": 404, "mensaje": "Recurso no encontrado"}}  [404]
+curl -s -w "  [%{http_code}]\n" localhost:8001/api/v1/mesas/99999 -H "Authorization: Bearer $TOKEN"
+#  --> {"error":{"codigo":404,"mensaje":"Mesa 99999 no encontrada"}}
+
+# --- SLIDE 15: el replay de idempotencia (35 s) ---------------------------------
+KEY="idem-demo-$(date +%s)"; echo "  Idempotency-Key=$KEY"
+curl -s -w "  [%{http_code}]\n" -X POST localhost:8001/api/v1/mesas/3/solicitudes -H "Authorization: Bearer $TOKEN" -H "Idempotency-Key: $KEY" -H 'Content-Type: application/json' -d '{}'
+curl -s -w "  [%{http_code}]\n" -X POST localhost:8001/api/v1/mesas/3/solicitudes -H "Authorization: Bearer $TOKEN" -H "Idempotency-Key: $KEY" -H 'Content-Type: application/json' -d '{}'
+curl -s -w "  [%{http_code}]\n" -X POST localhost:8001/api/v1/mesas/3/solicitudes -H "Authorization: Bearer $TOKEN" -H "Idempotency-Key: ${KEY}-bis" -H 'Content-Type: application/json' -d '{}'
+#  --> la 1 y la 2 devuelven el MISMO id y la MISMA fecha. La 3 crea una fila nueva.
+docker compose exec -T postgres psql -U tfinder -d mesas_db -c "SELECT id, mesa_id, usuario_id, estado, idem_key FROM solicitudes_uniones ORDER BY id DESC LIMIT 3;"
+echo -n "  TTL de la clave = "; docker compose exec -T redis redis-cli TTL "idem:solicitud:$KEY"
+
+# --- SLIDE 16 paso 1 y 2: el listado y el detalle (1:50 en total) ---------------
+curl -s localhost:8001/api/v1/mesas | jq -r '.[] | select(.estado=="abierta" and .jugadores_actuales < .jugadores_max) | "  \(.id)  \(.nombre)  \(.jugadores_actuales)/\(.jugadores_max)  \(.sistema)"'
+curl -s localhost:8001/api/v1/mesas/1 | jq -c '{id,nombre,jugadores_actuales,jugadores_max,estado}'
+#  El filtro es del CLIENTE: GET /mesas no acepta parametros de consulta.
+
+# --- SLIDE 16 paso 3 y 4: unirse y ver el contador ------------------------------
+TOKEN_J3=$(tok login '{"email":"jugador3@tfinder.dev","password":"DemoTFinder123!"}')
+curl -s -w "  [%{http_code}]\n" -X POST localhost:8001/api/v1/mesas/1/solicitudes -H "Authorization: Bearer $TOKEN_J3" -H "Idempotency-Key: guia-$(date +%s)" -H 'Content-Type: application/json' -d '{}'
+curl -s localhost:8001/api/v1/mesas/1 | jq -r '"  \(.nombre): \(.jugadores_actuales)/\(.jugadores_max)"'; docker compose exec -T postgres psql -U tfinder -d mesas_db -c "SELECT id, nombre, jugadores_actuales, jugadores_max FROM mesas ORDER BY id;"
+#  --> Mesa Demo Abierta: 3/4.  Se consulta el DETALLE, no el listado: el listado va cacheado.
+#  OJO: una llamada sola. Repetirla sumaria otro miembro y moveria el contador.
+
+# --- SLIDE 16 paso 5: la notificacion por SSE -----------------------------------
+(timeout 8 curl -sN localhost:8004/api/v1/notificaciones/stream -H "Authorization: Bearer $TOKEN_J3" > /tmp/sse.txt 2>&1 &); sleep 1
+curl -s -o /dev/null -w "  disparo -> %{http_code}\n" -X POST localhost:8001/api/v1/mesas/3/solicitudes -H "Authorization: Bearer $TOKEN_J3" -H "Idempotency-Key: sse-$(date +%s)" -H 'Content-Type: application/json' -d '{}'; sleep 4
+echo "  -- llego por SSE --"; cat /tmp/sse.txt; echo "  -- quedo guardado --"; curl -s "localhost:8004/api/v1/notificaciones?solo_no_leidas=true" -H "Authorization: Bearer $TOKEN_J3" | jq -c '.[0]'
+
+# --- SLIDE 16 paso 6: matchmaking, el TTL de Redis contandose -------------------
+MM=$(curl -s -X POST localhost:8001/api/v1/matchmaking/1/abrir -H "Authorization: Bearer $TOKEN"); echo "  $MM" | jq -c .; MMID=$(echo "$MM" | jq -r .matchmaking_id)
+curl -s "localhost:8001/api/v1/matchmaking/$MMID/estado"; echo; sleep 2; curl -s "localhost:8001/api/v1/matchmaking/$MMID/estado"; echo; sleep 2; curl -s "localhost:8001/api/v1/matchmaking/$MMID/estado"; echo
+curl -s -w "  [%{http_code}]\n" -X POST localhost:8001/api/v1/matchmaking/1/abrir -H "Authorization: Bearer $TOKEN_J3"
+#  --> "expira_en":120 y ttl_restante bajando 120 -> 118 -> 116. Con un rol que no es gm: 403.
+
+# --- SLIDE 16 paso 7: /encuentros NO toca el backend ----------------------------
+grep -c "@/api" tfinder-vue/src/views/EncuentrosView.vue
+grep -c "encuentros" tfinder-vue/src/api/endpoints.js
+grep -n "Math.random\|BESTIARIO" tfinder-vue/src/views/EncuentrosView.vue | head -3
+#  --> 0 / 0 / Math.random local. El calculo es del cliente.
+
+# --- SLIDE 16 paso 8: /admin/estadisticas son datos de demostracion --------------
+sed -n '1,13p' tfinder-vue/src/services/admin.js
+echo -n "  llamadas a la API en vistas admin: "; grep -rl "@/api" tfinder-vue/src/views/ | grep -c admin
+curl -s -w "  [%{http_code}]\n" localhost:8001/api/v1/auth/admin-only -H "Authorization: Bearer $TOKEN_ADMIN"
+curl -s -w "  [%{http_code}]\n" localhost:8001/api/v1/auth/admin-only -H "Authorization: Bearer $TOKEN"
+curl -s -w "  [%{http_code}]\n" "localhost:8004/api/v1/dlq?limite=1" -H "Authorization: Bearer $TOKEN_ADMIN"
+#  --> 10 JSON estaticos y 350 ms simulados, 0 llamadas a la API.
+#  --> {"ok":true} [200] / 403 Rol insuficiente / [] [200]
+
+# --- SLIDE 17: gating (60 s) -----------------------------------------------------
+node -e "const f=require('fs').readFileSync('tfinder-vue/src/config/features.js','utf8');const on=[...f.matchAll(/available: true/g)].length,off=[...f.matchAll(/available: false/g)].length;console.log('  features:',on+off,'| activas:',on,'| comingSoon:',off);"
+(cd tfinder-vue && npx vitest run tests/unit/feature-gating.spec.js --reporter=verbose)
+#  --> features: 20 | activas: 7 | comingSoon: 13
+#  --> 6 passed. La tercera linea: "permite encuentros, que no necesita backend".
+
+# --- SLIDE 18: testing (25 s) ---------------------------------------------------
+(cd tfinder-vue && npm run test:unit 2>&1 | tail -4)
+(cd tfinder-vue && npm run test:integration 2>&1 | tail -3)
+venv/bin/python -m pytest -m unit -q 2>&1 | tail -1
+venv/bin/python -m pytest -m integration -q 2>&1 | tail -1
+#  --> 15+7 = 22 frontend   |   50+80 = 130 backend   |   TOTAL 152
+
+# --- DEMO EXTRA: el QR de un solo uso (si sobra tiempo) -------------------------
+QR=$(curl -s -X POST localhost:8001/api/v1/sesiones/1/qr -H "Authorization: Bearer $TOKEN" | jq -r .qr_data)
+curl -s -w " [%{http_code}]\n" -X POST localhost:8001/api/v1/sesiones/1/qr/validar -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "{\"usuario_id\": 2, \"qr_data\": \"$QR\"}"
+curl -s -w " [%{http_code}]\n" -X POST localhost:8001/api/v1/sesiones/1/qr/validar -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "{\"usuario_id\": 2, \"qr_data\": \"$QR\"}"
+#  --> {"asistencia":"registrada"} [200]  y  {"error":{"codigo":409,"mensaje":"QR vencido o ya utilizado"}} [409]
+#  El usuario_id del cuerpo tiene que ser el del EMISOR. Con gm@ es el 2.
+
+# --- SI ALGO FALLA: el diagnostico completo esta en el script ---------------------
+#  bash scripts/demo/99-diagnostico.sh
+
+# --- LIMPIEZA (opcional) ---------------------------------------------------------
+rm -f doc.pdf
+#  Para empezar de cero:  docker compose down -v && docker compose up -d --build  y repetir el BLOQUE 1.
+# ===============================================================================
