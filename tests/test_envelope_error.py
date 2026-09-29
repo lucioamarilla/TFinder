@@ -91,12 +91,17 @@ def test_404_de_ruta_inexistente_usa_el_envelope_canonico(servicio):
 
 
 def test_no_se_altera_una_respuesta_correcta():
-    """El middleware solo toca errores: un 200 debe pasar intacto."""
+    """El middleware solo toca errores: un 200 debe pasar intacto.
+
+    Usa /live y no /health a proposito: /live responde sin tocar PostgreSQL,
+    asi que este test unitario no necesita la base. /health hace SELECT 1 y
+    pertenece a la suite de integracion.
+    """
     app = importlib.import_module("mesas_api.main").app
     client = TestClient(app, raise_server_exceptions=False)
-    r = client.get("/health")
+    r = client.get("/live")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok", "servicio": "mesas-api"}
+    assert r.json() == {"estado": "vivo"}
 
 
 def test_el_middleware_no_rompe_el_streaming():

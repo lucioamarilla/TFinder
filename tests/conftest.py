@@ -39,6 +39,7 @@ import json
 import urllib.error
 import urllib.request
 import uuid
+import warnings
 
 import pytest
 from fastapi.testclient import TestClient
@@ -131,7 +132,7 @@ def vhost_de_pruebas():
     """
     base = _mgmt_disponible()
     if base is None:
-        pytest.warn(
+        warnings.warn(
             "RabbitMQ management API no disponible: los tests usan el vhost '/' "
             "y pueden dejar residuo en dlq.general del ambiente de desarrollo",
             RuntimeWarning,
