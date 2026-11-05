@@ -2,6 +2,7 @@ import json
 import os
 import smtplib
 import socket
+import time
 import urllib.error
 import urllib.request
 from email.mime.text import MIMEText
@@ -11,7 +12,7 @@ from notif_api.app.models.notif import (
     registrar_email,
 )
 
-SMTP_TIMEOUT = int(os.getenv("SMTP_TIMEOUT", "3"))
+SMTP_TIMEOUT = int(os.getenv("SMTP_TIMEOUT", "10"))
 MESAS_URL = os.getenv("MESAS_URL", "http://localhost:8001")
 MESAS_EMAIL = os.getenv("MESAS_EMAIL", "email_svc@tfinder.dev")
 MESAS_PASSWORD = os.getenv("MESAS_PASSWORD", "cambiar-svc-password")
@@ -26,27 +27,41 @@ def _config():
         os.getenv("MAIL_FROM", "noreply@tfinder.local"),
         os.getenv("SMTP_USER", ""),
         os.getenv("SMTP_PASSWORD", ""),
-        os.getenv("SMTP_USE_TLS", "false").lower() in {"1", "true", "yes"},
+        os.getenv("SMTP_USE_TLS", "true").lower() in {"1", "true", "yes"},
+        os.getenv("SMTP_USE_SSL", "false").lower() in {"1", "true", "yes"},
     )
 
 
+def _abrir_conexion(host, port, use_ssl, timeout):
+    if use_ssl or port == 465:
+        return smtplib.SMTP_SSL(host, port, timeout=timeout)
+    return smtplib.SMTP(host, port, timeout=timeout)
+
+
 def _enviar_por_smtp(destino: str, asunto: str, cuerpo: str) -> str | None:
-    """Envía por SMTP; devuelve None si OK o el error como string si falló."""
-    host, port, desde, user, password, use_tls = _config()
+    """Envía por SMTP (STARTTLS/SSL) con reintentos; devuelve None si OK o el error."""
+    host, port, desde, user, password, use_tls, use_ssl = _config()
     msg = MIMEText(cuerpo, "plain", "utf-8")
     msg["Subject"] = asunto
     msg["From"] = desde
     msg["To"] = destino
-    try:
-        with smtplib.SMTP(host, port, timeout=SMTP_TIMEOUT) as conexion:
-            if use_tls:
-                conexion.starttls()
-            if user:
-                conexion.login(user, password)
-            conexion.sendmail(desde, [destino], msg.as_string())
-        return None
-    except (smtplib.SMTPException, socket.timeout, TimeoutError, OSError) as exc:
-        return str(exc)
+    ultimo_error = None
+    for intento in range(3):
+        try:
+            with _abrir_conexion(host, port, use_ssl, SMTP_TIMEOUT) as conexion:
+                conexion.ehlo()
+                if (use_tls or port in (587, 25)) and not use_ssl:
+                    conexion.starttls()
+                    conexion.ehlo()
+                if user:
+                    conexion.login(user, password)
+                conexion.sendmail(desde, [destino], msg.as_string())
+            return None
+        except (smtplib.SMTPException, socket.timeout, TimeoutError, OSError) as exc:
+            ultimo_error = str(exc)
+            if intento < 2:
+                time.sleep(2 ** intento)
+    return ultimo_error
 
 
 def enviar_email(destino: str, asunto: str, cuerpo: str, registrar: bool = True) -> bool:
