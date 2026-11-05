@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from fastapi import HTTPException
+
 from mesas_api.app.controllers.mesas import obtener_mesa_controller
 from mesas_api.app.models.sesiones import (
     cerrar_sesion_db,
@@ -45,9 +47,23 @@ def emitir_qr(sesion_id: int, usuario_id: int):
     return generar_sesion_qr(sesion_id, usuario_id)
 
 
-def validar_qr(sesion_id: int, body: QrValidate):
+def validar_qr(sesion_id: int, body: QrValidate, usuario: dict | None = None):
     if obtener_sesion(sesion_id) is None:
         raise SesionNotFoundError(f"Sesión {sesion_id} no encontrada")
+    if usuario is not None:
+        fila = obtener_sesion(sesion_id)
+        from mesas_api.app.models.mesa import obtener_mesa_por_id
+
+        mesa = obtener_mesa_por_id(fila["mesa_id"])
+        if mesa is None:
+            raise SesionNotFoundError(f"La mesa de la sesión no existe")
+        gmid = mesa.get("gm_id")
+        # ÚNICAMENTE el GM propietario registra asistencia (incluso admin fuera).
+        if gmid is None or int(usuario["sub"]) != gmid:
+            raise HTTPException(
+                status_code=403,
+                detail="No tienes permisos para registrar asistencia de esta mesa (solo su GM).",
+            )
     try:
         validar_sesion_qr(sesion_id, body.usuario_id, body.qr_data)
     except _Conflict:

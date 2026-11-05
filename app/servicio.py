@@ -16,13 +16,19 @@ from threading import Thread
 from types import ModuleType
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
+from fastapi.openapi.utils import get_openapi
 
+from app.infra import metrics
 from app.infra.errors import registrar_manejadores
 from app.infra.logge import logger
 from app.infra.ready import evaluar_ready
 from app.middleware.error_envelope import ErrorEnvelopeMiddleware
 from app.middleware.log_context import CorrelationMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
+
+import os
+from app.infra import metrics
 
 
 def crear_app(
@@ -54,6 +60,41 @@ def crear_app(
     app = FastAPI(title=titulo, version=version, lifespan=lifespan)
     app.add_middleware(ErrorEnvelopeMiddleware)
     app.add_middleware(CorrelationMiddleware)
+    app.add_middleware(RateLimitMiddleware, limite=int(os.getenv("RATE_LIMIT_PER_MIN", "100")))
+
+    @app.middleware("http")
+    async def _medir(request, call_next):
+        respuesta = await call_next(request)
+        metrics.contar(servicio, respuesta.status_code)
+        return respuesta
+
+    @app.get("/metrics")
+    def metrics_endpoint():
+        return Response(
+            content=metrics.exposicion(servicio),
+            media_type="text/plain; version=0.0.4; charset=utf-8",
+        )
+
+    def _openapi_con_bearer():
+        """OpenAPI con securitySchemes (BearerAuth) — audit 'Que le falta' 7.3."""
+        documento = get_openapi(
+            title=app.title,
+            version=app.version,
+            openapi_version=app.openapi_version,
+            description=app.description,
+            routes=app.routes,
+        )
+        documento.setdefault("components", {}).setdefault("securitySchemes", {})
+        documento["components"]["securitySchemes"]["BearerAuth"] = {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "Access token JWT emitido por mesas-api (POST /api/v1/auth/login).",
+        }
+        return documento
+
+    app.openapi = _openapi_con_bearer
+
     registrar_manejadores(app, servicio, adicionales=adicionales)
     for router in routers:
         app.include_router(router)

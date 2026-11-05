@@ -50,6 +50,9 @@ def _asegurar_propietario(usuario, mesa):
 
 
 def listar_mesas_controller(estado=None, sistema=None, tono=None, orden="id", page=1, limit=20):
+    """RF-04/13. Con Redis sano usa caché (X-Cache: HIT); si falla, BD (MISS)."""
+    import json as _json
+
     cacheada = (
         estado is None
         and sistema is None
@@ -58,18 +61,30 @@ def listar_mesas_controller(estado=None, sistema=None, tono=None, orden="id", pa
         and page == 1
         and limit == 20
     )
+    tier = "MISS"
+    cache = None
     if cacheada:
-        cache = obtener_listado_cachead()
-        if cache is not None:
-            return cache
+        try:
+            cache = obtener_listado_cachead()
+            if cache is not None:
+                tier = "HIT"
+        except Exception:
+            # CA-51: Redis caído → modo degradado: se responde desde la BD.
+            cache = None
+            tier = "MISS"
+    if cache is not None:
+        return cache, tier
     listado = [
         MesaOut(**fila).model_dump()
         for fila in (_formatear_fila(f) for f in listar_mesas(estado, sistema, tono, orden, page, limit))
         if fila
     ]
     if cacheada:
-        guardar_listado(listado)
-    return listado
+        try:
+            guardar_listado(listado)
+        except Exception:
+            pass
+    return listado, tier
 
 
 def obtener_mesa_controller(mesa_id):

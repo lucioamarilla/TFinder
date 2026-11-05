@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from mesas_api.app.controllers import matchmaking_controller
-from mesas_api.app.middleware.auth import requerir_roles
+from mesas_api.app.middleware.auth import requerir_roles, usuario_actual
 
 router = APIRouter(prefix="/api/v1/matchmaking", tags=["matchmaking"])
 
@@ -12,5 +12,5 @@ def abrir_llamado(mesa_id: int, _=Depends(requerir_roles("gm"))):
 
 
 @router.get("/{mm_id}/estado")
-def estado_llamado(mm_id: int):
+def estado_llamado(mm_id: int, _=Depends(usuario_actual)):
     return matchmaking_controller.estado(mm_id)

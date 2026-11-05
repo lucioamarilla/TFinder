@@ -318,3 +318,13 @@ def crear_sesion(mesa_id):
             (mesa_id,),
         ).fetchone()
     return fila["id"]
+
+@pytest.fixture(autouse=True)
+def tasa_atope_en_pruebas(request):
+    """RNF-22 en producción (100/min); en pruebas el tope se levanta salvo que
+    el test lo baje explícitamente (p. ej. test_infra_operativa fuerza 429)."""
+    import mesas_api.main as mesas_main
+
+    mesas_main.app.state.rate_limit_min = 1_000_000
+    yield
+    mesas_main.app.state.rate_limit_min = 100

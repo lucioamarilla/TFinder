@@ -1,6 +1,7 @@
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, Request, Response
+from starlette.responses import JSONResponse
 
 from mesas_api.app.controllers.mesas import (
     actualizar_mesa_controller,
@@ -59,7 +60,8 @@ def listar_mesas(
     limit: int = Query(default=20, ge=1, le=50),
 ):
     """Listado con filtros RF-04/13: estado, sistema, tono, orden y pagina."""
-    return listar_mesas_controller(estado, sistema, tono, orden, page, limit)
+    listado, tier = listar_mesas_controller(estado, sistema, tono, orden, page, limit)
+    return JSONResponse(content=listado, headers={"X-Cache": tier})
 
 
 @router.get("/{mesa_id}", response_model=MesaOut)

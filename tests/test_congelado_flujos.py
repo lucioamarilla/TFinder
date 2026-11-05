@@ -182,10 +182,16 @@ def test_matchmaking_llamado_congelado(client, token_gm):
     assert cuerpo["expira_en"] == 120
     assert cuerpo["matchmaking_id"] == cuerpo["id"]
 
-    estado = client.get(f"/api/v1/matchmaking/{cuerpo['id']}/estado")
+    estado = client.get(
+        f"/api/v1/matchmaking/{cuerpo['id']}/estado",
+        headers=auth,  # P1.9: el estado exige sesión (no es público)
+    )
     assert estado.status_code == 200
     assert estado.json()["estado"] == "abierto"
     assert 0 < estado.json()["ttl_restante"] <= 120
+
+    anonimo = client.get(f"/api/v1/matchmaking/{cuerpo['id']}/estado")
+    assert anonimo.status_code == 401
 
     denegado = client.post(
         f"/api/v1/matchmaking/{mesa_id}/abrir",

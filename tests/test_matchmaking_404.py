@@ -58,6 +58,9 @@ def test_mesa_existente_sigue_abriendo_200(client, token_gm):
     assert cuerpo["mesa_id"] == mesa_id
 
     # el TTL vive en el endpoint de estado, no en la respuesta de abrir
-    estado = client.get(f"/api/v1/matchmaking/{cuerpo['id']}/estado")
+    estado = client.get(
+        f"/api/v1/matchmaking/{cuerpo['id']}/estado",
+        headers={"Authorization": f"Bearer {token_gm}"},
+    )
     assert estado.status_code == 200
     assert estado.json()["ttl_restante"] > 0

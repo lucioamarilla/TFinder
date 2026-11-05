@@ -16,6 +16,7 @@ def emitir(sesion_id: int, usuario: dict = Depends(usuario_actual)):
 def validar(
     sesion_id: int,
     body: QrValidate,
-    _=Depends(requerir_roles("gm")),
+    usuario: dict = Depends(requerir_roles("gm")),
 ):
-    return validar_qr(sesion_id, body)
+    """Solo el GM propietario de la mesa registra asistencia (VAL-23/RN-02)."""
+    return validar_qr(sesion_id, body, usuario)
