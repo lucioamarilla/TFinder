@@ -25,14 +25,17 @@ def _serializar(fila):
     return BuildOut(**f)
 
 
-def listar_builds(mesa_id=None):
+def listar_builds(mesa_id=None, tipo=None):
     with get_connection() as conn:
+        conditions, params = [], []
         if mesa_id is not None:
-            filas = conn.execute(
-                "SELECT * FROM builds WHERE mesa_id = %s ORDER BY id", (mesa_id,)
-            ).fetchall()
-        else:
-            filas = conn.execute("SELECT * FROM builds ORDER BY id").fetchall()
+            conditions.append("mesa_id = %s")
+            params.append(mesa_id)
+        if tipo:
+            conditions.append("tipo = %s")
+            params.append(tipo)
+        where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        filas = conn.execute(f"SELECT * FROM builds {where} ORDER BY id", params).fetchall()
     return [_serializar(f) for f in filas]
 
 
@@ -87,28 +90,53 @@ def _campos_de_ficha(datos):
     }
 
 
+TIPOS_VALIDOS = {"personaje", "objeto", "lugar", "criatura", "nota"}
+
+
 def _validar(datos: dict, requerir_clase: bool = False):
     """RF-19 / VAL-44 / VAL-45. En updates solo valida lo que viene."""
-    clase = datos.get("clase")
-    if clase is not None:
-        if not str(clase).strip():
+    tipo = datos.get("tipo")
+    tipo_normalizado = (str(tipo).strip().lower() if tipo is not None else "personaje")
+    if tipo is not None:
+        if tipo_normalizado not in TIPOS_VALIDOS:
+            raise ValorInvalidoError("El tipo de build debe ser personaje, objeto, lugar, criatura o nota.")
+        datos["tipo"] = tipo_normalizado
+
+    # Validación por tipo: personaje mantiene las reglas VAL-44/45; el resto
+    # solo exige nombre/título y detalle cuando corresponda.
+    if tipo_normalizado == "personaje":
+        clase = datos.get("clase")
+        if clase is not None:
+            if not str(clase).strip():
+                raise ValorInvalidoError("La clase del personaje es obligatoria.")
+        elif requerir_clase:
             raise ValorInvalidoError("La clase del personaje es obligatoria.")
-    elif requerir_clase:
-        raise ValorInvalidoError("La clase del personaje es obligatoria.")
-    nivel = datos.get("nivel")
-    if nivel is not None and (not isinstance(nivel, int) or nivel < 1 or nivel > 20):
-        raise ValorInvalidoError("El nivel debe estar entre 1 y 20.")
-    atributos = datos.get("atributos")
-    ficha_val = datos.get("ficha")
-    if isinstance(ficha_val, dict) and ficha_val.get("atributos"):
-        atributos = ficha_val["atributos"]
-    if isinstance(atributos, dict):
-        for clave, nombre in _VALIDACION_NUMERICA.items():
-            valor = atributos.get(clave)
-            if valor is None:
-                continue
-            if not isinstance(valor, int) or not 3 <= valor <= 18:
-                raise ValorInvalidoError(f"El atributo {nombre} debe estar entre 3 y 18.")
+        nivel = datos.get("nivel")
+        if nivel is not None and (not isinstance(nivel, int) or nivel < 1 or nivel > 20):
+            raise ValorInvalidoError("El nivel debe estar entre 1 y 20.")
+        atributos = datos.get("atributos")
+        ficha_val = datos.get("ficha")
+        if isinstance(ficha_val, dict) and ficha_val.get("atributos"):
+            atributos = ficha_val["atributos"]
+        if isinstance(atributos, dict):
+            for clave, nombre in _VALIDACION_NUMERICA.items():
+                valor = atributos.get(clave)
+                if valor is None:
+                    continue
+                if not isinstance(valor, int) or not 3 <= valor <= 18:
+                    raise ValorInvalidoError(f"El atributo {nombre} debe estar entre 3 y 18.")
+    else:
+        nombre = datos.get("nombre") or datos.get("titulo")
+        if requerir_clase and not (isinstance(nombre, str) and nombre.strip()):
+            raise ValorInvalidoError("El nombre de la creación es obligatorio.")
+        if tipo_normalizado == "nota":
+            cuerpo = datos.get("detalle") or (datos.get("ficha") or {}).get("cuerpo")
+            if requerir_clase and not (isinstance(cuerpo, str) and cuerpo.strip()):
+                raise ValorInvalidoError("El cuerpo de la nota es obligatorio.")
+        if tipo_normalizado == "lugar":
+            detalle = datos.get("detalle")
+            if requerir_clase and not (isinstance(detalle, str) and detalle.strip()):
+                raise ValorInvalidoError("La descripción del lugar es obligatoria.")
     return datos
 
 
@@ -126,22 +154,25 @@ def crear_build(usuario, datos, token=None):
     if privacidad not in ("borrador", "publico", "privado"):
         raise ValorInvalidoError("La visibilidad debe ser borrador, publico o privado.")
     ficha = datos.get("atributos") or datos.get("ficha")
+    tipo = datos.get("tipo") or "personaje"
+    persona_default = "Personaje" if tipo == "personaje" else (datos.get("titulo") or "Creación")
     with get_connection() as conn:
         fila = conn.execute(
             """
             INSERT INTO builds (
-                persona, handle, autor, nombre, display, clase, raza, arquetipo,
+                tipo, persona, handle, autor, nombre, display, clase, raza, arquetipo,
                 nivel, rol, alineamiento, privacidad, detalle, ficha, autor_id
             ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s, %s, %s, %s, %s,
                 %s, %s, %s, %s, %s, %s, %s
             ) RETURNING *""",
             (
-                datos.get("persona") or datos.get("titulo") or "Personaje",
-                datos.get("handle") or f"@{ (datos.get('titulo') or 'pj').lower().replace(' ', '_') }",
+                tipo,
+                datos.get("persona") or persona_default,
+                datos.get("handle") or f"@{ (datos.get('titulo') or 'creacion').lower().replace(' ', '_') }",
                 usuario.get("email"),
                 datos.get("nombre") or datos.get("titulo"),
-                datos.get("titulo"),
+                datos.get("titulo") or datos.get("nombre"),
                 (datos.get("clase") or "").strip() or None,
                 datos.get("raza"),
                 datos.get("arquetipo"),
@@ -171,22 +202,24 @@ def actualizar_build(build_id, usuario, datos, token=None):
     _propietario_o_403(usuario, fila)
 
     campos = _campos_de_ficha({**dict(fila), **datos})
+    tipo = datos.get("tipo") or fila.get("tipo") or "personaje"
     historial = list(fila["historial"] or [])
     historial.append(
         {
             "version": len(historial) + 1,
             "at": fila.get("actualizado"),
-            "snapshot": {k: fila.get(k) for k in ("clase", "raza", "arquetipo", "nivel", "rol", "ficha")},
+            "snapshot": {k: fila.get(k) for k in ("tipo", "clase", "raza", "arquetipo", "nivel", "rol", "ficha")},
         }
     )
     with get_connection() as conn, conn.transaction():
         updated = conn.execute(
             """
-            UPDATE builds SET persona = %s, nombre = %s, clase = %s, raza = %s,
+            UPDATE builds SET tipo = %s, persona = %s, nombre = %s, clase = %s, raza = %s,
                 arquetipo = %s, nivel = %s, rol = %s, alineamiento = %s,
                 detalle = %s, ficha = %s, historial = %s, actualizado = to_char(now(), 'YYYY-MM-DD"T"HH24:MI:SS')
             WHERE id = %s RETURNING *""",
             (
+                tipo,
                 campos["persona"], campos["nombre"], campos["clase"], campos["raza"],
                 campos["arquetipo"], campos["nivel"], campos["rol"], campos["alineamiento"],
                 campos["detalle"],
@@ -295,7 +328,7 @@ def asignar_tags(build_id, usuario, nombres, token=None):
     return {"build_id": build_id, "tags": [f["nombre"] for f in filas]}
 
 
-def listar_builds_filtradas(mesa_id=None, autor_id=None, tag=None):
+def listar_builds_filtradas(mesa_id=None, autor_id=None, tag=None, tipo=None):
     """Listado con filtro de visibilidad (RN-11: privado/borrador ajenos no salen)."""
     conditions, params = [], []
     if mesa_id is not None:
@@ -309,6 +342,9 @@ def listar_builds_filtradas(mesa_id=None, autor_id=None, tag=None):
             "b.id IN (SELECT build_id FROM builds_tags WHERE nombre = %s)"
         )
         params.append(tag)
+    if tipo:
+        conditions.append("b.tipo = %s")
+        params.append(tipo)
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     with get_connection() as conn:
         filas = conn.execute(

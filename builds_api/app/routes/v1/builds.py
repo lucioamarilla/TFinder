@@ -37,9 +37,10 @@ def listar_builds_endpoint(
     mesa_id: Optional[int] = Query(default=None, alias="mesa_id"),
     autor_id: Optional[str] = Query(default=None),
     tag: Optional[str] = Query(default=None, max_length=48),
+    tipo: Optional[str] = Query(default=None, max_length=32),
 ):
     """Listado público; oculta 'borrador'/'privado' de otras personas (RN-11)."""
-    listado = listar_builds_filtradas(mesa_id=mesa_id, autor_id=autor_id, tag=tag)
+    listado = listar_builds_filtradas(mesa_id=mesa_id, autor_id=autor_id, tag=tag, tipo=tipo)
     usuario = auth_opcional(request)
     if usuario is None:
         return [b for b in listado if b.privacidad == "publico"]

@@ -7,6 +7,7 @@ class BuildOut(BaseModel):
     id: int
     mesaId: Optional[int] = None
     autorId: Optional[str] = None
+    tipo: Optional[str] = "personaje"
     persona: str
     handle: Optional[str] = None
     autor: Optional[str] = None

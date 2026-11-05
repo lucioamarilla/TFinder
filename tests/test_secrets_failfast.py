@@ -5,8 +5,7 @@ import sys
 
 def test_failfast_con_demo_seed_y_secret_default():
     env = dict(os.environ)
-    env["DEMO_SEED_ENABLED"] = "true"
-    env.setdefault("JWT_SECRET", "dev-secret")
+    env["JWT_SECRET"] = "dev-secret"
     # Forzar que no haya .env interfiriendo: correr en el cwd del proyecto.
     res = subprocess.run(
         [sys.executable, "-c", "import app.infra.token"],

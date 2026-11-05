@@ -12,11 +12,10 @@ from mesas_api.app.db import get_connection
 _SECRET = os.getenv("JWT_SECRET", "dev-secret")
 _EXP_MIN = int(os.getenv("JWT_EXP_MIN", "1440"))  # 24 h
 
-_DEMO_SEED_ENABLED = os.getenv("DEMO_SEED_ENABLED", "false").lower() in {"1", "true", "yes"}
-if _SECRET == "dev-secret" and _DEMO_SEED_ENABLED:
+if _SECRET == "dev-secret":
     raise RuntimeError(
-        "JWT_SECRET no puede ser el valor por defecto ('dev-secret') cuando "
-        "DEMO_SEED_ENABLED está activo. Configurá JWT_SECRET en .env."
+        "JWT_SECRET no puede ser el valor por defecto ('dev-secret'). "
+        "Configurá JWT_SECRET en .env (generá uno con: openssl rand -hex 32)."
     )
 
 ROL_USUARIO = "usuario"

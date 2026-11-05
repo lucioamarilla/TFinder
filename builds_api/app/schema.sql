@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS builds (
     id                SERIAL      PRIMARY KEY,
     mesa_id           INTEGER,
+    tipo              TEXT        NOT NULL DEFAULT 'personaje',
     persona           TEXT        NOT NULL,
     handle            TEXT,
     autor             TEXT,
@@ -41,3 +42,5 @@ CREATE TABLE IF NOT EXISTS builds_tags (
     nombre   TEXT    NOT NULL REFERENCES tags (nombre) ON DELETE CASCADE,
     PRIMARY KEY (build_id, nombre)
 );
+-- Tipo de creación (personaje, objeto, lugar, criatura, nota).
+ALTER TABLE builds ADD COLUMN IF NOT EXISTS tipo TEXT NOT NULL DEFAULT 'personaje';

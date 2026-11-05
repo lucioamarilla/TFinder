@@ -5,7 +5,7 @@ os.environ.setdefault(
     "postgresql://tfinder:tfinder@localhost:5432/mesas_db_test",
 )
 os.environ.setdefault("REDIS_URL", "redis://localhost:6390/15")
-os.environ.setdefault("JWT_SECRET", "dev-secret")
+os.environ.setdefault("JWT_SECRET", "test-secret-no-prod")
 # Los cuatro servicios deben apuntar a sus bases de test. Sin esto, builds_api y
 # feed_api caen en su default (builds_db / feed_db) y la suite trunca y escribe
 # sobre los datos de desarrollo.

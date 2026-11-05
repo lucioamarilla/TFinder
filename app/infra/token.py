@@ -16,11 +16,10 @@ from app.infra.redis import get_redis
 
 _SECRET = os.getenv("JWT_SECRET", "dev-secret")
 
-_DEMO_SEED_ENABLED = os.getenv("DEMO_SEED_ENABLED", "false").lower() in {"1", "true", "yes"}
-if _SECRET == "dev-secret" and _DEMO_SEED_ENABLED:
+if _SECRET == "dev-secret":
     raise RuntimeError(
-        "JWT_SECRET no puede ser el valor por defecto ('dev-secret') cuando "
-        "DEMO_SEED_ENABLED está activo. Configurá JWT_SECRET en .env."
+        "JWT_SECRET no puede ser el valor por defecto ('dev-secret'). "
+        "Configurá JWT_SECRET en .env (generá uno con: openssl rand -hex 32)."
     )
 
 _IDLE_MIN = int(os.getenv("SESSION_IDLE_MIN", "30"))
