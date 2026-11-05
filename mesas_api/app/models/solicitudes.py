@@ -80,11 +80,12 @@ def existe_solicitud_pendiente(mesa_id: int, usuario_id: int) -> bool:
 
 
 def aceptar_solicitud(solicitud_id: int, mesa_id: int):
-    """Acepta (RF-15/RN-08) en una sola transacción: estado + cupo.
+    """Acepta (RF-15/RN-08) en una sola transacción: estado + cupo + membresía.
 
     La aceptación consume la última vacante atómicamente: si el UPDATE de mesa
     no gana el cupo, la excepción revierte el estado de la solicitud a
-    'pendiente' (postcondición preservada).
+    'pendiente' (postcondición preservada). El aceptado entra a miembros_mesa
+    con rol 'jugador' (principio 2.1: roles contextuales por mesa).
     """
     with get_connection() as conn, conn.transaction():
         cursor = conn.execute(
@@ -103,6 +104,11 @@ def aceptar_solicitud(solicitud_id: int, mesa_id: int):
         )
         if cursor_mesa.fetchone() is None:
             raise CupoAgotadoError("Cupo agotado: no quedan vacantes")
+        conn.execute(
+            "INSERT INTO miembros_mesa (mesa_id, usuario_id, rol)"
+            " VALUES (%s, %s, 'jugador') ON CONFLICT (mesa_id, usuario_id) DO NOTHING",
+            (mesa_id, fila["usuario_id"]),
+        )
         return dict(fila)
 
 
@@ -123,7 +129,8 @@ def expulsar_miembro(mesa_id: int, usuario_id: int):
     """Elimina la membresía aceptada (y cualquier pendiente viva) y libera cupo.
 
     Postcondición: se emite mesa.expulsada, no queda solicitud activa del
-    usuario en esa mesa, y la vacante vuelve (greatest(...,0)).
+    usuario en esa mesa, la fila en miembros_mesa desaparece (rol contextual
+    perdido) y la vacante vuelve (greatest(...,0)).
     """
     with get_connection() as conn, conn.transaction():
         cursor = conn.execute(
@@ -135,6 +142,10 @@ def expulsar_miembro(mesa_id: int, usuario_id: int):
         conn.execute(
             "DELETE FROM solicitudes_uniones"
             " WHERE mesa_id = %s AND usuario_id = %s AND estado = 'pendiente'",
+            (mesa_id, usuario_id),
+        )
+        conn.execute(
+            "DELETE FROM miembros_mesa WHERE mesa_id = %s AND usuario_id = %s AND rol = 'jugador'",
             (mesa_id, usuario_id),
         )
         nuevo_cupo = None

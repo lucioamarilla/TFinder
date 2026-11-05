@@ -32,7 +32,8 @@ CAMPOS_MESA = {
     "id",
     "nombre",
     "sistema",
-    "gm_id",  # P0.4 vertical: propietario (RN-02)
+    "gm_id",  # F1: propio con nombre visible para el front (gm_nombre)
+    "gm_nombre",
     "descripcion",
     "tono",
     "horario",

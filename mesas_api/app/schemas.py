@@ -54,6 +54,7 @@ class MesaOut(BaseModel):
     nombre: str
     sistema: str
     gm_id: Optional[int] = None
+    gm_nombre: Optional[str] = None
     descripcion: Optional[str] = None
     tono: Optional[str] = None
     horario: Optional[str] = None

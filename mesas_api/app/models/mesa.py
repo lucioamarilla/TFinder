@@ -27,7 +27,12 @@ def listar_mesas(
     if tono:
         where.append("tono ILIKE %s")
         params.append(f"%{tono}%")
-    sql = f"SELECT * FROM mesas{(' WHERE ' + ' AND '.join(where)) if where else ''}"
+    sql = (
+        "SELECT m.*, u.nombre AS gm_nombre FROM mesas m"
+        " LEFT JOIN usuarios u ON u.id = m.gm_id"
+    )
+    if where:
+        sql += " WHERE " + " AND ".join(where)
     sql += f" ORDER BY {ordenes[orden]} LIMIT %s OFFSET %s"
     params += [limit, (page - 1) * limit]
     with get_connection() as conn:
@@ -37,7 +42,12 @@ def listar_mesas(
 
 def obtener_mesa_por_id(mesa_id):
     with get_connection() as conn:
-        fila = conn.execute("SELECT * FROM mesas WHERE id = %s", (mesa_id,)).fetchone()
+        fila = conn.execute(
+            "SELECT m.*, u.nombre AS gm_nombre FROM mesas m"
+            " LEFT JOIN usuarios u ON u.id = m.gm_id"
+            " WHERE m.id = %s",
+            (mesa_id,),
+        ).fetchone()
         return dict(fila) if fila else None
 
 
@@ -46,12 +56,17 @@ def crear_mesa(data, gm_id: int):
     datos["gm_id"] = gm_id
     columnas = ", ".join(datos.keys())
     placeholders = ", ".join(["%s"] * len(datos))
-    with get_connection() as conn:
+    with get_connection() as conn, conn.transaction():
         cursor = conn.execute(
             f"INSERT INTO mesas ({columnas}) VALUES ({placeholders}) RETURNING id",
             tuple(datos.values()),
         )
         mesa_id = cursor.fetchone()["id"]
+        # F2 (2.1): el creador pasa a ser master de la mesa automáticamente.
+        conn.execute(
+            "INSERT INTO miembros_mesa (mesa_id, usuario_id, rol) VALUES (%s, %s, 'master')",
+            (mesa_id, gm_id),
+        )
         fila = conn.execute("SELECT * FROM mesas WHERE id = %s", (mesa_id,)).fetchone()
         return dict(fila)
 
@@ -108,6 +123,16 @@ def liberar_vacante(mesa_id):
         )
         fila = cursor.fetchone()
         return fila["jugadores_actuales"] if fila else None
+
+
+def rol_de(usuario_id: int, mesa_id: int):
+    """F2: rol contextual del usuario en la mesa (master | jugador | None)."""
+    with get_connection() as conn:
+        fila = conn.execute(
+            "SELECT rol FROM miembros_mesa WHERE mesa_id = %s AND usuario_id = %s",
+            (mesa_id, usuario_id),
+        ).fetchone()
+        return fila["rol"] if fila else None
 
 
 def listar_con_rol(usuario_id: int):

@@ -16,6 +16,12 @@ from builds_api.app.controllers.builds import (
     vincular_build,
 )
 from builds_api.app.middleware.auth import auth_opcional, usuario_actual
+
+
+def auth_opicional_safe(request):
+    if request is None:
+        return None
+    return auth_opcional(request)
 from builds_api.app.schemas import BuildOut
 
 router = APIRouter(prefix="/api/v1/builds")
@@ -43,8 +49,8 @@ def listar_builds_endpoint(
 
 
 @router.get("/{build_id}", response_model=BuildOut)
-def obtener_build_endpoint(build_id: int):
-    return obtener_build(build_id)
+def obtener_build_endpoint(build_id: int, request: Request = None):
+    return obtener_build(build_id, auth_opicional_safe(request))
 
 
 @router.post("", response_model=BuildOut, status_code=201)

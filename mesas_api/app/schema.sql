@@ -76,6 +76,27 @@ CREATE INDEX IF NOT EXISTS idx_sesiones_mesa ON sesiones (mesa_id);
 -- (reconfirmar no vuelve a publicar el evento)
 ALTER TABLE sesiones ADD COLUMN IF NOT EXISTS confirmada_at TIMESTAMPTZ;
 
+-- F2: membresía por mesa (principio 2.1: roles contextuales, no de cuenta).
+CREATE TABLE IF NOT EXISTS miembros_mesa (
+    mesa_id    INTEGER NOT NULL REFERENCES mesas (id)    ON DELETE CASCADE,
+    usuario_id BIGINT  NOT NULL REFERENCES usuarios (id) ON DELETE CASCADE,
+    rol        TEXT    NOT NULL DEFAULT 'jugador' CHECK (rol IN ('master', 'jugador')),
+    fecha      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (mesa_id, usuario_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_miembros_usuario ON miembros_mesa (usuario_id);
+
+-- Backfill idempotente: cada mesa define su master y los aceptados entran como jugadores.
+INSERT INTO miembros_mesa (mesa_id, usuario_id, rol)
+  SELECT id, gm_id, 'master' FROM mesas WHERE gm_id IS NOT NULL
+  ON CONFLICT (mesa_id, usuario_id) DO NOTHING;
+
+INSERT INTO miembros_mesa (mesa_id, usuario_id, rol)
+  SELECT s.mesa_id, s.usuario_id, 'jugador'
+  FROM solicitudes_uniones s WHERE s.estado = 'aceptada'
+  ON CONFLICT (mesa_id, usuario_id) DO NOTHING;
+
 -- P0.4 vertical: propiedad de la mesa (RN-02: "el que crea es el propietario").
 -- Nullable por compatibilidad con filas históricas — todo flujo nuevo lo fija.
 ALTER TABLE mesas ADD COLUMN IF NOT EXISTS gm_id BIGINT REFERENCES usuarios (id);

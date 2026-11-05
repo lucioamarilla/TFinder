@@ -36,13 +36,21 @@ def listar_builds(mesa_id=None):
     return [_serializar(f) for f in filas]
 
 
-def obtener_build(build_id):
+def obtener_build(build_id, usuario=None):
+    """F2 (L-04): borrador/privado solo su creador (o admin). Público: todos."""
     with get_connection() as conn:
         fila = conn.execute(
             "SELECT * FROM builds WHERE id = %s", (build_id,)
         ).fetchone()
     if fila is None:
         raise BuildNotFoundError(build_id)
+    privacidad = fila.get("privacidad") or "publico"
+    if privacidad in ("borrador", "privado"):
+        sub = str((usuario or {}).get("sub", ""))
+        es_duenio = fila.get("autor_id") is not None and str(fila["autor_id"]) == sub
+        es_admin = (usuario or {}).get("rol") == "admin"
+        if not (es_duenio or es_admin):
+            raise BuildNotFoundError(build_id)
     return _serializar(fila)
 
 # ---- P1.8: escritura de builds (RF-19/20/21, RN-11/12/19, VAL-44/45) ----------
@@ -114,6 +122,9 @@ def _propietario_o_403(usuario, fila):
 
 def crear_build(usuario, datos, token=None):
     datos = _validar(dict(datos), requerir_clase=True)
+    privacidad = (datos.get("privacidad") or datos.get("visibilidad") or "borrador")
+    if privacidad not in ("borrador", "publico", "privado"):
+        raise ValorInvalidoError("La visibilidad debe ser borrador, publico o privado.")
     ficha = datos.get("atributos") or datos.get("ficha")
     with get_connection() as conn:
         fila = conn.execute(
@@ -137,7 +148,7 @@ def crear_build(usuario, datos, token=None):
                 datos.get("nivel"),
                 datos.get("rol"),
                 datos.get("alineamiento"),
-                "borrador",
+                privacidad,
                 datos.get("detalle"),
                 _json.dumps(datos.get("ficha") if isinstance(datos.get("ficha"), dict) else ({"atributos": datos.get("atributos")} if datos.get("atributos") else {})),
                 str(usuario["sub"]),
@@ -235,6 +246,8 @@ def vincular_build(build_id, mesa_id, usuario, token=None):
         miembro = es_miembro_aceptado(int(mesa_id), usuario, token=token)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from None
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from None
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from None
     if not miembro:

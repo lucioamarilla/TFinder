@@ -14,9 +14,18 @@ router = APIRouter(prefix="/api/v1")
 
 
 @router.get("/wiki")
-def listar_wiki(mesa_id: Optional[str] = Query(default=None, alias="mesa_id")):
-    """Listado público (carpetas agregadas); la visibilidad filtra el DETALLE."""
-    return obtener_wiki(mesa_id)
+def listar_wiki(
+    request: Request,
+    mesa_id: Optional[str] = Query(default=None, alias="mesa_id"),
+    authorization: Optional[str] = Header(default=None),
+):
+    """F2: listado con visibilidad según llamante (privadas solo master)."""
+    try:
+        usuario = auth_opcional(request)
+    except Exception:
+        usuario = None
+    token = authorization or request.headers.get("Authorization")
+    return obtener_wiki(mesa_id, token=token, usuario=usuario)
 
 
 def _token_de(request: Request, autorizacion_raw):

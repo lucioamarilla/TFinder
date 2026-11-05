@@ -33,6 +33,7 @@ from mesas_api.app.controllers.solicitudes_controller import (
     expulsar_miembro_controller,
 )
 from mesas_api.app.middleware.auth import requerir_roles, usuario_actual
+from mesas_api.app.middleware.membresia import requerir_miembro, requerir_master
 from mesas_api.app.models.sesiones import listar_miembros
 from mesas_api.app.schemas import MesaCreate, MesaMiaOut, MesaOut, MesaUpdate, SesionOut
 
@@ -46,7 +47,8 @@ def mis_mesas(usuario: dict = Depends(usuario_actual)):
 
 
 @router.get("/{mesa_id}/miembros")
-def miembros_mesa(mesa_id: int, _=Depends(usuario_actual)):
+def miembros_mesa(mesa_id: int, _=Depends(requerir_miembro)):
+    """F2 (2.4): solo integrantes (o servicio B09) leen los miembros."""
     obtener_mesa_controller(mesa_id)
     return {"mesa_id": mesa_id, "miembros": listar_miembros(mesa_id)}
 
@@ -56,9 +58,9 @@ def expulsar_miembro_mesa(
     mesa_id: int,
     usuario_id: int,
     request: Request,
-    usuario: dict = Depends(usuario_actual),
+    usuario: dict = Depends(requerir_master),
 ):
-    """El GM propietario expulsa a un miembro (libera cupo y notifica)."""
+    """El master expulsa a un miembro (libera cupo y notifica)."""
     return expulsar_miembro_controller(
         mesa_id,
         usuario_id,
@@ -124,13 +126,14 @@ def solicitar_union(
 # ---- Sesiones de juego (cierre AE2) -----------------------------------------
 
 @router.get("/{mesa_id}/sesiones", response_model=list[SesionOut])
-def listar_sesiones_mesa(mesa_id: int, _=Depends(usuario_actual)):
+def listar_sesiones_mesa(mesa_id: int, _=Depends(requerir_miembro)):
+    """F2 (2.4): sesiones solo para integrantes de la mesa."""
     return listar_sesiones_controller(mesa_id)
 
 
 @router.post("/{mesa_id}/sesiones", status_code=201, response_model=SesionOut)
-def crear_sesion_mesa(mesa_id: int, _=Depends(requerir_roles("gm", "admin"))):
-    """El GM crea una sesión de juego de la mesa (para el pase de asistencia)."""
+def crear_sesion_mesa(mesa_id: int, _=Depends(requerir_master)):
+    """El master de la mesa crea la sesión (principio 2.1)."""
     return crear_sesion_controller(mesa_id)
 
 
@@ -139,9 +142,9 @@ def confirmar_sesion_mesa(
     mesa_id: int,
     sesion_id: int,
     request: Request,
-    usuario: dict = Depends(requerir_roles("gm", "admin")),
+    usuario: dict = Depends(requerir_master),
 ):
-    """Confirma la sesión y emite sesion.confirmada (notif + emails a miembros)."""
+    """Confirma la sesión y emite sesion.confirmada (notif + emails)."""
     return confirmar_sesion_controller(
         mesa_id,
         sesion_id,
@@ -154,6 +157,6 @@ def confirmar_sesion_mesa(
 def cerrar_sesion_mesa(
     mesa_id: int,
     sesion_id: int,
-    _=Depends(requerir_roles("gm", "admin")),
+    _=Depends(requerir_master),
 ):
     return cerrar_sesion_controller(mesa_id, sesion_id)

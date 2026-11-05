@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from mesas_api.app.controllers import fechas_controller
 from mesas_api.app.middleware.auth import usuario_actual
+from mesas_api.app.middleware.membresia import requerir_miembro, requerir_master
 
 router = APIRouter(prefix="/api/v1/mesas/{mesa_id}/fechas", tags=["calendario"])
 
@@ -18,14 +19,15 @@ class VotoValor(BaseModel):
 
 
 @router.post("", status_code=201)
-def proponer_fecha(mesa_id: int, payload: PropuestaFecha, usuario: dict = Depends(usuario_actual)):
-    """RF-10: el GM propone una fecha (VAL-29: no en el pasado)."""
+def proponer_fecha(mesa_id: int, payload: PropuestaFecha, usuario: dict = Depends(requerir_master)):
+    """RF-10: solo el master propone una fecha (VAL-29: no en el pasado)."""
     return fechas_controller.proponer_controller(mesa_id, usuario, payload.propuesta)
 
 
 @router.get("")
-def listar_fechas(mesa_id: int, usuario: dict = Depends(usuario_actual)):
-    return fechas_controller.listar_controller(mesa_id, usuario)
+def listar_fechas(mesa_id: int, _=Depends(requerir_miembro)):
+    """F2 (2.4): fechas y votos solo para integrantes de la mesa."""
+    return fechas_controller.listar_controller(mesa_id, None)
 
 
 @router.post("/{fecha_id}/voto")
@@ -40,7 +42,7 @@ def votar_fecha(
 
 
 @router.delete("/{fecha_id}")
-def descartar_fecha(mesa_id: int, fecha_id: int, usuario: dict = Depends(usuario_actual)):
+def descartar_fecha(mesa_id: int, fecha_id: int, usuario: dict = Depends(requerir_master)):
     return fechas_controller.descartar_controller(mesa_id, fecha_id, usuario)
 
 
@@ -49,7 +51,7 @@ def confirmar_fecha(
     mesa_id: int,
     fecha_id: int,
     request: Request,
-    usuario: dict = Depends(usuario_actual),
+    usuario: dict = Depends(requerir_master),
 ):
     """CA: la fecha ganadora confirmada nace sesión de juego."""
     return fechas_controller.confirmar_controller(

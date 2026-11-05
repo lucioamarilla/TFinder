@@ -23,7 +23,20 @@ def _serializar_pagina(fila, include_mesa=False):
     return PaginaOut(**f)
 
 
-def obtener_wiki(mesa_id):
+def obtener_wiki(mesa_id, token=None, usuario=None):
+    """F2 (L-05): el listado respeta la visibilidad (RN-05) del llamante.
+
+    publica: todos — jugadores: miembros — privada: solo el master de la mesa.
+    La verificación de master viaja por REST a mesas-api (contrato B09).
+    """
+    es_master = bool(usuario and (usuario.get("rol") == "admin"))
+    if usuario and not es_master:
+        try:
+            from app.infra.mesas import es_gm_mesa
+
+            es_master, _ = es_gm_mesa(int(mesa_id), usuario, token=token) if mesa_id is not None else (False, None)
+        except (LookupError, RuntimeError, ValueError):
+            es_master = False
     with get_connection() as conn:
         if mesa_id:
             filas = conn.execute(
@@ -32,6 +45,8 @@ def obtener_wiki(mesa_id):
             ).fetchall()
         else:
             filas = conn.execute("SELECT * FROM wiki_paginas ORDER BY id").fetchall()
+    if not es_master:
+        filas = [f for f in filas if (f.get("visibilidad") or "jugadores") != "privada"]
     paginas = [_serializar_pagina(f) for f in filas]
     carpetas = {}
     for pagina in paginas:

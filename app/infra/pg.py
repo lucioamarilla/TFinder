@@ -63,5 +63,8 @@ class PoolPropio:
             self._abierto = False
 
     def conectar(self):
-        """Proxy de conexión para `with` (igual que pool.connection())."""
-        return self._construir().connection()
+        """Conexión para `with`. Auto-abre (o reabre) si el ciclo quedó cerrado:
+        threads de prueba con lifespan='off' necesitan disponibilidad perezosa.
+        """
+        self.abrir()
+        return self._pool.connection()

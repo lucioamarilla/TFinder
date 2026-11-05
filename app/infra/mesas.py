@@ -36,8 +36,8 @@ def obtener_mesa(mesa_id: int, token=None):
         if e.code == 404:
             raise LookupError("La mesa solicitada no existe.") from None
         raise RuntimeError(f"mesas-api respondió {e.code}.") from None
-    except (urllib.error.URLError, TimeoutError):
-        raise RuntimeError("No se pudo contactar a mesas-api.") from None
+    except (urllib.error.URLError, TimeoutError) as _e:
+        raise RuntimeError(f"No se pudo contactar a mesas-api ({_MESAS_URL()}): {type(_e).__name__}: {_e}") from None
 
 
 def listar_miembros(mesa_id: int, token):
@@ -46,9 +46,12 @@ def listar_miembros(mesa_id: int, token):
     except urllib.error.HTTPError as e:
         if e.code == 401:
             raise PermissionError("Sesión inválida para verificar membresía.") from None
+        if e.code == 403:
+            # F2: el gate de membresía del server (el llamador no es miembro).
+            raise PermissionError("No eres miembro de esta mesa.") from None
         raise RuntimeError(f"mesas-api respondió {e.code}.") from None
-    except (urllib.error.URLError, TimeoutError):
-        raise RuntimeError("No se pudo contactar a mesas-api.") from None
+    except (urllib.error.URLError, TimeoutError) as _e:
+        raise RuntimeError(f"No se pudo contactar a mesas-api: {type(_e).__name__}") from None
 
 
 def es_gm_mesa(mesa_id: int, usuario: dict, token=None) -> tuple[bool, dict]:

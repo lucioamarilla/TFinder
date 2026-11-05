@@ -22,13 +22,17 @@ def registrar_asistencia(sesion_id: int, usuario_id: int) -> bool:
 
 
 def listar_miembros(mesa_id: int):
-    """Jugadores con solicitud aceptada en la mesa (contrato REST para notif-api)."""
+    """Miembros de la mesa (F2: desde miembros_mesa con rol contextual).
+
+    Contrato REST para notif-api (emails de sesión) y para la bandeja/FE.
+    """
     with get_connection() as conn:
         filas = conn.execute(
-            "SELECT u.id, u.nombre, u.email FROM usuarios u"
-            " JOIN solicitudes_uniones s ON s.usuario_id = u.id"
-            " WHERE s.mesa_id = %s AND s.estado = 'aceptada'"
-            " ORDER BY u.nombre",
+            "SELECT u.id, u.nombre, u.email, m.rol"
+            " FROM miembros_mesa m"
+            " JOIN usuarios u ON u.id = m.usuario_id"
+            " WHERE m.mesa_id = %s"
+            " ORDER BY (m.rol = 'master') DESC, u.nombre",
             (mesa_id,),
         ).fetchall()
     return [dict(f) for f in filas]

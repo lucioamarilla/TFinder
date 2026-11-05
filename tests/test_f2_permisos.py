@@ -43,6 +43,11 @@ def _pools():
     yield
 
 
+@pytest.fixture
+def builds_client(_pools):
+    return TestClient(builds_app)
+
+
 @pytest.fixture(autouse=True)
 def _limpieza_builds(_pools):
     with builds_conn() as conn:
