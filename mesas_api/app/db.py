@@ -1,41 +1,22 @@
-import os
+"""Pool del servicio mesas-api: dueño de mesas_db (RNF-04/B02)."""
 
-from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool
+from app.infra.pg import PoolPropio
 
-DEFAULT_DATABASE_URL = "postgresql://tfinder:tfinder@localhost:5432/mesas_db"
+_url = "postgresql://tfinder:tfinder@localhost:5432/mesas_db"
 
-_pool = None
-_abierto = False
+_pool = PoolPropio("MESAS_DATABASE_URL", _url)
 
-
-def get_pool() -> ConnectionPool:
-    global _pool
-    if _pool is None:
-        _pool = ConnectionPool(
-            os.getenv("MESAS_DATABASE_URL", DEFAULT_DATABASE_URL),
-            min_size=1,
-            max_size=5,
-            open=False,
-            kwargs={"row_factory": dict_row},
-        )
-    return _pool
+abrir_pool = _pool.abrir
+cerrar_pool = _pool.cerrar
 
 
-def abrir_pool():
-    global _abierto
-    pool = get_pool()
-    if not _abierto:
-        pool.open()
-        _abierto = True
-
-
-def cerrar_pool():
-    global _abierto
-    if _abierto:
-        get_pool().close()
-        _abierto = False
+def get_pool():
+    return _pool.pool
 
 
 def get_connection():
-    return get_pool().connection()
+    return _pool.conectar()
+
+
+# La URL de la base vive en este único archivo (dueño de la base).
+DEFAULT_DATABASE_URL = _url
