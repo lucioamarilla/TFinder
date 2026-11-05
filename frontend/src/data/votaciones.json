@@ -1,0 +1,39 @@
+{
+  "mesas": {
+    "la-corona-de-carrona": [
+      {
+        "id": "vot-s30",
+        "sesionNumero": "#30",
+        "titulo": "Venganza en el Pantano Diabólico",
+        "resumen": "Encuentro táctico con los trogloditas del lodazal y el relicario perdido.",
+        "fecha": "Sábado, 28 de Octubre de 4712 CA • 18:00 a 22:00 (GMT+1)",
+        "tipo": "PROPUESTA OFICIAL GM",
+        "favor": ["Aldren (GM)", "Kaelen", "Seelah"],
+        "contra": [],
+        "miVoto": "favor"
+      },
+      {
+        "id": "vot-s30-alt",
+        "sesionNumero": "#30",
+        "titulo": "Adelanto de Sesión #30 al viernes",
+        "resumen": "Votación relámpago por disponibilidad del fin de semana largo.",
+        "fecha": "Viernes, 27 de Octubre de 4712 CA • 19:00 a 23:00 (GMT+1)",
+        "tipo": "PROPUESTA ALTERNATIVA",
+        "favor": ["Harsk"],
+        "contra": ["Ezren"],
+        "miVoto": null
+      },
+      {
+        "id": "vot-s31",
+        "sesionNumero": "#31",
+        "titulo": "El Santuario de la Vía Susurrante",
+        "resumen": "Ingreso al santuario clandestino bajo la catedral de San Gudja.",
+        "fecha": "Sábado, 04 de Pharast de 4712 CA • 18:00 a 22:00 (GMT+1)",
+        "tipo": "PROPUESTA OFICIAL GM",
+        "favor": ["Aldren (GM)", "Seelah", "Harsk"],
+        "contra": ["Kaelen"],
+        "miVoto": "contra"
+      }
+    ]
+  }
+}

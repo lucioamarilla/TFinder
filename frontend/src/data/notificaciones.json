@@ -1,0 +1,100 @@
+{
+  "notificaciones": [
+    {
+      "id": "n01",
+      "grupo": "mesas",
+      "icono": "solicitud",
+      "leida": false,
+      "autor": "Seelah Corazón de Oro",
+      "mensaje": "solicitó unirse a tu mesa",
+      "entidad": "«La Corona de Carroña»",
+      "detalle": "con el arquetipo Paladín Humana Nvl 6.",
+      "enlace": { "label": "Ver Solicitud de Ingreso", "to": "/mis-mesas" },
+      "fecha": "hace 15 min"
+    },
+    {
+      "id": "n02",
+      "grupo": "social",
+      "icono": "comentario",
+      "leida": false,
+      "autor": "Kyra Sarenrae",
+      "mensaje": "respondió a tu debate sobre reglas",
+      "entidad": "«Interpretación del Código de Conducta según el SRD»",
+      "detalle": "en el Feed Social.",
+      "enlace": { "label": "Ir al Hilo de Discusión", "to": "/feed" },
+      "fecha": "hace 45 min"
+    },
+    {
+      "id": "n03",
+      "grupo": "sesiones",
+      "icono": "convocatoria",
+      "leida": false,
+      "autor": "Dungeon Master Ustalav",
+      "mensaje": "convocó una votación de quórum y fecha para la",
+      "entidad": "Sesión 15: El Festín de los Cuervos",
+      "detalle": "",
+      "enlace": { "label": "Ver Calendario y Emitir Voto", "to": "/mis-mesas" },
+      "fecha": "hace 2 horas"
+    },
+    {
+      "id": "n04",
+      "grupo": "social",
+      "icono": "favorito",
+      "leida": true,
+      "autor": "Ezren el Sabio",
+      "mensaje": "marcó como favorito tu compendio de dotes",
+      "entidad": "«Valeros el Temerario: Especialización en Espada Bastarda»",
+      "detalle": "",
+      "enlace": { "label": "Ver Ficha de Build", "to": "/builds" },
+      "fecha": "ayer a las 18:30"
+    },
+    {
+      "id": "n05",
+      "grupo": "sesiones",
+      "icono": "diario",
+      "leida": true,
+      "autor": "El Director de Juego",
+      "mensaje": "añadió un nuevo capítulo al Diario de Campaña:",
+      "entidad": "«Bitácora de Campo: Encuentro en las Criptas de Kenabres»",
+      "detalle": "",
+      "enlace": { "label": "Leer Bitácora", "to": "/mis-mesas" },
+      "fecha": "hace 2 días"
+    },
+    {
+      "id": "n06",
+      "grupo": "mesas",
+      "icono": "aceptacion",
+      "leida": true,
+      "autor": "Máster Varisiano",
+      "mensaje": "aceptó oficialmente a tu personaje Valeros (Guerrero 7) en la mesa",
+      "entidad": "«El Auge de los Señores de las Runas»",
+      "detalle": "",
+      "enlace": { "label": "Entrar a la Mesa Virtual", "to": "/mis-mesas" },
+      "fecha": "hace 3 días"
+    },
+    {
+      "id": "n07",
+      "grupo": "mesas",
+      "icono": "solicitud",
+      "leida": true,
+      "autor": "Borin Escudorruno",
+      "mensaje": "quiere unirse a tu mesa",
+      "entidad": "«Los Herederos de la Tormenta»",
+      "detalle": "buscando sitio de tanque.",
+      "enlace": { "label": "Revisar Solicitud", "to": "/mis-mesas" },
+      "fecha": "hace 5 días"
+    },
+    {
+      "id": "n08",
+      "grupo": "mesas",
+      "icono": "solicitud",
+      "leida": false,
+      "autor": "El Cónclave",
+      "mensaje": "encontró aventureros afines a tu estilo de juego en",
+      "entidad": "Matchmaking de Mesa",
+      "detalle": "Seelah, Ezren y Harsk buscan compañeros de crónica.",
+      "enlace": { "label": "Ver Aventureros Afines", "to": "/matchmaking" },
+      "fecha": "hace 5 horas"
+    }
+  ]
+}
