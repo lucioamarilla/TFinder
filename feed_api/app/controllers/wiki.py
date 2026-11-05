@@ -20,6 +20,7 @@ def _serializar_pagina(fila, include_mesa=False):
     else:
         f.pop("mesa_id", None)
     f.pop("creado_en", None)
+    f["parentId"] = f.pop("parent_id", None)
     return PaginaOut(**f)
 
 
@@ -92,6 +93,8 @@ def crear_pagina_controller(mesa_id, usuario, datos, token=None):
     titulo = (datos.get("titulo") or "").strip()
     if not titulo:
         raise HTTPException(status_code=400, detail="El título de la página es obligatorio.")
+    if len(titulo) > 200:
+        raise HTTPException(status_code=400, detail="El título no puede superar los 200 caracteres.")
     tipo = datos.get("tipo") or "Nota"
     if tipo not in TIPOS_VALIDOS:
         raise HTTPException(
@@ -107,7 +110,7 @@ def crear_pagina_controller(mesa_id, usuario, datos, token=None):
     with get_connection() as conn:
         fila = conn.execute(
             "INSERT INTO wiki_paginas (mesa_id, carpeta, titulo, tipo, fecha, resumen,"
-            " contenido, visibilidad) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *",
+            " contenido, visibilidad, parent_id, markdown) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING *",
             (
                 str(mesa_id),
                 datos.get("carpeta") or "notas",
@@ -117,6 +120,8 @@ def crear_pagina_controller(mesa_id, usuario, datos, token=None):
                 datos.get("resumen"),
                 _contenido_json(datos),
                 visibilidad,
+                datos.get("parent_id") or datos.get("parentId"),
+                datos.get("markdown"),
             ),
         ).fetchone()
     return _serializar_pagina(fila, include_mesa=True)
@@ -166,7 +171,9 @@ def actualizar_pagina_controller(mesa_id, pagina_id, usuario, datos, token=None)
         raise HTTPException(status_code=404, detail="La página de wiki no existe.")
     _propiedad_o_403(fil["mesa_id"], usuario, token)
     cambios, params = [], []
-    for campo in ("titulo", "carpeta", "tipo", "fecha", "resumen", "visibilidad"):
+    if "parentId" in datos and "parent_id" not in datos:
+        datos["parent_id"] = datos["parentId"]
+    for campo in ("titulo", "carpeta", "tipo", "fecha", "resumen", "visibilidad", "parent_id", "markdown"):
         if campo in datos and datos[campo] is not None:
             if campo == "tipo" and datos[campo] not in TIPOS_VALIDOS:
                 raise HTTPException(
@@ -178,6 +185,9 @@ def actualizar_pagina_controller(mesa_id, pagina_id, usuario, datos, token=None)
                     status_code=400,
                     detail="La visibilidad debe ser privada, jugadores o publica.",
                 )
+            # normalizar parentId → parent_id
+            if campo == "parent_id" and "parent_id" not in datos and "parentId" in datos:
+                datos["parent_id"] = datos["parentId"]
             cambios.append(f"{campo} = %s")
             params.append(datos[campo])
     if "cuerpo" in datos or "contenido" in datos:

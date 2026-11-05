@@ -24,18 +24,25 @@ def _config():
         os.getenv("SMTP_HOST", "localhost"),
         int(os.getenv("SMTP_PORT", "1025")),
         os.getenv("MAIL_FROM", "noreply@tfinder.local"),
+        os.getenv("SMTP_USER", ""),
+        os.getenv("SMTP_PASSWORD", ""),
+        os.getenv("SMTP_USE_TLS", "false").lower() in {"1", "true", "yes"},
     )
 
 
 def _enviar_por_smtp(destino: str, asunto: str, cuerpo: str) -> str | None:
     """Envía por SMTP; devuelve None si OK o el error como string si falló."""
-    host, port, desde = _config()
+    host, port, desde, user, password, use_tls = _config()
     msg = MIMEText(cuerpo, "plain", "utf-8")
     msg["Subject"] = asunto
     msg["From"] = desde
     msg["To"] = destino
     try:
         with smtplib.SMTP(host, port, timeout=SMTP_TIMEOUT) as conexion:
+            if use_tls:
+                conexion.starttls()
+            if user:
+                conexion.login(user, password)
             conexion.sendmail(desde, [destino], msg.as_string())
         return None
     except (smtplib.SMTPException, socket.timeout, TimeoutError, OSError) as exc:

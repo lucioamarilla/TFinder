@@ -63,6 +63,22 @@ def salir_de_mesa_mia(
     return salir_controller(mesa_id, usuario)
 
 
+@router.patch("/{mesa_id}/miembros/{usuario_id}/rol")
+def cambiar_rol(
+    mesa_id: int,
+    usuario_id: int,
+    body: dict,
+    _=Depends(requerir_master),
+):
+    nuevo_rol = body.get("rol")
+    if nuevo_rol not in ("master", "jugador", "co_gm", "observador"):
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail="Rol inválido.")
+    from mesas_api.app.models.sesiones import cambiar_rol_miembro
+
+    cambiar_rol_miembro(mesa_id, usuario_id, nuevo_rol)
+    return {"ok": True, "rol": nuevo_rol}
 @router.delete("/{mesa_id}/miembros/{usuario_id}")
 def expulsar_miembro_mesa(
     mesa_id: int,

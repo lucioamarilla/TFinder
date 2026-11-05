@@ -72,7 +72,7 @@ def listar_publicaciones(
     if offset < 0:
         raise HTTPException(status_code=400, detail="offset no puede ser negativo")
 
-    condiciones = []
+    condiciones = ["p.oculto = FALSE"]
     params = []
     if tipo:
         condiciones.append("p.tipo = %s")
@@ -127,6 +127,12 @@ def crear_publicacion(usuario, datos):
     cuerpo = (datos.get("cuerpo") or "").strip()
     if not titulo or not cuerpo:
         raise HTTPException(status_code=400, detail="El contenido de la publicación no puede estar vacío.")
+    if len(titulo) > 200:
+        raise HTTPException(status_code=400, detail="El título no puede superar los 200 caracteres.")
+    if len(cuerpo) > 5000:
+        raise HTTPException(status_code=400, detail="El cuerpo no puede superar los 5000 caracteres.")
+    if "<script" in (titulo + cuerpo).lower():
+        raise HTTPException(status_code=400, detail="El contenido no puede incluir scripts.")
     tipo = datos.get("tipo") or "post"
     if tipo not in ("post", "build", "wiki"):
         raise HTTPException(status_code=400, detail="El tipo debe ser post, build o wiki.")
@@ -245,3 +251,88 @@ def listar_siguimientos(objetivo_id: str):
             "SELECT COUNT(*) AS total FROM follows WHERE seguido_id = %s", (objetivo_id,)
         ).fetchone()
     return {"objetivo_id": objetivo_id, "seguidores": int(conteo["total"])}
+
+
+def agregar_comentario_controller(post_id: int, usuario, texto: str) -> dict:
+    from psycopg.types.json import Json as _Json
+
+    with get_connection() as conn:
+        fila = conn.execute(
+            "SELECT comentarios, total_comentarios FROM publicaciones WHERE id = %s",
+            (post_id,),
+        ).fetchone()
+        if fila is None:
+            raise HTTPException(status_code=404, detail="Publicacion no encontrada.")
+        comentarios = list(fila["comentarios"] or [])
+        comentarios.append(
+            {
+                "autor": (usuario.get("email") or "").split("@")[0] or "Aventurero",
+                "iniciales": (usuario.get("email") or "AV")[:2].upper(),
+                "texto": texto,
+            }
+        )
+        conn.execute(
+            "UPDATE publicaciones SET comentarios = %s, total_comentarios = %s WHERE id = %s",
+            (_Json(comentarios), len(comentarios), post_id),
+        )
+    return {"ok": True, "total": len(comentarios)}
+
+
+def eliminar_comentario_controller(post_id: int, indice: int, usuario) -> None:
+    from psycopg.types.json import Json as _Json
+
+    with get_connection() as conn:
+        fila = conn.execute(
+            "SELECT autor_id, comentarios FROM publicaciones WHERE id = %s",
+            (post_id,),
+        ).fetchone()
+        if fila is None:
+            raise HTTPException(status_code=404, detail="Publicacion no encontrada.")
+        comentarios = list(fila["comentarios"] or [])
+        if indice < 0 or indice >= len(comentarios):
+            raise HTTPException(status_code=404, detail="Comentario no encontrado.")
+        if str(fila["autor_id"]) != str(usuario["sub"]):
+            raise HTTPException(status_code=403, detail="Solo el autor del post puede eliminar comentarios.")
+        comentarios.pop(indice)
+        conn.execute(
+            "UPDATE publicaciones SET comentarios = %s, total_comentarios = %s WHERE id = %s",
+            (_Json(comentarios), len(comentarios), post_id),
+        )
+
+
+def _es_admin(usuario) -> bool:
+    return (usuario or {}).get("rol") == "admin"
+
+
+def ocultar_publicacion_controller(post_id: int, usuario) -> dict:
+    if not _es_admin(usuario):
+        raise HTTPException(status_code=403, detail="Solo un administrador puede moderar.")
+    with get_connection() as conn:
+        fila = conn.execute(
+            "UPDATE publicaciones SET oculto = TRUE WHERE id = %s RETURNING id", (post_id,)
+        ).fetchone()
+        if fila is None:
+            raise HTTPException(status_code=404, detail="Publicacion no encontrada.")
+    return {"id": post_id, "oculto": True}
+
+
+def restaurar_publicacion_controller(post_id: int, usuario) -> dict:
+    if not _es_admin(usuario):
+        raise HTTPException(status_code=403, detail="Solo un administrador puede moderar.")
+    with get_connection() as conn:
+        fila = conn.execute(
+            "UPDATE publicaciones SET oculto = FALSE WHERE id = %s RETURNING id", (post_id,)
+        ).fetchone()
+        if fila is None:
+            raise HTTPException(status_code=404, detail="Publicacion no encontrada.")
+    return {"id": post_id, "oculto": False}
+
+
+def listar_reportados_controller(usuario) -> list:
+    if not _es_admin(usuario):
+        raise HTTPException(status_code=403, detail="Solo un administrador puede moderar.")
+    with get_connection() as conn:
+        filas = conn.execute(
+            "SELECT * FROM publicaciones WHERE oculto = TRUE ORDER BY id"
+        ).fetchall()
+    return [_serializar(f) for f in filas]

@@ -22,8 +22,26 @@ def publicar_diario_controller(
     cuerpo: str,
     correlation_id: str = "-",
 ) -> dict:
-    """Persiste la publicación del diario y emite sesion.diario_publicado."""
+    """Persiste la publicación del diario y emite sesion.diario_publicado.
+
+    Idempotente por (mesa, sesión): si ya existe una publicación de diario
+    para esa sesión, se devuelve la existente sin duplicar ni reemitir el evento.
+    """
     with get_connection() as conn:
+        existente = conn.execute(
+            "SELECT id FROM publicaciones WHERE embed->>'sesion_id' = %s "
+            "AND embed->>'es_diario' = 'true' AND autor_id = %s",
+            (str(sesion_id), str(mesa_id)),
+        ).fetchone()
+        if existente is not None:
+            return {
+                "id": existente["id"],
+                "mesa_id": str(mesa_id),
+                "sesion_id": sesion_id,
+                "titulo": titulo,
+                "estado": "ya_publicado",
+            }
+
         fila = conn.execute(
             "INSERT INTO publicaciones (tipo, autor, autor_id, autor_nombre, titulo, cuerpo, embed)"
             " VALUES ('post', %s, %s, %s, %s, %s, %s::jsonb)"

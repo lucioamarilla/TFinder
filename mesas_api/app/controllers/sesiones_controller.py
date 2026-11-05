@@ -62,6 +62,10 @@ def anotacion_controller(mesa_id: int, sesion_id: int, usuario, texto: str):
     texto_limpio = (texto or '').strip()
     if not texto_limpio:
         raise AnotacionInvalidaError('El texto de la anotación no puede estar vacío.')
+    if len(texto_limpio) > 2000:
+        raise AnotacionInvalidaError('La anotación no puede superar los 2000 caracteres.')
+    if '<script' in texto_limpio.lower():
+        raise AnotacionInvalidaError('La anotación no puede incluir scripts.')
     fila = obtener_sesion(sesion_id)
     if fila is None or fila["mesa_id"] != mesa_id:
         raise SesionNotFoundError(f'Sesión {sesion_id} no encontrada')

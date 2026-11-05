@@ -118,6 +118,21 @@ def bandeja_contribuciones(
     return listar_contribuciones_controller(mesa_id, _, token=_token_de(request, authorization), estado=estado)
 
 
+@router.post("/mesas/{mesa_id}/wiki/{pagina_id}/publicar-feed", status_code=201)
+def publicar_wiki_en_feed(mesa_id: str, pagina_id: int, usuario: dict = Depends(usuario_actual)):
+    from feed_api.app.controllers.feed import crear_publicacion
+    from feed_api.app.controllers.wiki import obtener_pagina_controller
+
+    pagina = obtener_pagina_controller(mesa_id, pagina_id, usuario, token=None)
+    datos = {
+        "titulo": pagina.titulo,
+        "cuerpo": pagina.resumen or "Página de wiki publicada en el feed.",
+        "tipo": "wiki",
+        "embed": {"wiki_id": pagina_id},
+    }
+    return crear_publicacion(usuario, datos)
+
+
 @router.post("/mesas/{mesa_id}/wiki/contribuciones/{contribucion_id}/aprobar")
 def aprobar_contribucion(
     mesa_id: str,

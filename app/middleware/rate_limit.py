@@ -11,7 +11,7 @@ _SKIP_PREFIXES = ("/health", "/live", "/ready", "/metrics", "/docs", "/redoc", "
 
 
 class LimitadorIP:
-    """Ventana deslizante en memoria (una instancia por proceso)."""
+    """Ventana deslizante: Redis si está disponible, memoria como fallback."""
 
     def __init__(self, limite=100, ventana=60.0):
         self.limite = limite
@@ -19,9 +19,28 @@ class LimitadorIP:
         self._hits: dict[str, deque] = defaultdict(deque)
         self._lock = threading.Lock()
 
+    def _redis(self):
+        try:
+            from app.infra.redis import get_redis
+
+            return get_redis()
+        except Exception:
+            return None
+
     def puede(self, ip: str, limite: int | None = None, ahora: float | None = None) -> bool:
-        ahora = ahora if ahora is not None else time.monotonic()
         techo = limite if limite is not None else self.limite
+        r = self._redis()
+        if r is not None:
+            try:
+                clave = f"rl:{ip}:{techo}"
+                count = r.incr(clave)
+                if count == 1:
+                    r.expire(clave, int(self.ventana))
+                return count <= techo
+            except Exception:
+                pass
+        # Fallback en memoria (ventana deslizante)
+        ahora = ahora if ahora is not None else time.monotonic()
         with self._lock:
             cola = self._hits[ip]
             corte = ahora - self.ventana

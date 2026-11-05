@@ -13,15 +13,44 @@ class _Suscriptor:
 
 
 class StreamHub:
-    """Hub en memoria que une los consumers (threads) con los clientes SSE.
+    """Hub que une consumers (threads) con clientes SSE.
 
-    `publicar` se llama desde los hilos de consumo; `iterar` se consume desde
-    el event loop de FastAPI (StreamingResponse).
+    Si Redis está disponible, usa pub/sub para propagar entre réplicas;
+    si no, opera en memoria (single-replica).
     """
+
+    CANAL = "sse:stream"
 
     def __init__(self):
         self._suscriptores = []
         self._lock = threading.Lock()
+        self._redis = None
+        try:
+            from app.infra.redis import get_redis
+
+            self._redis = get_redis()
+            self._iniciar_subscriber()
+        except Exception:
+            self._redis = None
+
+    def _iniciar_subscriber(self):
+        def worker():
+            try:
+                pubsub = self._redis.pubsub()
+                pubsub.subscribe(self.CANAL)
+                for msg in pubsub.listen():
+                    if msg.get("type") != "message":
+                        continue
+                    try:
+                        payload = json.loads(msg["data"])
+                    except Exception:
+                        continue
+                    self._entregar_local(payload.get("usuario_id"), payload.get("notificacion") or {})
+            except Exception as exc:
+                logger.error(f"ssu: subscriber fallo: {exc!r}")
+
+        t = threading.Thread(target=worker, daemon=True, name="sse-subscriber")
+        t.start()
 
     def suscribir(self, usuario_id=None) -> _Suscriptor:
         s = _Suscriptor(usuario_id)
@@ -50,7 +79,7 @@ class StreamHub:
             except asyncio.QueueFull:
                 pass
 
-    def publicar(self, usuario_id, notificacion: dict):
+    def _entregar_local(self, usuario_id, notificacion: dict):
         with self._lock:
             targets = [
                 s for s in self._suscriptores
@@ -58,7 +87,10 @@ class StreamHub:
             ]
         if not targets:
             return
-        datos = json.dumps(notificacion, ensure_ascii=False, default=str)
+        try:
+            datos = json.dumps(notificacion, ensure_ascii=False, default=str)
+        except Exception:
+            datos = "{}"
         for s in targets:
             loop = s.loop
             if loop is None or not loop.is_running() or s.cola is None:
@@ -69,6 +101,19 @@ class StreamHub:
                 })
             except RuntimeError:
                 pass
+
+    def publicar(self, usuario_id, notificacion: dict):
+        if self._redis is not None:
+            try:
+                payload = json.dumps(
+                    {"usuario_id": usuario_id, "notificacion": notificacion},
+                    ensure_ascii=False, default=str,
+                )
+                self._redis.publish(self.CANAL, payload)
+                return
+            except Exception:
+                pass
+        self._entregar_local(usuario_id, notificacion)
 
     async def iterar(self, suscriptor: _Suscriptor):
         """Generador async: produce eventos SSE (data) o heartbeat mientras dure la conexion."""

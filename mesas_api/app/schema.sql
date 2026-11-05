@@ -80,7 +80,7 @@ ALTER TABLE sesiones ADD COLUMN IF NOT EXISTS confirmada_at TIMESTAMPTZ;
 CREATE TABLE IF NOT EXISTS miembros_mesa (
     mesa_id    INTEGER NOT NULL REFERENCES mesas (id)    ON DELETE CASCADE,
     usuario_id BIGINT  NOT NULL REFERENCES usuarios (id) ON DELETE CASCADE,
-    rol        TEXT    NOT NULL DEFAULT 'jugador' CHECK (rol IN ('master', 'jugador')),
+    rol        TEXT    NOT NULL DEFAULT 'jugador' CHECK (rol IN ('master', 'jugador', 'co_gm', 'observador')),
     fecha      TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (mesa_id, usuario_id)
 );

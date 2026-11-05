@@ -39,3 +39,5 @@ class PaginaOut(BaseModel):
     resumen: Optional[str] = None
     visibilidad: Optional[str] = "jugadores"
     contenido: list = []
+    parentId: Optional[int] = None
+    markdown: Optional[str] = None

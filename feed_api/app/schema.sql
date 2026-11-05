@@ -85,3 +85,10 @@ CREATE TABLE IF NOT EXISTS uploads (
     ruta      TEXT        NOT NULL,
     creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- F2: moderacion (ocultar/restaurar publicaciones)
+ALTER TABLE publicaciones ADD COLUMN IF NOT EXISTS oculto BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- F3: wiki jerarquica
+ALTER TABLE wiki_paginas ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES wiki_paginas(id) ON DELETE SET NULL;
+ALTER TABLE wiki_paginas ADD COLUMN IF NOT EXISTS markdown TEXT;

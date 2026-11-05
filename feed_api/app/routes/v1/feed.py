@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from feed_api.app.controllers.feed import (
     LIMITE_MAX,
@@ -60,6 +60,41 @@ def publicar_feed(payload: PostCreate, usuario: dict = Depends(usuario_actual)):
 def dar_like_a(post_id: int, usuario: dict = Depends(usuario_actual)):
     """RF-17/VAL-43: like único por usuario (toggle)."""
     return dar_like(post_id, str(usuario["sub"]))
+def ocultar_feed(post_id: int, usuario: dict = Depends(usuario_actual)):
+    from feed_api.app.controllers.feed import ocultar_publicacion_controller
+
+    return ocultar_publicacion_controller(post_id, usuario)
+
+
+@router.patch("/feed/{post_id}/restaurar")
+def restaurar_feed(post_id: int, usuario: dict = Depends(usuario_actual)):
+    from feed_api.app.controllers.feed import restaurar_publicacion_controller
+
+    return restaurar_publicacion_controller(post_id, usuario)
+
+
+@router.get("/feed/reportados")
+def reportados(usuario: dict = Depends(usuario_actual)):
+    from feed_api.app.controllers.feed import listar_reportados_controller
+
+    return listar_reportados_controller(usuario)
+def comentar(post_id: int, body: dict, usuario: dict = Depends(usuario_actual)):
+    texto = (body.get("texto") or "").strip()
+    if not texto:
+        raise HTTPException(status_code=400, detail="El comentario no puede estar vacío.")
+    if len(texto) > 1000:
+        raise HTTPException(status_code=400, detail="El comentario no puede superar los 1000 caracteres.")
+    from feed_api.app.controllers.feed import agregar_comentario_controller
+
+    return agregar_comentario_controller(post_id, usuario, texto)
+
+
+@router.delete("/feed/{post_id}/comentarios/{indice}", status_code=204)
+def borrar_comentario(post_id: int, indice: int, usuario: dict = Depends(usuario_actual)):
+    from feed_api.app.controllers.feed import eliminar_comentario_controller
+
+    eliminar_comentario_controller(post_id, indice, usuario)
+    return None
 
 
 @router.post("/usuarios/{usuario_id}/seguir")

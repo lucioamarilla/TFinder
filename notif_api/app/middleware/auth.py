@@ -1,6 +1,6 @@
 """Auth real (B03). La validación es compartida: ver app/infra/token.py."""
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.infra.token import decodificar_token, sesion_valida
@@ -13,6 +13,21 @@ def usuario_actual(creds: HTTPAuthorizationCredentials = Depends(_bearer)):
         raise HTTPException(status_code=401, detail="Autenticación requerida")
     try:
         payload = decodificar_token(creds.credentials)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+    if payload.get("tipo") == "refresh":
+        raise HTTPException(status_code=401, detail="Use el access_token")
+    if not sesion_valida(payload["jti"]):
+        raise HTTPException(status_code=401, detail="Sesión revocada o expirada")
+    return payload
+
+
+def usuario_stream(token: str | None = Query(default=None, alias="token")):
+    """SSE (EventSource no puede setear headers): acepta el token por query."""
+    if token is None:
+        raise HTTPException(status_code=401, detail="Autenticación requerida")
+    try:
+        payload = decodificar_token(token)
     except Exception:
         raise HTTPException(status_code=401, detail="Token inválido o expirado")
     if payload.get("tipo") == "refresh":

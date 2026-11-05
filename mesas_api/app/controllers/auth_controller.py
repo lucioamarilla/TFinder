@@ -1,11 +1,14 @@
 from fastapi import HTTPException
 
 from mesas_api.app.models.auth_model import (
+    actualizar_password_hash,
     crear_token,
     crear_usuario,
     decodificar_token,
     guardar_sesion,
     guardar_sesion_familia,
+    hash_password,
+    necesita_rehash,
     obtener_usuario_por_email,
     revocar_familia,
     revocar_sesion,
@@ -47,6 +50,11 @@ def iniciar_sesion(data: AuthLogin):
     usuario = obtener_usuario_por_email(data.email)
     if not usuario or not verificar_password(data.password, usuario["password_hash"]):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    if necesita_rehash(usuario["password_hash"]):
+        try:
+            actualizar_password_hash(usuario["id"], hash_password(data.password))
+        except Exception:
+            pass
     return _emitir_tokens(usuario)
 
 

@@ -19,6 +19,12 @@ def _procesar(mensaje: dict) -> bool:
     if evento_ya_procesado(mensaje["event_id"]):
         return True
     tipo = mensaje.get("tipo")
+    if tipo == "mesa.eliminada":
+        registrar_evento(
+            mensaje["event_id"], tipo, {"mesa_id": mensaje.get("mesa_id")},
+            correlation_id=mensaje.get("correlation_id", "-"),
+        )
+        return True
     regla = REGLA.get(tipo)
     if regla is None:
         return False

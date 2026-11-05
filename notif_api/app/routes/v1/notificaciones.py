@@ -9,7 +9,7 @@ from notif_api.app.controllers.notificaciones import (
     marcar_leida,
     marcar_todas_leidas,
 )
-from notif_api.app.middleware.auth import usuario_actual
+from notif_api.app.middleware.auth import usuario_actual, usuario_stream
 from notif_api.app.schemas import NotificacionOut
 from notif_api.app.services.stream import hub
 
@@ -27,8 +27,12 @@ def listar_notificaciones_endpoint(
 
 
 @router.get("/notificaciones/stream")
-def notificaciones_stream(usuario: dict = Depends(usuario_actual)):
-    """SSE: emite en vivo cada notificacion nueva (solo del usuario autenticado)."""
+def notificaciones_stream(usuario: dict = Depends(usuario_stream)):
+    """SSE: emite en vivo cada notificacion nueva (solo del usuario autenticado).
+
+    El token puede viajar por header (Authorization: Bearer) o por query
+    (?token=...) porque EventSource no permite headers personalizados.
+    """
 
     usuario_id = int(usuario["sub"])
 

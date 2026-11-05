@@ -8,6 +8,7 @@ guardar_sesion) — el resto solo valida.
 """
 
 import os
+import time
 
 import jwt
 
@@ -15,10 +16,34 @@ from app.infra.redis import get_redis
 
 _SECRET = os.getenv("JWT_SECRET", "dev-secret")
 
+_DEMO_SEED_ENABLED = os.getenv("DEMO_SEED_ENABLED", "false").lower() in {"1", "true", "yes"}
+if _SECRET == "dev-secret" and _DEMO_SEED_ENABLED:
+    raise RuntimeError(
+        "JWT_SECRET no puede ser el valor por defecto ('dev-secret') cuando "
+        "DEMO_SEED_ENABLED está activo. Configurá JWT_SECRET en .env."
+    )
+
+_IDLE_MIN = int(os.getenv("SESSION_IDLE_MIN", "30"))
+
 
 def decodificar_token(token: str) -> dict:
     return jwt.decode(token, _SECRET, algorithms=["HS256"])
 
 
 def sesion_valida(jti: str) -> bool:
-    return get_redis().exists(f"sesion:{jti}") == 1
+    r = get_redis()
+    if r.exists(f"sesion:{jti}") != 1:
+        return False
+    clave = f"actividad:{jti}"
+    ultima = r.get(clave)
+    ahora = time.time()
+    if ultima is not None:
+        try:
+            if ahora - float(ultima) > _IDLE_MIN * 60:
+                r.delete(f"sesion:{jti}")
+                r.delete(clave)
+                return False
+        except (TypeError, ValueError):
+            pass
+    r.setex(clave, _IDLE_MIN * 60 + 60, str(ahora))
+    return True

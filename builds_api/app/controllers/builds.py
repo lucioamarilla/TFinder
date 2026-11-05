@@ -315,3 +315,12 @@ def listar_builds_filtradas(mesa_id=None, autor_id=None, tag=None):
             f"SELECT * FROM builds b {where} ORDER BY b.id", params
         ).fetchall()
     return [_serializar(f) for f in filas]
+
+
+def desvincular_builds_de_mesa(mesa_id: int) -> int:
+    """B6: desvincula builds de una mesa eliminada (mesa_id = NULL)."""
+    with get_connection() as conn:
+        cursor = conn.execute(
+            "UPDATE builds SET mesa_id = NULL WHERE mesa_id = %s", (mesa_id,)
+        )
+        return cursor.rowcount

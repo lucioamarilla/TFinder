@@ -21,6 +21,14 @@ def registrar_asistencia(sesion_id: int, usuario_id: int) -> bool:
         return cursor.fetchone() is not None
 
 
+def cambiar_rol_miembro(mesa_id: int, usuario_id: int, nuevo_rol: str):
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE miembros_mesa SET rol = %s WHERE mesa_id = %s AND usuario_id = %s",
+            (nuevo_rol, mesa_id, usuario_id),
+        )
+
+
 def listar_miembros(mesa_id: int):
     """Miembros de la mesa (F2: desde miembros_mesa con rol contextual).
 
