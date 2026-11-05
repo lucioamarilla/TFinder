@@ -177,157 +177,46 @@ Para desactivarlos: `DEMO_SEED_ENABLED=false`.
 | Campo | Tipo | Obligatorio | Validación |
 |---|---|---|---|
 | nombre | TEXT | Sí | mínimo 1 carácter |
-| sistema | TEXT | Sí | mínimo 1 carácter |
+| sistema | TEXT | Sí | **Literal `pf1e` (VAL-08)** |
 | descripcion | TEXT | No | — |
 | tono | TEXT | No | — |
 | horario | TEXT | No | — |
 | estado | TEXT | No | `abierta` o `cerrada` (default: `abierta`) |
 | nivel_inicial | INTEGER | No | >= 0, tipo estricto |
-| jugadores_max | INTEGER | No | > 0, tipo estricto |
+| jugadores_max | INTEGER | No | > 0, tipo estricto; no puede bajar debajo de `jugadores_actuales` (VAL-15 → 409) |
+| **gm_id** | BIGINT FK usuarios | Sí (peticiones nuevas) | propietario: solo el GM (o admin) edita/elimina (RN-02/VAL-17 → 403) |
+| jugadores_actuales | INT | cachea | contador atómico de cupo (409 cuando se agota) |
 | fecha_creacion | DATETIME | No | se asigna automáticamente |
 
 > **Campos de tipo estricto**: `nivel_inicial` y `jugadores_max` deben enviarse como números JSON reales. Si se envían como string (ej. `"5"`), la API los rechaza con `400`.
 
 ## Endpoints
 
-Todas las rutas tienen el prefijo `/api/v1`. Los errores siguen el formato unificado descrito en [Formato de errores](#formato-de-errores).
+Todas las rutas tienen el prefijo `/api/v1` y los errores usan el envelope unificado
+`{"error":{"codigo","mensaje"}}`. La referencia OpenAPI de cada puerto (`/docs`)
+incluye `securitySchemes: BearerAuth`. Resumen por servicio (puerto host):
 
-### GET /api/v1/mesas
-Lista todas las mesas.
-- Respuesta: `200 OK` + array JSON
+**mesas-api 8001** — `mesas`, `auth` (register/login/refresh/logout/me + acceso
+admin), `matchmaking/{mesa_id}/abrir` + `estado` (con sesión), `sesiones`
+(crear/confirmar/cerrar + QR `emitir/validar` — valida asistencia solo el GM de
+la mesa), **`fechas`** (propuestas del GM + voto editable de miembros +
+`confirmar` → crea la sesión, RF-10/11).
 
-```bash
-curl http://localhost:8000/api/v1/mesas
-```
+**builds-api 8002** — `builds` (listado con filtros `mesa_id/autor_id/tag`,
+oculta `privado/borrador` ajenos), **`POST/PUT/DELETE /builds`** con
+atributos 3–18 (VAL-44/45), historial de versiones apilable y
+`POST /builds/{id}/restaurar/{idx}` (RN-19), `publicar`, `vincular/{mesa_id}`
+(exige membresía vía REST a mesas-api, VAL-40), `tags` (GET/POST).
 
-**Respuesta — `200 OK`:**
-```json
-[
-  {
-    "id": 1,
-    "nombre": "Mesa Alpha",
-    "sistema": "Pathfinder",
-    "descripcion": null,
-    "tono": null,
-    "horario": null,
-    "estado": "abierta",
-    "nivel_inicial": null,
-    "jugadores_max": 5,
-    "fecha_creacion": "2026-08-28 19:28:30"
-  }
-]
-```
+**feed-api 8003** — `feed` (GET con filtros + **POST publicar** con
+`embed`/`autorNombre`), `POST /feed/{id}/like` (toggle, VAL-43),
+`POST /usuarios/{id}/seguir` + `GET seguidores` (RN-10),
+**`wiki`** (listado público + CRUD del GM bajo `mesas/{id}/wiki` con
+visibilidad `privada|jugadores|publica`, RN-05), `diario` (POST + PDF).
 
-### GET /api/v1/mesas/{id}
-Obtiene una mesa por ID.
-- `200 OK` + objeto Mesa si existe
-- `404 Not Found` + `{"error": {"codigo": 404, "mensaje": "..."}}` si no existe
-
-```bash
-curl http://localhost:8000/api/v1/mesas/1
-```
-
-**Respuesta — `200 OK`:**
-```json
-{
-  "id": 1,
-  "nombre": "Mesa Alpha",
-  "sistema": "Pathfinder",
-  "descripcion": null,
-  "tono": null,
-  "horario": null,
-  "estado": "abierta",
-  "nivel_inicial": null,
-  "jugadores_max": 5,
-  "fecha_creacion": "2026-08-28 19:28:30"
-}
-```
-
-**Respuesta — `404 Not Found` (id inexistente):**
-```json
-{"error": {"codigo": 404, "mensaje": "Mesa 9999 no encontrada"}}
-```
-
-### POST /api/v1/mesas
-Crea una mesa. Body: `{"nombre": "...", "sistema": "...", ...}`
-- `201 Created` + objeto creado (campos obligatorios: `nombre`, `sistema`)
-- `400 Bad Request` si faltan campos obligatorios o hay datos inválidos
-
-```bash
-curl -X POST http://localhost:8000/api/v1/mesas \
-  -H "Content-Type: application/json" \
-  -d '{"nombre": "Mesa Alpha", "sistema": "Pathfinder", "jugadores_max": 5}'
-```
-
-**Respuesta — `201 Created`:**
-```json
-{
-  "id": 1,
-  "nombre": "Mesa Alpha",
-  "sistema": "Pathfinder",
-  "descripcion": null,
-  "tono": null,
-  "horario": null,
-  "estado": "abierta",
-  "nivel_inicial": null,
-  "jugadores_max": 5,
-  "fecha_creacion": "2026-08-28 19:28:30"
-}
-```
-
-**Respuesta — `400 Bad Request` (faltan campos obligatorios):**
-```json
-{"error": {"codigo": 400, "mensaje": "body.nombre: Field required; body.sistema: Field required"}}
-```
-
-### PUT /api/v1/mesas/{id}
-Actualiza una mesa existente (update parcial: solo cambia los campos enviados).
-- `200 OK` + objeto actualizado
-- `404 Not Found` si no existe
-- `400 Bad Request` si hay datos inválidos
-
-```bash
-curl -X PUT http://localhost:8000/api/v1/mesas/1 \
-  -H "Content-Type: application/json" \
-  -d '{"estado": "cerrada", "jugadores_max": 4}'
-```
-
-**Respuesta — `200 OK`:**
-```json
-{
-  "id": 1,
-  "nombre": "Mesa Alpha",
-  "sistema": "Pathfinder",
-  "descripcion": null,
-  "tono": null,
-  "horario": null,
-  "estado": "cerrada",
-  "nivel_inicial": null,
-  "jugadores_max": 4,
-  "fecha_creacion": "2026-08-28 19:28:30"
-}
-```
-
-**Respuesta — `404 Not Found` (id inexistente):**
-```json
-{"error": {"codigo": 404, "mensaje": "Mesa 9999 no encontrada"}}
-```
-
-### DELETE /api/v1/mesas/{id}
-Elimina una mesa existente.
-- `204 No Content` si se elimina (sin body)
-- `404 Not Found` si no existe
-
-```bash
-curl -X DELETE http://localhost:8000/api/v1/mesas/1
-```
-
-**Respuesta — `204 No Content`** (sin cuerpo en la respuesta).
-
-**Respuesta — `404 Not Found` (id inexistente):**
-```json
-{"error": {"codigo": 404, "mensaje": "Mesa 9999 no encontrada"}}
-```
+**notif-api 8004** — `notificaciones` (listado/leída/leer-todas + SSE
+`/stream` con token), `auth/recuperar`, `event-log`, `emails`, `pdf`
+(estado/descarga), `dlq` (listar/reintentar/descartar).
 
 ## Formato de errores
 
