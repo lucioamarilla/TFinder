@@ -15,7 +15,6 @@ from notif_api.app.routes.v1.emails import router as emails_router
 from notif_api.app.routes.v1.event_log import router as event_log_router
 from notif_api.app.routes.v1.notificaciones import router as notificaciones_router
 from notif_api.app.routes.v1.pdf import router as pdf_router
-from notif_api.app.seed_demo import seed_demo_if_enabled as seed_demo_notif
 from notif_api.app.workers import pdf as pdf_worker
 from app.servicio import crear_app
 
@@ -38,5 +37,4 @@ app = crear_app(
         sesion_consumer.run,
         pdf_worker.run,
     ),
-    seed=seed_demo_notif,
 )

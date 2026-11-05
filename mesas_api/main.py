@@ -43,7 +43,6 @@ from mesas_api.app.routes.v1.matchmaking import router as matchmaking_router
 from mesas_api.app.routes.v1.mesas import router as mesas_router
 from mesas_api.app.routes.v1.sesiones import router as sesiones_router
 from mesas_api.app.routes.v1.solicitudes import router as solicitudes_router
-from mesas_api.app.seed_demo import seed_demo_if_enabled as seed_demo_mesas
 from mesas_api.app.services.qr_asistencia import _Conflict, _Invalid
 from app.servicio import crear_app
 
@@ -79,5 +78,4 @@ app = crear_app(
         _Conflict: manejar_qr_conflicto,
         _Invalid: manejar_qr_invalido,
     },
-    seed=seed_demo_mesas,
 )

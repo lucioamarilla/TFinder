@@ -15,7 +15,6 @@ from builds_api.app.init_db import init_db as builds_init_db
 from builds_api.app.routes.v1.build_pdf import router as build_pdf_router
 from builds_api.app.routes.v1.builds import router as builds_router
 from builds_api.app.routes.v1.tags import router as tags_router
-from builds_api.app.seed_demo import seed_demo_if_enabled as seed_demo_builds
 from builds_api.app.consumers.mesa import run as run_builds_consumer
 from app.servicio import crear_app
 
@@ -31,6 +30,5 @@ app = crear_app(
         BuildProhibidoError: manejar_prohibido_build,
         ValorInvalidoError: manejar_valor_invalido_build,
     },
-    seed=seed_demo_builds,
     hilos=(run_builds_consumer,),
 )
