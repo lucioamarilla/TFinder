@@ -81,3 +81,10 @@ def registrar_manejadores(app, servicio: str, adicionales: dict | None = None):
     app.add_exception_handler(Exception, manejar_error_interno(servicio))
     for exc_tipo, handler in (adicionales or {}).items():
         app.add_exception_handler(exc_tipo, handler)
+
+
+def manejar_conflicto(request, exc):
+    """409 genérico de conflicto (usado por contribuciones ya resueltas)."""
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(status_code=409, content=body_error(409, str(exc)))

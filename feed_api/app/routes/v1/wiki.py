@@ -1,6 +1,11 @@
 from fastapi import APIRouter, Depends, Header, Query, Request
 from typing import Optional
 
+from feed_api.app.controllers.wiki_contribuciones import (
+    crear_contribucion_controller,
+    decidir_contribucion_controller,
+    listar_contribuciones_controller,
+)
 from feed_api.app.controllers.wiki import (
     actualizar_pagina_controller,
     crear_pagina_controller,
@@ -85,3 +90,51 @@ def eliminar_pagina(
 ):
     eliminar_pagina_controller(mesa_id, pagina_id, _, token=_token_de(request, authorization))
     return None
+
+# ---- F4: contribuciones con estados -----------------------------------------
+
+@router.post("/mesas/{mesa_id}/wiki/{pagina_id}/contribuciones", status_code=201)
+def agregar_contribucion(
+    mesa_id: str,
+    pagina_id: int,
+    payload: dict,
+    request: Request,
+    _: dict = Depends(usuario_actual),
+    authorization: Optional[str] = Header(default=None),
+):
+    """Pliego F4: un integrante propone una edición (nace 'pendiente')."""
+    return crear_contribucion_controller(mesa_id, pagina_id, _, payload, token=_token_de(request, authorization))
+
+
+@router.get("/mesas/{mesa_id}/wiki/contribuciones")
+def bandeja_contribuciones(
+    mesa_id: str,
+    request: Request,
+    estado: str = Query(default='pendiente', pattern='^(pendiente|aprobada|rechazada)$'),
+    _: dict = Depends(usuario_actual),
+    authorization: Optional[str] = Header(default=None),
+):
+    """Solo el master ve la bandeja (2.4)."""
+    return listar_contribuciones_controller(mesa_id, _, token=_token_de(request, authorization), estado=estado)
+
+
+@router.post("/mesas/{mesa_id}/wiki/contribuciones/{contribucion_id}/aprobar")
+def aprobar_contribucion(
+    mesa_id: str,
+    contribucion_id: int,
+    request: Request,
+    _: dict = Depends(usuario_actual),
+    authorization: Optional[str] = Header(default=None),
+):
+    return decidir_contribucion_controller(mesa_id, contribucion_id, _, 'aprobada', token=_token_de(request, authorization))
+
+
+@router.post("/mesas/{mesa_id}/wiki/contribuciones/{contribucion_id}/rechazar")
+def rechazar_contribucion(
+    mesa_id: str,
+    contribucion_id: int,
+    request: Request,
+    _: dict = Depends(usuario_actual),
+    authorization: Optional[str] = Header(default=None),
+):
+    return decidir_contribucion_controller(mesa_id, contribucion_id, _, 'rechazada', token=_token_de(request, authorization))

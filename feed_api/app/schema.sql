@@ -57,3 +57,20 @@ CREATE TABLE IF NOT EXISTS follows (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_follows_par
     ON follows (seguidor_id, seguido_id);
 CREATE INDEX IF NOT EXISTS idx_follows_seguido ON follows (seguido_id);
+-- F4: contribuciones de jugadores con estados (pliego F4).
+CREATE TABLE IF NOT EXISTS wiki_contribuciones (
+    id          SERIAL      PRIMARY KEY,
+    pagina_id   INTEGER     NOT NULL REFERENCES wiki_paginas (id) ON DELETE CASCADE,
+    mesa_id     TEXT        NOT NULL,
+    autor_id    TEXT        NOT NULL,
+    autor_nome  TEXT,
+    cuerpo      JSONB       NOT NULL,
+    estado      TEXT        NOT NULL DEFAULT 'pendiente'
+                            CHECK (estado IN ('pendiente', 'aprobada', 'rechazada')),
+    revisado_por TEXT,
+    revisado_en TIMESTAMPTZ,
+    creado_en   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contribuciones_pagina
+    ON wiki_contribuciones (pagina_id, estado);
