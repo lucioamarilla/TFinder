@@ -24,7 +24,7 @@ from tests.conftest import _crear_con_rol
 pytestmark = pytest.mark.integration
 
 BUILDS_TABLAS = (
-    "builds_tags, builds, tags"
+    "builds, tags"  # builds_tags existe tras el GREEN (índice creado en schema.sql)
 )
 
 
