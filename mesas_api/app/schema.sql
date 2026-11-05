@@ -86,3 +86,29 @@ ALTER TABLE mesas ADD COLUMN IF NOT EXISTS gm_id BIGINT REFERENCES usuarios (id)
 CREATE UNIQUE INDEX IF NOT EXISTS uq_solicitud_activa
     ON solicitudes_uniones (mesa_id, usuario_id)
     WHERE estado = 'pendiente';
+
+-- P1.5: calendario con votación de fechas (RF-10/RF-11).
+CREATE TABLE IF NOT EXISTS fechas_propuestas (
+    id            SERIAL      PRIMARY KEY,
+    mesa_id       INTEGER     NOT NULL REFERENCES mesas (id) ON DELETE CASCADE,
+    propuesta     TIMESTAMPTZ NOT NULL,
+    estado        TEXT        NOT NULL DEFAULT 'propuesta'
+                              CHECK (estado IN ('propuesta', 'confirmada', 'descartada')),
+    propuesto_por BIGINT      NOT NULL,
+    confirmada_at TIMESTAMPTZ,
+    fecha         TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_fechas_mesa ON fechas_propuestas (mesa_id);
+
+CREATE TABLE IF NOT EXISTS votos_fechas (
+    id           SERIAL PRIMARY KEY,
+    propuesta_id INTEGER NOT NULL REFERENCES fechas_propuestas (id) ON DELETE CASCADE,
+    usuario_id   BIGINT  NOT NULL,
+    valor        TEXT    NOT NULL CHECK (valor IN ('a_favor', 'en_contra')),
+    fecha        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- RN-06: un solo voto (editable) por usuario y propuesta.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_voto_por_usuario
+    ON votos_fechas (propuesta_id, usuario_id);

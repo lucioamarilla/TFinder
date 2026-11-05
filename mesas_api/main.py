@@ -37,6 +37,7 @@ from mesas_api.app.errors import (
 )
 from mesas_api.app.init_db import init_db as mesas_init_db
 from mesas_api.app.routes.auth_routes import router as auth_router
+from mesas_api.app.routes.v1.fechas import router as fechas_router
 from mesas_api.app.routes.v1.matchmaking import router as matchmaking_router
 from mesas_api.app.routes.v1.mesas import router as mesas_router
 from mesas_api.app.routes.v1.sesiones import router as sesiones_router
@@ -56,6 +57,7 @@ app = crear_app(
         auth_router,
         matchmaking_router,
         solicitudes_router,
+        fechas_router,
         sesiones_router,
     ],
     adicionales={
