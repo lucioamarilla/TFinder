@@ -16,6 +16,7 @@ from mesas_api.app.controllers.sesiones_controller import (
 )
 from mesas_api.app.controllers.solicitudes_controller import (
     AccionInvalidaError,
+    SalirDeMasterError,
     CupoAgotadoError,
     MesaCerradaError,
     MesaNoExisteError,
@@ -71,6 +72,7 @@ app = crear_app(
         SolicitudDuplicadaError: manejar_conflicto,
         SolicitudNoExisteError: manejar_solicitud_inexistente,
         SolicitudProhibidaError: manejar_prohibido,
+        SalirDeMasterError: manejar_conflicto,
         AccionInvalidaError: manejar_accion_invalida,
         SesionNotFoundError: manejar_sesion_inexistente,
         SesionCerradaError: manejar_conflicto,

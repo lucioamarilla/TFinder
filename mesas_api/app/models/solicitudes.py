@@ -157,3 +157,31 @@ def expulsar_miembro(mesa_id: int, usuario_id: int):
             ).fetchone()
             nuevo_cupo = fila["jugadores_actuales"] if fila else None
     return hubo, nuevo_cupo
+
+def salir_de_mesa(mesa_id: int, usuario_id: int):
+    """F2: baja voluntaria del JUGADOR (no del master).
+
+    Elimina la membresía 'jugador' (y pendientes vivas), libera el cupo y
+    limpia solicitudes. Nunca toca al master: transferencia/eliminación de
+    mesa es un flujo aparte (futuro).
+    """
+    with get_connection() as conn, conn.transaction():
+        cursor = conn.execute(
+            "DELETE FROM miembros_mesa WHERE mesa_id = %s AND usuario_id = %s AND rol = 'jugador' RETURNING usuario_id",
+            (mesa_id, usuario_id),
+        )
+        hubo = cursor.fetchone() is not None
+        conn.execute(
+            "DELETE FROM solicitudes_uniones"
+            " WHERE mesa_id = %s AND usuario_id = %s AND estado = 'pendiente'",
+            (mesa_id, usuario_id),
+        )
+        nuevo_cupo = None
+        if hubo:
+            fila = conn.execute(
+                "UPDATE mesas SET jugadores_actuales = greatest(jugadores_actuales - 1, 0)"
+                " WHERE id = %s RETURNING jugadores_actuales",
+                (mesa_id,),
+            ).fetchone()
+            nuevo_cupo = fila["jugadores_actuales"] if fila else None
+    return hubo, nuevo_cupo

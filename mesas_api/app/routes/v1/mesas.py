@@ -31,6 +31,7 @@ from mesas_api.app.controllers.sesiones_controller import (
 from mesas_api.app.controllers.solicitudes_controller import (
     crear_solicitud_controller,
     expulsar_miembro_controller,
+    salir_controller,
 )
 from mesas_api.app.middleware.auth import requerir_roles, usuario_actual
 from mesas_api.app.middleware.membresia import requerir_miembro, requerir_master
@@ -51,6 +52,15 @@ def miembros_mesa(mesa_id: int, _=Depends(requerir_miembro)):
     """F2 (2.4): solo integrantes (o servicio B09) leen los miembros."""
     obtener_mesa_controller(mesa_id)
     return {"mesa_id": mesa_id, "miembros": listar_miembros(mesa_id)}
+
+
+@router.delete("/{mesa_id}/miembros/mi")
+def salir_de_mesa_mia(
+    mesa_id: int,
+    usuario: dict = Depends(requerir_miembro),
+):
+    """F2: baja voluntaria del jugador (el master no sale por esta vía)."""
+    return salir_controller(mesa_id, usuario)
 
 
 @router.delete("/{mesa_id}/miembros/{usuario_id}")

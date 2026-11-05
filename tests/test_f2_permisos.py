@@ -105,6 +105,39 @@ def _mesa(client, token, nombre="Mesa F2"):
     return r.json()
 
 
+# ---- panel del jugador: salirse de una mesa donde es jugador -------------------
+
+def test_jugador_puede_salir_de_la_mesa(client, token_gm):
+    mesa_id = _mesa(client, token_gm)["id"]
+    usuario = _registrar(client)
+    sol = client.post(
+        f"/api/v1/mesas/{mesa_id}/solicitudes",
+        headers={"Authorization": f"Bearer {usuario['access_token']}"},
+    ).json()
+    client.post(
+        f"/api/v1/mesas/{mesa_id}/solicitudes/{sol['id']}/aceptar",
+        headers={"Authorization": f"Bearer {token_gm}"},
+    )
+    auth = {"Authorization": f"Bearer {usuario['access_token']}"}
+
+    r = client.delete(f"/api/v1/mesas/{mesa_id}/miembros/mi", headers=auth)
+    assert r.status_code == 200, "el jugador puede salirse por su cuenta"
+    detalle = client.get(f"/api/v1/mesas/{mesa_id}").json()
+    assert detalle["jugadores_actuales"] == 0, "el cupo vuelve al salirse"
+
+    # tras salirse ya NO es miembro: la lectura de sesiones vuelve a 403
+    assert client.get(f"/api/v1/mesas/{mesa_id}/sesiones", headers=auth).status_code == 403
+
+
+def test_master_no_puede_salir_por_esta_via(client, token_gm):
+    mesa_id = _mesa(client, token_gm)["id"]
+    r = client.delete(
+        f"/api/v1/mesas/{mesa_id}/miembros/mi",
+        headers={"Authorization": f"Bearer {token_gm}"},
+    )
+    assert r.status_code == 409, "el master transfiere o elimina la mesa (futuro), no sale"
+
+
 # ---- 2.1: crear mesa => master -------------------------------------------------
 
 def test_crear_mesa_registra_master_en_membresias(client, token_gm):

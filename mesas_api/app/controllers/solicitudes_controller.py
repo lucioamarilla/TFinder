@@ -1,6 +1,7 @@
 from psycopg import errors as pg_errors
 
 from mesas_api.app.models.mesa import obtener_mesa_por_id
+from mesas_api.app.models.mesa import rol_de
 from mesas_api.app.models.solicitudes import (
     aceptar_solicitud,
     crear_solicitud,
@@ -9,6 +10,7 @@ from mesas_api.app.models.solicitudes import (
     listar_solicitudes_con_estado,
     obtener_solicitud,
     rechazar_solicitud,
+    salir_de_mesa,
 )
 from mesas_api.app.services.eventos import (
     publicar_aceptacion,
@@ -41,6 +43,10 @@ class SolicitudNoExisteError(Exception):
 
 
 class SolicitudProhibidaError(Exception):
+    pass
+
+
+class SalirDeMasterError(Exception):
     pass
 
 
@@ -108,6 +114,23 @@ def obtener_solicitud_por_idem(mesa_id, usuario_id, idem_key):
     from mesas_api.app.models.solicitudes import obtener_solicitud_por_key
 
     return obtener_solicitud_por_key(mesa_id, usuario_id, idem_key)
+
+
+def salir_controller(mesa_id, usuario):
+    """F2: el jugador se va; el master no puede salir por esta vía (409)."""
+    mesa = obtener_mesa_por_id(mesa_id)
+    if mesa is None:
+        raise MesaNoExisteError(f"Mesa {mesa_id} no encontrada")
+    usuario_id = int(usuario["sub"])
+    # El master de la mesa NO sale por esta vía: transfiere o elimina (futuro).
+    if rol_de(mesa_id, usuario_id) == "master":
+        raise SalirDeMasterError(
+            "El master no puede salir de su mesa por esta vía: transferí la dirección o eliminá la mesa."
+        )
+    hubo, nuevo_cupo = salir_de_mesa(mesa_id, usuario_id)
+    if not hubo:
+        raise SolicitudNoExisteError(f"El usuario {usuario_id} no es jugador de la mesa {mesa_id}.")
+    return {"mesa_id": mesa_id, "jugadores_actuales": nuevo_cupo}
 
 
 def listar_solicitudes_controller(mesa_id, usuario, estado=None):
