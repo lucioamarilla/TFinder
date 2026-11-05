@@ -35,3 +35,22 @@ CREATE INDEX IF NOT EXISTS idx_wiki_mesa_id ON wiki_paginas (mesa_id);
 
 -- P1.6: visibilidad por página (RN-05: privada | jugadores | publica).
 ALTER TABLE wiki_paginas ADD COLUMN IF NOT EXISTS visibilidad TEXT NOT NULL DEFAULT 'jugadores';
+
+-- P1.7: feed activo — likes únicos y follows (RF-17/RF-18).
+CREATE TABLE IF NOT EXISTS likes_post (
+    post_id    INTEGER     NOT NULL REFERENCES publicaciones (id) ON DELETE CASCADE,
+    usuario_id TEXT        NOT NULL,
+    fecha      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (post_id, usuario_id)
+);
+
+CREATE TABLE IF NOT EXISTS follows (
+    id          SERIAL      PRIMARY KEY,
+    seguidor_id TEXT        NOT NULL,
+    seguido_id  TEXT        NOT NULL,
+    fecha       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_follows_par
+    ON follows (seguidor_id, seguido_id);
+CREATE INDEX IF NOT EXISTS idx_follows_seguido ON follows (seguido_id);

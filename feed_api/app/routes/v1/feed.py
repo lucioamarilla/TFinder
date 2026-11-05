@@ -1,6 +1,15 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
-from feed_api.app.controllers.feed import LIMITE_MAX, listar_publicaciones
+from feed_api.app.controllers.feed import (
+    LIMITE_MAX,
+    PostCreate,
+    crear_publicacion,
+    dar_like,
+    listar_publicaciones,
+    listar_siguimientos,
+    seguir_a,
+)
+from feed_api.app.middleware.auth import usuario_actual
 from feed_api.app.schemas import PostOut
 
 router = APIRouter(prefix="/api/v1")
@@ -30,3 +39,26 @@ def listar_feed(
         limit=limit,
         offset=offset,
     )
+
+
+@router.post("/feed", response_model=PostOut, status_code=201)
+def publicar_feed(payload: PostCreate, usuario: dict = Depends(usuario_actual)):
+    """RF-16: el usuario autenticado publica su contenido (VAL-41)."""
+    return crear_publicacion(usuario, payload)
+
+
+@router.post("/feed/{post_id}/like")
+def dar_like_a(post_id: int, usuario: dict = Depends(usuario_actual)):
+    """RF-17/VAL-43: like único por usuario (toggle)."""
+    return dar_like(post_id, str(usuario["sub"]))
+
+
+@router.post("/usuarios/{usuario_id}/seguir")
+def seguir(usuario_id: str, usuario: dict = Depends(usuario_actual)):
+    """RF-18/RN-10: seguir a otro usuario (sin duplicar ni autofollow)."""
+    return seguir_a(str(usuario_id), str(usuario["sub"]))
+
+
+@router.get("/usuarios/{usuario_id}/seguidores")
+def seguidores(usuario_id: str):
+    return listar_siguimientos(str(usuario_id))

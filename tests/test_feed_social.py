@@ -111,7 +111,7 @@ def test_likes_de_varios_usuarios_suman(feed):
     ).json()["id"]
     feed.post(f"/api/v1/feed/{post_id}/like", headers=auth1)
     res = feed.post(f"/api/v1/feed/{post_id}/like", headers=_usuario_rol())
-    assert res.json()["votos"] == 1, "un like + un acredtiado nuevo = 1 de ese usuario"
+    assert res.json()["votos"] == 2, "like de dos usuarios distintos suma 2 (1 por cabeza)"
 
 
 # ---- RF-18/RN-10: follows --------------------------------------------------------
