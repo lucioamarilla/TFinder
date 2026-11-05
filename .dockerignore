@@ -12,7 +12,7 @@ venv/
 openspec/
 
 # Frontend (se desarrolla y versiona aparte)
-tfinder-vue/
+frontend/
 
 # Tests y documentacion locales
 tests/

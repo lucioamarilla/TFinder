@@ -191,7 +191,7 @@ services:
 
   frontend:
     build:
-      context: ./tfinder-vue
+      context: ./frontend
       args:
         VITE_MESAS_API: /mesas-api
         VITE_BUILDS_API: /builds-api

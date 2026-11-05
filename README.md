@@ -1,47 +1,47 @@
-# TFinder — Módulo de Gestión de Mesas (AE1)
+# TFinder — Plataforma de Rol de Mesa (MVP · Fase 1)
 
-**TFinder** es una API REST para gestionar la entidad **Mesa**, basada en el juego de rol **Pathfinder 1.ª edición**. El objetivo es realizar un **CRUD completo** (crear, listar, obtener, actualizar y eliminar) de mesas de juego, cumpliendo con las **consignas del AE1** de la materia Paradigmas III. La aplicación está construida con FastAPI, persiste en SQLite y maneja de forma centralizada los errores con un formato de respuesta uniforme.
+**TFinder** centraliza las herramientas de una mesa de rol —gestión de mesas/campañas, matchmaking, sesiones con asistencia y calendario, builds de personajes (Pathfinder 1e), wiki de campaña, feed social y notificaciones— en una plataforma multi-servicio. Fase 1: **FastAPI + PostgreSQL** con Redis, RabbitMQ y MailHog; el frontend es una app **Vue 3** consumiendo los cuatro servicios por proxy same-origin.
 
 ## Integrantes
 - Amarilla Lucio
 - Czajkowski Leonardo
 
 ## Stack Tecnológico
-- Lenguaje: Python 3.11+
-- Framework: FastAPI
-- Persistencia: SQLite
-- Servidor ASGI: Uvicorn
+- Framework: FastAPI (4 microservicios, Dockerfile multi-use con `ARG SERVICE`)
+- Persistencia: PostgreSQL (una base por servicio: `mesas_db`, `builds_db`, `feed_db`, `notif_db`)
+- Infraestructura: Redis (caché + sesiones JWT), RabbitMQ (eventos asíncronos + DLQ), MailHog (sandbox SMTP)
+- Frontend: Vue 3 + Vite + Tailwind (`frontend/`), servido por Nginx con proxies same-origin
+- Errores: envelope unificado `{"error": {"codigo": <int>, "mensaje": <str>}}` en todos los servicios
+
+## Arquitectura
+
+| Servicio | Carpeta | Puerto (host) | Dominio |
+|---|---|---|---|
+| mesas-api | `mesas_api/` | 8001 | mesas CRUD, auth JWT, solicitudes de unión, sesiones+QR de asistencia, matchmaking |
+| builds-api | `builds_api/` | 8002 | builds y tags (lectura), generación de PDF de build |
+| feed-api | `feed_api/` | 8003 | feed público, wiki de campaña, diario de sesión |
+| notif-api | `notif_api/` | 8004 | notificaciones (REST + SSE), emails, event-log, DLQ, descarga de PDFs |
+
+Comunicación entre servicios: eventos asíncronos vía exchange topic **`tfinder.events`** (reintentos con backoff y routing a DLQ `dlq.general` tras agotar) y REST `notif→mesas` para obtener miembros. Idempotencia de POSTs críticos por header `Idempotency-Key` (Redis, TTL 24 h). `/docs` de cada puerto es la referencia OpenAPI autoritativa.
 
 ## Requisitos previos
-- Python 3.11 o superior instalado (`python --version`).
-- `pip` disponible (incluido con Python).
+- Python 3.11+ (`python3 --version`) y Docker Compose para la infraestructura.
 
 ## Estructura del proyecto
 ```bash
-TFinder/
-├── .env                        # (NO se sube, va en .gitignore)
-├── .env.example                # sí se sube, con claves sin valores sensibles
-├── .gitignore
-├── requirements.txt
-├── README.md
-├── REPORTE_PRUEBAS.md          # reporte de pruebas funcionales de los endpoints
-├── schema.sql                  # DDL de la tabla mesas
-├── main.py                     # punto de entrada, instancia FastAPI, arranca Uvicorn
-└── app/
-    ├── __init__.py
-    ├── db.py                   # conexión SQLite + init_db() + migraciones
-    ├── routes/
-    │   ├── __init__.py
-    │   └── mesas_routes.py     # define los endpoints /api/v1/mesas
-    ├── controllers/
-    │   ├── __init__.py
-    │   └── mesas_controller.py # lógica intermedia entre rutas y modelo
-    ├── models/
-    │   ├── __init__.py
-    │   └── mesas_model.py      # esquemas Pydantic (MesaCreate, MesaUpdate, MesaOut) + acceso a datos
-    └── middleware/
-        ├── __init__.py
-        └── error_handler.py    # manejador centralizado de excepciones (400/404/500)
+App_Final/
+├── app/            # paquete compartido: infra (pg, redis, rabbitmq, token, ready, logs)
+├── mesas_api/      # 8001 · mesas, auth, solicitudes, sesiones/QR, matchmaking
+├── builds_api/     # 8002 · builds/tags + PDF de build
+├── feed_api/       # 8003 · feed, wiki, diario de sesión
+├── notif_api/      # 8004 · notificaciones (REST+SSE), emails, event-log, DLQ, PDF
+├── frontend/       # app Vue 3 (repo anidado tfinder-vue) + nginx same-origin
+├── infra/          # init de PostgreSQL (crea las 4 bases + bases *_test)
+├── tests/          # suite pytest con infraestructura real (docker) — 169+ casos
+├── scripts/        # seed/demo y generadores de evidencias
+├── docker-compose.yml
+├── Dockerfile      # uno para los 4 servicios (ARG SERVICE)
+└── requirements.txt · requirements-dev.txt
 ```
 
 ## Instalación
