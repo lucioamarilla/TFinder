@@ -67,5 +67,22 @@ def guardar_sesion(jti: str, usuario_id: int, ttl_seg: int = 86400):
     get_redis().setex(f"sesion:{jti}", ttl_seg, str(usuario_id))
 
 
+def guardar_sesion_familia(jti: str, usuario_id: int, ttl_seg: int = 86400):
+    """Indexa el jti en la familia de sesiones del usuario (logout total)."""
+    _r = get_redis()
+    _r.sadd(f"sesiones_usuario:{usuario_id}", jti)
+    _r.expire(f"sesiones_usuario:{usuario_id}", ttl_seg)
+
+
 def revocar_sesion(jti: str):
     get_redis().delete(f"sesion:{jti}")
+
+
+def revocar_familia(jti: str, usuario_id):
+    """Revoca el access pedido y TODAS las sesiones hermanas (refresh incluidos)."""
+    _r = get_redis()
+    claves = _r.smembers(f"sesiones_usuario:{usuario_id}")
+    for j in claves:
+        _r.delete(f"sesion:{j.decode() if isinstance(j, bytes) else j}")
+    _r.delete(f"sesiones_usuario:{usuario_id}")
+    _r.delete(f"sesion:{jti}")

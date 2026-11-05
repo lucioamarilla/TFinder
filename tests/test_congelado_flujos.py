@@ -92,14 +92,16 @@ def test_auth_flujo_completo_congelado(client):
     registro = client.post("/api/v1/auth/register", json=credencial)
     assert registro.status_code == 201
     body = registro.json()
-    assert set(body) == {"access_token", "refresh_token", "rol"}
+    # P0.3: el contrato gana "perfil" (el FE arma la sesión sin un viaje a /me).
+    assert set(body) == {"access_token", "refresh_token", "rol", "perfil"}
+    assert body["perfil"]["email"] == email
 
     login = client.post(
         "/api/v1/auth/login",
         json={"email": email, "password": "secreto123"},
     )
     assert login.status_code == 200
-    assert set(login.json()) == {"access_token", "refresh_token", "rol"}
+    assert set(login.json()) == {"access_token", "refresh_token", "rol", "perfil"}
 
     duplicado = client.post("/api/v1/auth/register", json=credencial)
     assert duplicado.status_code == 400

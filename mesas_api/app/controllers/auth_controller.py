@@ -5,7 +5,9 @@ from mesas_api.app.models.auth_model import (
     crear_usuario,
     decodificar_token,
     guardar_sesion,
+    guardar_sesion_familia,
     obtener_usuario_por_email,
+    revocar_familia,
     revocar_sesion,
     sesion_valida,
     verificar_password,
@@ -19,10 +21,18 @@ def _emitir_tokens(usuario):
     refresh = crear_token(claims, tipo="refresh")
     guardar_sesion(decodificar_token(access)["jti"], usuario["id"])
     guardar_sesion(decodificar_token(refresh)["jti"], usuario["id"])
+    guardar_sesion_familia(decodificar_token(access)["jti"], usuario["id"])
+    guardar_sesion_familia(decodificar_token(refresh)["jti"], usuario["id"])
     return {
         "access_token": access,
         "refresh_token": refresh,
         "rol": usuario["rol"],
+        "perfil": {
+            "id": usuario["id"],
+            "email": usuario["email"],
+            "nombre": usuario.get("nombre") or "",
+            "rol": usuario["rol"],
+        },
     }
 
 
@@ -49,9 +59,13 @@ def renovar_access(data: AuthRefresh):
     claims = {k: payload[k] for k in ("sub", "rol", "email")}
     access = crear_token(claims, tipo="access")
     guardar_sesion(decodificar_token(access)["jti"], int(payload["sub"]))
+    guardar_sesion_familia(decodificar_token(access)["jti"], int(payload["sub"]))
     return {"access_token": access}
 
 
-def cerrar_sesion(jti: str):
-    revocar_sesion(jti)
+def cerrar_sesion(jti: str, usuario_id=None):
+    if usuario_id:
+        revocar_familia(jti, usuario_id)
+    else:
+        revocar_sesion(jti)
     return {"ok": True}

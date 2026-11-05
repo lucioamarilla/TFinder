@@ -2,7 +2,10 @@ from fastapi import APIRouter, Depends, status
 
 from mesas_api.app.controllers import auth_controller
 from mesas_api.app.middleware.auth import requerir_roles, usuario_actual
-from mesas_api.app.models.auth_model import ROL_USUARIO
+from mesas_api.app.models.auth_model import (
+    ROL_USUARIO,
+    decodificar_token,
+)
 from mesas_api.app.schemas import AuthLogin, AuthRefresh, AuthRegistro
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -28,7 +31,7 @@ def refresh(data: AuthRefresh):
 
 @router.post("/logout")
 def logout(payload: dict = Depends(usuario_actual)):
-    return auth_controller.cerrar_sesion(payload["jti"])
+    return auth_controller.cerrar_sesion(payload["jti"], payload.get("sub"))
 
 
 @router.get("/me")
