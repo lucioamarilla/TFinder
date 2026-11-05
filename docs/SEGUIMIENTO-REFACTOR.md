@@ -55,3 +55,14 @@
 ## Problemas encontrados durante F1
 
 - (se registra a medida que aparecen)
+
+
+## Registro de skills — F3/F4/F5/F6
+
+| Fase | Skill | Motivo | Resultado |
+|---|---|---|---|
+| F3 | tdd-workflow | RED→GREEN por ciclo (anotaciones, bitácora), commits checkpoint | 255 BE / 227 FE |
+| F4 | tdd-workflow + error-handling | contribuciones con estados, bandeja master | 259 BE |
+| F5 | tdd-workflow | uploads + perfil + foro adjunta solo builds públicas | 269 BE |
+| F6 | tdd-workflow + e2e-testing | suite 6 cuentas (19 ítems) + Playwright smoke | 269 BE / 219 FE / 1/1 E2E |
+| Todas | verification-loop + agent-self-evaluation | gate de cierre de cada fase | suites verdes + 0 errores de consola |
