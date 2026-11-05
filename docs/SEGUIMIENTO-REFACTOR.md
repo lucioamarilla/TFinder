@@ -8,8 +8,8 @@
 | Fase | Estado | Fecha |
 |---|---|---|
 | F0 Auditoría | ✅ completa | 2026-11-05 |
-| F1 Navegación/UX | 🚧 en curso | 2026-11-05 |
-| F2 Membresías/permisos | ⏳ | — |
+| F1 Navegación/UX | ✅ completa | 2026-11-05 |
+| F2 Membresías/permisos | ⏳ próxima | — |
 | F3 Bitácora de sesión | ⏳ | — |
 | F4 Wiki colaborativa | ⏳ | — |
 | F5 Foro/Builds/Perfil + uploads | ⏳ | — |
@@ -19,12 +19,13 @@
 
 | # | Tarea | Estado |
 |---|---|---|
-| 1.1 | Header único (Mis mesas + toda la nav autenticada; no duplicar) | ⏳ |
-| 1.2 | Auth sin header (GuestLayout real en /login /registro /recuperar) | ⏳ |
-| 1.3 | Landing: dado visible desde el inicio + scroll progresivo + sin cifras ficticias | ⏳ |
-| 1.4 | Feed: sin "Mis mesas activas", sin texto v5/OGL, sin tendencias; comunidades reales `t/` con filtro backend | ⏳ |
-| 1.5 | Mesas activas: detalle accesible + filtros con selectores predefinidos | ⏳ |
-| 1.6 | Endpoint BE `GET /api/v1/feed/comunidades` (fuente real de comunidades) | ⏳ |
+| 1.1 | Header único (Mis mesas + toda la nav autenticada; no duplicar) | ✅ `34dc872` |
+| 1.2 | Auth sin header (GuestLayout real en /login /registro /recuperar) | ✅ `34dc872` |
+| 1.3 | Landing: dado visible desde el primer frame + hero sin vacíos + sin cifras ficticias + datos reales con estados vacíos | ✅ `4eb7624` |
+| 1.4 | Feed dual-mode: comunidades `t/` con filtro real, sin sidebar fake ni tendencias ni "Próxima sesión" | ✅ `dc87790` |
+| 1.5 | Mesas activas: detalle accesible (link real) + filtros `<select>` + sin redirección prohibida al modo sesión | ✅ `34dc872`/`e401867` |
+| 1.6 | Endpoint BE `GET /api/v1/feed/comunidades` + campo `comunidad` + `GET /mesas/mias` + `gm_nombre` | ✅ `20a76c1` |
+| 1.7 | D10: consola admin simulada oculta en modo api | ✅ `15d4697` |
 
 ## Registro de skills (por pliego §8)
 
@@ -35,11 +36,17 @@
 | F1 | tdd-workflow | RED→GREEN por tarea con commits checkpoint | en curso |
 | F1 | verification-loop | gate post-cambios de nav (vitest + ruff + pytest) | pendiente |
 
-## Pruebas ejecutadas (línea de base al iniciar F1)
+## Pruebas ejecutadas (cierre F1)
 
-- Backend: `venv/bin/pytest -q` → **236 passed** · cov 83% · `ruff` clean.
-- Frontend: `npx vitest run` → **221 passed**.
-- Stack: docker full up + login real por UI verificado.
+- Backend: `venv/bin/pytest -q` → **241 passed** (+5 de F1: comunidades/mias) · `ruff` clean.
+- Frontend: `npx vitest run` → **221 passed** (feed dual-mode, landing real, header unificado) · `eslint` clean.
+- Deploy: `docker compose up -d --build frontend` → healthy; **0 errores de consola** verificado con navegador (landing con hero desde el primer frame, mesas reales del backend, post más votado, comunidades real=0 → estado vacío diseñado).
+
+## Archivos modificados en F1
+
+- FE: `App.vue`, `router/index.js` (meta layout guest), `layouts/GuestLayout.vue` (reescrito), `components/AppHeader.vue` (nav única + servicios), `views/FeedView.vue` (reescrito dual-mode), `views/LandingView.vue` (reescrita real), `views/MesasListView.vue` (selects + dual), `views/MesaDetailJugadorView.vue` (dual + sin modal redundante), `services/{mesas,feed}.js`, `api/endpoints.js`, `utils/asciiD20.js` (reveal fijo).
+- BE: `feed_api` (coluna comunidad + endpoints), `mesas_api` (`/mesas/mias`, `gm_nombre`), tests nuevos.
+- Docs: `docs/AUDITORIA-FASE-0.md`, `docs/SEGUIMIENTO-REFACTOR.md` (este archivo).
 
 ## Decisiones arquitectónicas registradas
 
