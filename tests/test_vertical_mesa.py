@@ -7,6 +7,7 @@ cualquier string, GET /mesas no filtraba, y POST /solicitudes auto-aceptaba.
 """
 
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -329,6 +330,91 @@ def test_aceptar_sin_cupo_da_409_y_no_consume_mas(client, token_gm):
         f"/api/v1/mesas/{mesa_id}/solicitudes/{solicitudes[1]}/aceptar", headers=gm
     )
     assert segunda.status_code == 409, "CupoAgotado: no hay vacantes"
+
+
+def test_bandeja_del_gm_muestra_quien_pidio(client, token_gm, token_jugador):
+    """P2: la bandeja trae nombre/email del solicitante (JOIN dentro de mesas_db)."""
+    mesa_id = client.post(
+        "/api/v1/mesas",
+        json={"nombre": "Mesa bandeja", "sistema": "pf1e"},
+        headers={"Authorization": f"Bearer {token_gm}"},
+    ).json()["id"]
+
+    email_jugador = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": f"bandeja_{uuid.uuid4().hex[:8]}@tfinder.dev",
+            "password": "secreto123",
+            "nombre": "Nombre Visible",
+        },
+    ).json()["perfil"]["email"]
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": email_jugador, "password": "secreto123"},
+    )
+    auth = {"Authorization": f"Bearer {login.json()['access_token']}"}
+    client.post(f"/api/v1/mesas/{mesa_id}/solicitudes", headers=auth)
+
+    banda = client.get(
+        f"/api/v1/mesas/{mesa_id}/solicitudes",
+        headers={"Authorization": f"Bearer {token_gm}"},
+    ).json()[0]
+    assert banda.get("nombre") == "Nombre Visible", "el GM necesita ver QUIÉN pide"
+    assert banda.get("email") == email_jugador
+
+
+def test_votos_del_calendario_muestran_el_nombre_del_votante(client, token_gm):
+    """P2: la propuesta devuelve los nombres por facción (faturado JOIN)."""
+    mesa_id = client.post(
+        "/api/v1/mesas",
+        json={"nombre": "Mesa votos nombres", "sistema": "pf1e"},
+        headers={"Authorization": f"Bearer {token_gm}"},
+    ).json()["id"]
+
+    email_votante = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": f"voto_{uuid.uuid4().hex[:8]}@tfinder.dev",
+            "password": "secreto123",
+            "nombre": "Votarón Ana",
+        },
+    ).json()["perfil"]["email"]
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": email_votante, "password": "secreto123"},
+    )
+    auth_vot = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+    client.post(
+        f"/api/v1/mesas/{mesa_id}/solicitudes", headers=auth_vot
+    )
+    sol_id = client.get(
+        f"/api/v1/mesas/{mesa_id}/solicitudes",
+        headers={"Authorization": f"Bearer {token_gm}"},
+    ).json()[0]["id"]
+    client.post(
+        f"/api/v1/mesas/{mesa_id}/solicitudes/{sol_id}/aceptar",
+        headers={"Authorization": f"Bearer {token_gm}"},
+    )
+
+    fut = (datetime.now(timezone.utc) + timedelta(days=9)).strftime("%Y-%m-%dT%H:%M:%S")
+    fecha_id = client.post(
+        f"/api/v1/mesas/{mesa_id}/fechas",
+        json={"propuesta": fut},
+        headers={"Authorization": f"Bearer {token_gm}"},
+    ).json()["id"]
+    client.post(
+        f"/api/v1/mesas/{mesa_id}/fechas/{fecha_id}/voto",
+        json={"valor": "a_favor"},
+        headers=auth_vot,
+    )
+
+    lista = client.get(
+        f"/api/v1/mesas/{mesa_id}/fechas", headers=auth_vot
+    ).json()
+    prop = [p for p in lista if p["id"] == fecha_id][0]
+    assert prop["a_favor_nombres"] == ["Votarón Ana"]
+    assert prop["en_contra_nombres"] == []
 
 
 def test_gm_puede_expulsar_jugador_y_liberar_cupo(client, token_gm, token_jugador):

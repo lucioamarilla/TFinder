@@ -32,7 +32,12 @@ def obtener_solicitud_por_key(mesa_id: int, usuario_id: int, idem_key: str):
 def listar_solicitudes(mesa_id: int):
     with get_connection() as conn:
         filas = conn.execute(
-            "SELECT * FROM solicitudes_uniones WHERE mesa_id = %s ORDER BY id DESC",
+            """
+            SELECT s.*, u.nombre AS nombre, u.email AS email
+            FROM solicitudes_uniones s
+            LEFT JOIN usuarios u ON u.id = s.usuario_id
+            WHERE s.mesa_id = %s ORDER BY s.id DESC
+            """,
             (mesa_id,),
         ).fetchall()
         return [dict(fila) for fila in filas]
@@ -42,8 +47,12 @@ def listar_solicitudes_con_estado(mesa_id: int, estado=None):
     with get_connection() as conn:
         if estado:
             filas = conn.execute(
-                "SELECT * FROM solicitudes_uniones WHERE mesa_id = %s AND estado = %s"
-                " ORDER BY id DESC",
+                """
+                SELECT s.*, u.nombre AS nombre, u.email AS email
+                FROM solicitudes_uniones s
+                LEFT JOIN usuarios u ON u.id = s.usuario_id
+                WHERE s.mesa_id = %s AND s.estado = %s ORDER BY s.id DESC
+                """,
                 (mesa_id, estado),
             ).fetchall()
         else:

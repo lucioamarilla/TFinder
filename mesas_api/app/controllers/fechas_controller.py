@@ -60,6 +60,8 @@ def listar_controller(mesa_id, _usuario):
             "propuesta": _iso(f["propuesta"]),
             "estado": f["estado"],
             "votos": {"a_favor": int(f["a_favor"]), "en_contra": int(f["en_contra"])},
+            "a_favor_nombres": (f.get("a_favor_nombres") or "").split(", ") if f.get("a_favor_nombres") else [],
+            "en_contra_nombres": (f.get("en_contra_nombres") or "").split(", ") if f.get("en_contra_nombres") else [],
         }
         for f in listar_fechas(mesa_id)
     ]

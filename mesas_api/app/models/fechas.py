@@ -55,7 +55,15 @@ def listar_fechas(mesa_id: int):
             """
             SELECT f.id, f.mesa_id, f.propuesta, f.estado, f.propuesto_por,
                    COALESCE(SUM(CASE WHEN v.valor = 'a_favor' THEN 1 ELSE 0 END), 0) AS a_favor,
-                   COALESCE(SUM(CASE WHEN v.valor = 'en_contra' THEN 1 ELSE 0 END), 0) AS en_contra
+                   COALESCE(SUM(CASE WHEN v.valor = 'en_contra' THEN 1 ELSE 0 END), 0) AS en_contra,
+                   COALESCE(
+                       (SELECT string_agg(u.nombre, ', ' ORDER BY u.nombre)
+                        FROM votos_fechas vv JOIN usuarios u ON u.id = vv.usuario_id
+                        WHERE vv.propuesta_id = f.id AND vv.valor = 'a_favor'), '') AS a_favor_nombres,
+                   COALESCE(
+                       (SELECT string_agg(u.nombre, ', ' ORDER BY u.nombre)
+                        FROM votos_fechas vv JOIN usuarios u ON u.id = vv.usuario_id
+                        WHERE vv.propuesta_id = f.id AND vv.valor = 'en_contra'), '') AS en_contra_nombres
             FROM fechas_propuestas f
             LEFT JOIN votos_fechas v ON v.propuesta_id = f.id
             WHERE f.mesa_id = %s
