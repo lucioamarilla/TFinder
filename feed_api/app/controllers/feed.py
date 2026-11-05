@@ -27,6 +27,8 @@ class PostCreate(BaseModel):
     tipo: str = "post"
     etiqueta: Optional[str] = None
     autor: Optional[str] = None
+    autorNombre: Optional[str] = None
+    embed: Optional[dict] = None
 
 
 class PostNotFoundError(Exception):
@@ -104,19 +106,23 @@ def crear_publicacion(usuario, datos):
     if tipo not in ("post", "build", "wiki"):
         raise HTTPException(status_code=400, detail="El tipo debe ser post, build o wiki.")
     nombre = usuario.get("email", "").split("@")[0]
+    from psycopg.types.json import Json
+
+    embed = datos.get("embed") or None
     with get_connection() as conn:
         fila = conn.execute(
             "INSERT INTO publicaciones (tipo, autor_id, autor_nombre, iniciales,"
-            " tiempo, titulo, cuerpo, etiqueta, horas)"
-            " VALUES (%s, %s, %s, %s, 'ahora', %s, %s, %s, 0) RETURNING *",
+            " tiempo, titulo, cuerpo, etiqueta, horas, embed)"
+            " VALUES (%s, %s, %s, %s, 'ahora', %s, %s, %s, 0, %s) RETURNING *",
             (
                 tipo,
                 str(usuario["sub"]),
-                datos.get("autor") or nombre or "Autor",
+                datos.get("autorNombre") or datos.get("autor") or nombre or "Autor",
                 (nombre or "AV")[:2].upper(),
                 titulo,
                 cuerpo,
                 datos.get("etiqueta"),
+                Json(embed) if embed is not None else None,
             ),
         ).fetchone()
     return _serializar(fila)

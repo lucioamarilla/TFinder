@@ -60,6 +60,27 @@ def test_crear_publicacion(feed):
     assert cuerpo["votos"] == 0
 
 
+def test_publicar_con_embed_y_nombre_visible(feed):
+    """RF-16/RF-20: el post puede referenciar un build (embed) y nombre visible."""
+    auth = _usuario_rol()
+    r = feed.post(
+        "/api/v1/feed",
+        json={
+            "titulo": "Mi mago PF1e tiempo completo",
+            "cuerpo": "Anal左手isis de arquetipo",
+            "tipo": "build",
+            "embed": {"build_id": 4},
+            "autorNombre": "Aldren Valeros",
+        },
+        headers=auth,
+    )
+    assert r.status_code == 201
+    cuerpo = r.json()
+    assert cuerpo["tipo"] == "build"
+    assert cuerpo["embed"] == {"build_id": 4}, "el embed viaja para el feed"
+    assert cuerpo["autorNombre"].strip()
+
+
 def test_publicacion_vacia_da_400(feed):
     auth = _usuario_rol()
     r = feed.post(
