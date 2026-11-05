@@ -74,11 +74,10 @@ def test_publicar_con_embed_y_nombre_visible(feed):
         },
         headers=auth,
     )
-    assert r.status_code == 201
-    cuerpo = r.json()
-    assert cuerpo["tipo"] == "build"
-    assert cuerpo["embed"] == {"build_id": 4}, "el embed viaja para el feed"
-    assert cuerpo["autorNombre"].strip()
+    # build 4 no existe en la DB de pruebas → el backend ahora valida → 409
+    # (pliego F5: validación de builds adjuntas en backend). El caso feliz
+    # (build público) queda cubierto en test_f5_foro_builds.py.
+    assert r.status_code == 409
 
 
 def test_publicacion_vacia_da_400(feed):
