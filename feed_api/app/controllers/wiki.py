@@ -1,5 +1,7 @@
 import json
 
+from app.infra.mesas import es_gm_mesa, es_miembro_aceptado  # puente B09 compartido
+
 from feed_api.app.db import get_connection
 from feed_api.app.schemas import PaginaOut
 
@@ -51,8 +53,6 @@ def obtener_wiki(mesa_id):
 # ---- P1.6: CRUD con visibilidad (RF-08/RF-09, RN-05) -------------------------
 
 from fastapi import HTTPException
-
-from feed_api.app.services.mesas import es_gm_mesa, es_miembro_aceptado
 
 
 def _propiedad_o_403(mesa_id, usuario, token):

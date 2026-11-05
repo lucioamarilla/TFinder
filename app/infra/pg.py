@@ -40,8 +40,21 @@ class PoolPropio:
         return self._construir()
 
     def abrir(self):
-        if not self._abierto:
-            self._construir().open()
+        # Abre (o REABRE): psycopg_pool no permite reusar un pool abierto y
+        # cerrado, así que si quedó cerrado (p. ej. el shutdown de un TestClient
+        # o de un servidor de prueba) se reconstruye uno nuevo sobre el mismo
+        # env-var. El ciclo sigue idempotente y seguro para reuso.
+        cerrado_previamente = self._abierto and self._pool is not None and self._pool._closed
+        if not self._abierto or cerrado_previamente:
+            pool = ConnectionPool(
+                os.getenv(self._variable, self._url_default),
+                min_size=1,
+                max_size=5,
+                open=False,
+                kwargs={"row_factory": dict_row},
+            )
+            pool.open()
+            self._pool = pool
             self._abierto = True
 
     def cerrar(self):

@@ -1,4 +1,4 @@
-"""Puente REST feed-api → mesas-api (contrato B09, igual que notif-api).
+"""Puente REST → mesas-api (contrato B09), compartido por feed-api y builds-api.
 
 Las reglas de permiso viven en mesas-api:
   - GET /api/v1/mesas/{id}          → datos de la mesa (con gm_id)

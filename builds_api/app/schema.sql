@@ -31,3 +31,13 @@ CREATE TABLE IF NOT EXISTS tags (
     id     SERIAL PRIMARY KEY,
     nombre TEXT   NOT NULL UNIQUE
 );
+
+-- P1.8: propiedad de builds (RN-11, usuario_id como TEXT del sub del JWT).
+ALTER TABLE builds ADD COLUMN IF NOT EXISTS autor_id TEXT;
+
+-- P1.8: tags por build (RF 7.5).
+CREATE TABLE IF NOT EXISTS builds_tags (
+    build_id INTEGER NOT NULL REFERENCES builds (id) ON DELETE CASCADE,
+    nombre   TEXT    NOT NULL REFERENCES tags (nombre) ON DELETE CASCADE,
+    PRIMARY KEY (build_id, nombre)
+);

@@ -90,7 +90,9 @@ def test_405_metodo_no_permitido(mesas, builds):
     assert r.status_code == 405
     assert r.json() == {"error": {"codigo": 405, "mensaje": "Método no permitido para este endpoint"}}
 
-    rb = builds.delete("/api/v1/builds/1")
+    # P1.8: DELETE /builds/{id} ahora existe (requiere auth → 401). El 405
+    # congelado queda en un método que sigue sin existir (PATCH).
+    rb = builds.patch("/api/v1/builds/1")
     assert rb.status_code == 405
     assert rb.json() == {"error": {"codigo": 405, "mensaje": "Método no permitido para este endpoint"}}
 

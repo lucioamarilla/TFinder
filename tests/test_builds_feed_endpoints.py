@@ -111,7 +111,11 @@ def feed_client(_pools):
 def test_listar_builds_devuelve_todos(builds_client):
     r = builds_client.get("/api/v1/builds")
     assert r.status_code == 200
-    assert len(r.json()) == 2
+    # P1.8 (RN-11): anónimos solo ven 'publico'; 'privado' y 'borrador' quedan
+    # ocultos en el listado.
+    publicos = [b["persona"] for b in r.json()]
+    assert "Mago Test" in publicos
+    assert "Guerrera Test" not in publicos
 
 
 def test_filtrar_builds_por_mesa(builds_client):

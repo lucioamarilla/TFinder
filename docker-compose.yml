@@ -117,7 +117,9 @@ services:
       BUILDS_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/builds_db
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
-      JWT_SECRET: ${JWT_SECRET:-dev-secret}  # B03: valida access_token de mesas-api
+      JWT_SECRET: ${JWT_SECRET:-dev-secret}
+      MESA_URL: http://mesas-api:8001        # P1.8: membresías para vincular builds (B09)
+      MESAS_URL: http://mesas-api:8001  # B03: valida access_token de mesas-api
       JWT_EXP_MIN: ${JWT_EXP_MIN:-1440}
       DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
       DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-DemoTFinder123!}

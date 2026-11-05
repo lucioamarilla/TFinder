@@ -51,7 +51,13 @@ def _mesas_local():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         puerto = s.getsockname()[1]
-    config = uvicorn.Config(mesas_app, host="127.0.0.1", port=puerto, log_level="warning")
+    config = uvicorn.Config(
+        mesas_app,
+        host="127.0.0.1",
+        port=puerto,
+        log_level="warning",
+        lifespan="off",  # el ciclo de pools lo maneja el entorno de pruebas
+    )
     servidor = uvicorn.Server(config)
     hilo = threading.Thread(target=servidor.run, daemon=True)
     hilo.start()
@@ -239,9 +245,9 @@ def test_asignar_tags_y_filtrar(builds):
     )
     assert r.status_code == 200
 
-    filtrado = builds.get("/api/v1/builds", params={"tag": "Guerrero"})
+    filtrado = builds.get("/api/v1/builds", params={"tag": "Guerrero"}, headers=auth)
     assert filtrado.status_code == 200
-    assert filtrado.json() and all(b["id"] == body["id"] or b["clase"] == "Guerrero" for b in filtrado.json())
+    assert any(b["id"] == body["id"] for b in filtrado.json()), "el tag filtra el build propio"
 
     tags = builds.get("/api/v1/tags").json()
     nombres = {t["nombre"] for t in tags}

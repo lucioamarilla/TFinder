@@ -42,7 +42,13 @@ def _mesas_local():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         puerto = s.getsockname()[1]
-    config = uvicorn.Config(mesas_app, host="127.0.0.1", port=puerto, log_level="warning")
+    config = uvicorn.Config(
+        mesas_app,
+        host="127.0.0.1",
+        port=puerto,
+        log_level="warning",
+        lifespan="off",  # el ciclo de pools lo maneja el entorno de pruebas
+    )
     servidor = uvicorn.Server(config)
     hilo = threading.Thread(target=servidor.run, daemon=True)
     hilo.start()

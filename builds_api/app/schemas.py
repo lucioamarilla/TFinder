@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class BuildOut(BaseModel):
     id: int
     mesaId: Optional[int] = None
+    autorId: Optional[str] = None
     persona: str
     handle: Optional[str] = None
     autor: Optional[str] = None
