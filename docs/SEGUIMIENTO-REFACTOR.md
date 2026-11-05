@@ -9,8 +9,8 @@
 |---|---|---|
 | F0 Auditoría | ✅ completa | 2026-11-05 |
 | F1 Navegación/UX | ✅ completa | 2026-11-05 |
-| F2 Membresías/permisos | ⏳ próxima | — |
-| F3 Bitácora de sesión | ⏳ | — |
+| F2 Membresías/permisos | ✅ completa | 2026-11-05 |
+| F3 Bitácora de sesión | ⏳ próxima | — |
 | F4 Wiki colaborativa | ⏳ | — |
 | F5 Foro/Builds/Perfil + uploads | ⏳ | — |
 | F6 Pruebas 6 cuentas | ⏳ | — |
