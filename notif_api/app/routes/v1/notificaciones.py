@@ -7,6 +7,7 @@ from notif_api.app.controllers.notificaciones import (
     NotificacionNotFoundError,
     listar_notificaciones,
     marcar_leida,
+    marcar_todas_leidas,
 )
 from notif_api.app.middleware.auth import usuario_actual
 from notif_api.app.schemas import NotificacionOut
@@ -56,3 +57,9 @@ def marcar_leida_endpoint(id: int, usuario: dict = Depends(usuario_actual)):
         return marcar_leida(id, int(usuario["sub"]))
     except NotificacionNotFoundError:
         raise HTTPException(status_code=404, detail="Notificación no encontrada")
+
+
+@router.patch("/notificaciones/leer-todas")
+def marcar_todas_endpoint(usuario: dict = Depends(usuario_actual)):
+    """Marca como leídas todas las notificaciones del usuario y las globales."""
+    return {"actualizadas": marcar_todas_leidas(int(usuario["sub"]))}

@@ -45,3 +45,20 @@ def marcar_leida(id: int, usuario_id):
         if fila is None:
             raise NotificacionNotFoundError(id)
     return NotificacionOut(**_dict_fila(fila))
+
+
+def marcar_todas_leidas(usuario_id) -> int:
+    """Marca como leídas todas las del usuario y las globales; cuenta los cambios.
+
+    Las globales (usuario_id IS NULL) son una fila compartida: marcarlas en
+    masa deja leídas para todos, misma semántica del PATCH individual
+    (spec notificaciones-vivo: marcar leída y marcar todas).
+    """
+    with get_connection() as conn:
+        filas = conn.execute(
+            "UPDATE notificaciones SET leida = TRUE"
+            " WHERE leida = FALSE AND (usuario_id = %s OR usuario_id IS NULL)"
+            " RETURNING id",
+            (usuario_id,),
+        ).fetchall()
+    return len(filas)
