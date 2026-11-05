@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 
 from app.infra.redis import get_redis
+from app.infra.token import decodificar_token, sesion_valida
 from mesas_api.app.db import get_connection
 
 _SECRET = os.getenv("JWT_SECRET", "dev-secret")
@@ -42,10 +43,6 @@ def crear_token(payload: dict, tipo="access") -> str:
     return jwt.encode(p, _SECRET, algorithm="HS256")
 
 
-def decodificar_token(token: str) -> dict:
-    return jwt.decode(token, _SECRET, algorithms=["HS256"])
-
-
 def crear_usuario(email, password, nombre, rol=ROL_USUARIO):
     with get_connection() as conn:
         return conn.execute(
@@ -72,7 +69,3 @@ def guardar_sesion(jti: str, usuario_id: int, ttl_seg: int = 86400):
 
 def revocar_sesion(jti: str):
     get_redis().delete(f"sesion:{jti}")
-
-
-def sesion_valida(jti: str) -> bool:
-    return get_redis().exists(f"sesion:{jti}") == 1

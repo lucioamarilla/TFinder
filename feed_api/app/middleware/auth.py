@@ -1,21 +1,11 @@
-import os
+"""Auth real (B03). La validación es compartida: ver app/infra/token.py."""
 
-import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.infra.redis import get_redis
+from app.infra.token import decodificar_token, sesion_valida
 
-_SECRET = os.getenv("JWT_SECRET", "dev-secret")
 _bearer = HTTPBearer(auto_error=False)
-
-
-def decodificar_token(token: str) -> dict:
-    return jwt.decode(token, _SECRET, algorithms=["HS256"])
-
-
-def sesion_valida(jti: str) -> bool:
-    return get_redis().exists(f"sesion:{jti}") == 1
 
 
 def usuario_actual(creds: HTTPAuthorizationCredentials = Depends(_bearer)):

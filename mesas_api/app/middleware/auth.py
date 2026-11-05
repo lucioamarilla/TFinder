@@ -1,7 +1,9 @@
+"""Auth real (B03). La validación es compartida: ver app/infra/token.py."""
+
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from mesas_api.app.models.auth_model import decodificar_token, sesion_valida
+from app.infra.token import decodificar_token, sesion_valida
 
 _bearer = HTTPBearer(auto_error=False)
 
