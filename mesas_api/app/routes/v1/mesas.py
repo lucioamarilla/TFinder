@@ -170,3 +170,42 @@ def cerrar_sesion_mesa(
     _=Depends(requerir_master),
 ):
     return cerrar_sesion_controller(mesa_id, sesion_id)
+
+# ---- F3: bitácora de la sesión (pliego 2.3) ----------------------------------
+
+from mesas_api.app.controllers.sesiones_controller import (
+    AnotacionInvalidaError,
+    anotacion_controller,
+    anotaciones_controller,
+)
+from app.infra.errors import body_error as _body_error
+
+
+def _anotacion_resp(code, mensaje):
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(status_code=code, content=_body_error(code, mensaje))
+
+
+@router.post("/{mesa_id}/sesiones/{sesion_id}/anotaciones", status_code=201)
+def anotar_sesion(
+    mesa_id: int,
+    sesion_id: int,
+    payload: dict,
+    usuario: dict = Depends(requerir_miembro),
+):
+    """F3: anotación cronológica de un integrante (autor y fecha del server)."""
+    try:
+        return anotacion_controller(mesa_id, sesion_id, usuario, (payload or {}).get("texto"))
+    except AnotacionInvalidaError as exc:
+        return _anotacion_resp(400, str(exc))
+
+
+@router.get("/{mesa_id}/sesiones/{sesion_id}/anotaciones")
+def historial_sesion(
+    mesa_id: int,
+    sesion_id: int,
+    _=Depends(requerir_miembro),
+):
+    """F3: historial cronológico (autor, fecha-hora, texto)."""
+    return anotaciones_controller(mesa_id, sesion_id)

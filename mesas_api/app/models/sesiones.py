@@ -97,3 +97,30 @@ def cerrar_sesion_db(sesion_id: int) -> dict | None:
             (sesion_id,),
         ).fetchone()
     return dict(fila) if fila else None
+
+# ---- F3: bitácora (anotaciones cronológicas) ---------------------------------
+
+_ANOTACIONES_SELECT = """
+    SELECT a.id, a.sesion_id, a.texto, a.creado_en, a.autor_id, u.nombre AS autor_nombre
+    FROM anotaciones_sesion a
+    JOIN usuarios u ON u.id = a.autor_id
+    WHERE a.sesion_id = %s
+    ORDER BY a.creado_en ASC, a.id ASC
+"""
+
+
+def agregar_anotacion(sesion_id: int, mesa_id: int, autor_id: int, texto: str):
+    with get_connection() as conn, conn.transaction():
+        fila = conn.execute(
+            "INSERT INTO anotaciones_sesion (sesion_id, mesa_id, autor_id, texto)"
+            " VALUES (%s, %s, %s, %s)"
+            " RETURNING id, sesion_id, texto, creado_en, autor_id",
+            (sesion_id, mesa_id, autor_id, texto),
+        ).fetchone()
+    return dict(fila)
+
+
+def listar_anotaciones(sesion_id: int):
+    with get_connection() as conn:
+        filas = conn.execute(_ANOTACIONES_SELECT, (sesion_id,)).fetchall()
+    return [dict(f) for f in filas]

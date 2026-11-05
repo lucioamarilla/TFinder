@@ -133,3 +133,16 @@ CREATE TABLE IF NOT EXISTS votos_fechas (
 -- RN-06: un solo voto (editable) por usuario y propuesta.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_voto_por_usuario
     ON votos_fechas (propuesta_id, usuario_id);
+-- F3: bitácora de la sesión (principio 2.3) — anotaciones textuales de los
+-- integrantes, cronológicas, con autor y fecha-hora del servidor.
+CREATE TABLE IF NOT EXISTS anotaciones_sesion (
+    id        BIGSERIAL PRIMARY KEY,
+    sesion_id INTEGER NOT NULL REFERENCES sesiones (id) ON DELETE CASCADE,
+    mesa_id   INTEGER NOT NULL REFERENCES mesas (id)    ON DELETE CASCADE,
+    autor_id  BIGINT  NOT NULL REFERENCES usuarios (id),
+    texto     TEXT    NOT NULL,
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_anotaciones_sesion
+    ON anotaciones_sesion (sesion_id, creado_en, id);

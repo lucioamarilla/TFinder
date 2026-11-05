@@ -8,6 +8,8 @@ from mesas_api.app.models.sesiones import (
     confirmar_sesion_db,
     crear_sesion_db,
     listar_sesiones_db,
+    listar_anotaciones,
+    agregar_anotacion,
     obtener_sesion,
     obtener_sesion_de_mesa,
     registrar_asistencia,
@@ -38,6 +40,49 @@ def _formatear_sesion(fila):
         valor = salida.get(clave)
         if isinstance(valor, datetime):
             salida[clave] = valor.isoformat()
+    return salida
+
+
+def resolver_sesion(sesion_id: int):
+    """F3: obtiene la sesión (mesa_id incluido) o None."""
+    return obtener_sesion(sesion_id)
+
+
+def annotacion_para_controller(mesa_id, sesion_id, usuario, texto):
+    """Alias solicitado por la ruta (transforma controller de igual nombre)."""
+    return anotacion_controller(mesa_id, sesion_id, usuario, texto)
+
+
+class AnotacionInvalidaError(Exception):
+    """VAL-33 aplicado a la bitácora: el texto no puede estar vacío."""
+
+
+def anotacion_controller(mesa_id: int, sesion_id: int, usuario, texto: str):
+    """F3: agrega una anotación cronológica de un integrante."""
+    texto_limpio = (texto or '').strip()
+    if not texto_limpio:
+        raise AnotacionInvalidaError('El texto de la anotación no puede estar vacío.')
+    fila = obtener_sesion(sesion_id)
+    if fila is None or fila["mesa_id"] != mesa_id:
+        raise SesionNotFoundError(f'Sesión {sesion_id} no encontrada')
+    modelo = agregar_anotacion(sesion_id, mesa_id, int(usuario['sub']), texto_limpio)
+    import uuid as _uuid
+
+    from mesas_api.app.models.usuarios_lookup import obtener_usuario_por_id
+
+    autor = obtener_usuario_por_id(int(usuario['sub']))
+    return {**modelo, 'autor_nombre': autor['nombre'] if autor else ''}
+
+
+def anotaciones_controller(mesa_id: int, sesion_id: int):
+    """F3: historial cronológico con autor y fecha-hora."""
+    fila = obtener_sesion(sesion_id)
+    if fila is None or fila["mesa_id"] != mesa_id:
+        raise SesionNotFoundError(f'Sesión {sesion_id} no encontrada')
+    salida = []
+    for a in listar_anotaciones(sesion_id):
+        creado = a['creado_en'].isoformat() if hasattr(a['creado_en'], 'isoformat') else str(a['creado_en'])
+        salida.append({**a, 'creado_en': creado})
     return salida
 
 

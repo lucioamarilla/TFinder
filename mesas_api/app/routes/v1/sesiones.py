@@ -1,8 +1,17 @@
 from fastapi import APIRouter, Depends
 
-from mesas_api.app.controllers.sesiones_controller import emitir_qr, validar_qr
+from mesas_api.app.controllers.sesiones_controller import (
+    emitir_qr,
+    validar_qr,
+    anotacion_controller,
+    anotaciones_controller,
+)
 from mesas_api.app.middleware.auth import usuario_actual
-from mesas_api.app.middleware.membresia import requerir_master
+from mesas_api.app.models.mesa import rol_de
+
+
+def _rol_de(mesa_id, usuario):
+    return rol_de(mesa_id, int(usuario["sub"]))
 from mesas_api.app.schemas import QROut, QrValidate
 
 router = APIRouter(prefix="/api/v1/sesiones", tags=["sesiones"])
@@ -21,3 +30,5 @@ def validar(
 ):
     """Solo el master de la mesa registra asistencia (validado por sesion)."""
     return validar_qr(sesion_id, body, usuario)
+
+
