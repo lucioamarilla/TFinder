@@ -41,5 +41,16 @@ context/
 dev.cmd
 dev.ps1
 
+# Frontend (dependencias y build)
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+
+# Datos locales / artefactos
+storage/
+.playwright-mcp/
+*.png
+
 # Archivos de bloqueo de LibreOffice (se crean al abrir un .md/.odt en el editor)
 .~lock.*#
