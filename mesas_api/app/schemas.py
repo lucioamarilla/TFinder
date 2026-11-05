@@ -79,6 +79,18 @@ class QROut(BaseModel):
     sesion_id: int
 
 
+class SesionOut(BaseModel):
+    """Sesión de juego de una mesa (B07)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    mesa_id: int
+    estado: EstadoMesa  # mismas reglas del CHECK de la tabla: abierta | cerrada
+    fecha: str
+    confirmada_at: Optional[str] = None
+
+
 class AuthLogin(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1)

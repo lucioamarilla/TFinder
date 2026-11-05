@@ -68,3 +68,10 @@ CREATE TABLE IF NOT EXISTS asistencias (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sesiones_mesa ON sesiones (mesa_id);
+
+-- Cierre AE2: confirmación explícita del GM (B07/proveedor-email)
+-- Confirmar la sesión dispara el evento sesion.confirmada y notif-api notifica
+-- por SSE y emails a los miembros de la mesa. La columna es nullable porque
+-- las sesiones históricas no la registraban, y confirmar es idempotente
+-- (reconfirmar no vuelve a publicar el evento)
+ALTER TABLE sesiones ADD COLUMN IF NOT EXISTS confirmada_at TIMESTAMPTZ;

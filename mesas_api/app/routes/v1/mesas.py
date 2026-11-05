@@ -7,10 +7,16 @@ from mesas_api.app.controllers.mesas import (
     listar_mesas_controller,
     obtener_mesa_controller,
 )
-from mesas_api.app.controllers.sesiones_controller import SesionNotFoundError
-from mesas_api.app.middleware.auth import usuario_actual
+from mesas_api.app.controllers.sesiones_controller import (
+    SesionNotFoundError,
+    cerrar_sesion_controller,
+    confirmar_sesion_controller,
+    crear_sesion_controller,
+    listar_sesiones_controller,
+)
+from mesas_api.app.middleware.auth import requerir_roles, usuario_actual
 from mesas_api.app.models.sesiones import listar_miembros
-from mesas_api.app.schemas import MesaCreate, MesaOut, MesaUpdate
+from mesas_api.app.schemas import MesaCreate, MesaOut, MesaUpdate, SesionOut
 from mesas_api.app.services.eventos import publicar_solicitud
 
 router = APIRouter(prefix="/api/v1/mesas")
@@ -61,3 +67,41 @@ def solicitar_union(
         correlation_id=request.scope.get("correlation_id"),
     )
     return {"estado": "pendiente"}
+
+
+# ---- Sesiones de juego (cierre AE2) -----------------------------------------
+
+@router.get("/{mesa_id}/sesiones", response_model=list[SesionOut])
+def listar_sesiones_mesa(mesa_id: int, _=Depends(usuario_actual)):
+    return listar_sesiones_controller(mesa_id)
+
+
+@router.post("/{mesa_id}/sesiones", status_code=201, response_model=SesionOut)
+def crear_sesion_mesa(mesa_id: int, _=Depends(requerir_roles("gm", "admin"))):
+    """El GM crea una sesión de juego de la mesa (para el pase de asistencia)."""
+    return crear_sesion_controller(mesa_id)
+
+
+@router.post("/{mesa_id}/sesiones/{sesion_id}/confirmar")
+def confirmar_sesion_mesa(
+    mesa_id: int,
+    sesion_id: int,
+    request: Request,
+    usuario: dict = Depends(requerir_roles("gm", "admin")),
+):
+    """Confirma la sesión y emite sesion.confirmada (notif + emails a miembros)."""
+    return confirmar_sesion_controller(
+        mesa_id,
+        sesion_id,
+        int(usuario["sub"]),
+        correlation_id=request.scope.get("correlation_id"),
+    )
+
+
+@router.post("/{mesa_id}/sesiones/{sesion_id}/cerrar")
+def cerrar_sesion_mesa(
+    mesa_id: int,
+    sesion_id: int,
+    _=Depends(requerir_roles("gm", "admin")),
+):
+    return cerrar_sesion_controller(mesa_id, sesion_id)

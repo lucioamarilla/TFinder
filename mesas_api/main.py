@@ -9,7 +9,10 @@ from app.infra.ready import evaluar_ready
 from app.middleware.error_envelope import ErrorEnvelopeMiddleware
 from app.middleware.log_context import CorrelationMiddleware
 from mesas_api.app.controllers.mesas import MesaNotFoundError
-from mesas_api.app.controllers.sesiones_controller import SesionNotFoundError
+from mesas_api.app.controllers.sesiones_controller import (
+    SesionCerradaError,
+    SesionNotFoundError,
+)
 from mesas_api.app.controllers.solicitudes_controller import (
     CupoAgotadoError,
     MesaNoExisteError,
@@ -58,6 +61,7 @@ registrar_manejadores(
         SolicitudEnProcesoError: manejar_conflicto,
         MesaNoExisteError: manejar_mesa_inexistente,
         SesionNotFoundError: manejar_sesion_inexistente,
+        SesionCerradaError: manejar_conflicto,
         _Conflict: manejar_qr_conflicto,
         _Invalid: manejar_qr_invalido,
     },
