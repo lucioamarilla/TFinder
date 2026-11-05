@@ -197,6 +197,7 @@ services:
         VITE_BUILDS_API: /builds-api
         VITE_FEED_API: /feed-api
         VITE_NOTIF_API: /notif-api
+        VITE_AUTH_MODE: api
     container_name: tfinder-frontend
     ports:
       - "5173:80"
