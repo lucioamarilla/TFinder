@@ -1,73 +1,42 @@
-from contextlib import asynccontextmanager
-from threading import Thread
+"""notif-api: notificaciones vivas, emails, PDF, event-log y DLQ (f08/f09/B05).
 
-from dotenv import load_dotenv
-from fastapi import FastAPI
+Además del andamiaje estándar, arranca en hilos daemon los consumidores de
+RabbitMQ (mesas, sesiones) y el worker de PDF — era la única diferencia de su
+lifespan respecto a los otros tres servicios.
+"""
 
-from app.infra.errors import registrar_manejadores
-from app.infra.logge import logger
-from app.infra.ready import evaluar_ready
-from app.middleware.error_envelope import ErrorEnvelopeMiddleware
-from app.middleware.log_context import CorrelationMiddleware
+from notif_api.app import db as notif_db
 from notif_api.app.consumers import mesa as mesa_consumer
 from notif_api.app.consumers import sesion as sesion_consumer
-from notif_api.app.db import abrir_pool, cerrar_pool, get_pool
-from notif_api.app.init_db import init_db
+from notif_api.app.init_db import init_db as notif_init_db
 from notif_api.app.routes.v1.auth import router as auth_router
 from notif_api.app.routes.v1.dlq import router as dlq_router
 from notif_api.app.routes.v1.emails import router as emails_router
 from notif_api.app.routes.v1.event_log import router as event_log_router
 from notif_api.app.routes.v1.notificaciones import router as notificaciones_router
 from notif_api.app.routes.v1.pdf import router as pdf_router
-from notif_api.app.workers import pdf as pdf_worker
 from notif_api.app.seed_demo import seed_demo_if_enabled as seed_demo_notif
+from notif_api.app.workers import pdf as pdf_worker
+from app.servicio import crear_app
 
-load_dotenv()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    abrir_pool()
-    init_db()
-    seed_demo_notif()
-    logger.info("servicio iniciado")
-    Thread(target=mesa_consumer.run, daemon=True).start()
-    Thread(target=sesion_consumer.run, daemon=True).start()
-    Thread(target=pdf_worker.run, daemon=True).start()
-    yield
-    cerrar_pool()
-
-
-app = FastAPI(title="TFinder · Notif API", version="0.6.0", lifespan=lifespan)
-app.add_middleware(ErrorEnvelopeMiddleware)
-app.add_middleware(CorrelationMiddleware)
-registrar_manejadores(app, "notif")
-app.include_router(notificaciones_router)
-app.include_router(auth_router)
-app.include_router(event_log_router)
-app.include_router(emails_router)
-app.include_router(pdf_router)
-app.include_router(dlq_router)
-
-
-def psql_disponible():
-    abrir_pool()
-    return get_pool().connection()
-
-
-@app.get("/health")
-def health():
-    abrir_pool()
-    with get_pool().connection() as conn:
-        conn.execute("SELECT 1")
-    return {"status": "ok", "servicio": "notif-api"}
-
-
-@app.get("/live")
-def live():
-    return {"estado": "vivo"}
-
-
-@app.get("/ready")
-def ready():
-    return evaluar_ready(psql_disponible)
+app = crear_app(
+    titulo="TFinder · Notif API",
+    version="0.6.0",
+    servicio="notif",
+    db=notif_db,
+    init_db=notif_init_db,
+    routers=[
+        notificaciones_router,
+        auth_router,
+        event_log_router,
+        emails_router,
+        pdf_router,
+        dlq_router,
+    ],
+    hilos=(
+        mesa_consumer.run,
+        sesion_consumer.run,
+        pdf_worker.run,
+    ),
+    seed=seed_demo_notif,
+)
