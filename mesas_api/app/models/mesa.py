@@ -108,3 +108,23 @@ def liberar_vacante(mesa_id):
         )
         fila = cursor.fetchone()
         return fila["jugadores_actuales"] if fila else None
+
+
+def listar_con_rol(usuario_id: int):
+    """Mesas del usuario como master (creador) o como jugador miembro (F1)."""
+    with get_connection() as conn:
+        filas = conn.execute(
+            """
+            SELECT m.*,
+                   CASE WHEN m.gm_id = %s THEN 'master' ELSE 'jugador' END AS mi_rol
+            FROM mesas m
+            WHERE m.gm_id = %s
+               OR m.id IN (
+                   SELECT s.mesa_id FROM solicitudes_uniones s
+                   WHERE s.usuario_id = %s AND s.estado = 'aceptada'
+               )
+            ORDER BY m.fecha_creacion DESC, m.id DESC
+            """,
+            (usuario_id, usuario_id, usuario_id),
+        ).fetchall()
+        return [dict(fila) for fila in filas]

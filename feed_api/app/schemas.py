@@ -20,6 +20,7 @@ class PostOut(BaseModel):
     tiempo: Optional[str] = None
     horas: int = 0
     etiqueta: Optional[str] = None
+    comunidad: Optional[str] = None
     titulo: str
     cuerpo: Optional[str] = None
     votos: int = 0

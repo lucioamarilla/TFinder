@@ -9,7 +9,18 @@ from mesas_api.app.controllers.mesas import (
     eliminar_mesa_controller,
     listar_mesas_controller,
     obtener_mesa_controller,
+    _formatear_fila,
 )
+from mesas_api.app.models.mesa import listar_con_rol
+from mesas_api.app.models.sesiones import listar_miembros
+from mesas_api.app.schemas import MesaOut
+
+
+def _con_mi_rol(filas):
+    return [
+        {**MesaOut(**(_formatear_fila(fila))).model_dump(), "mi_rol": fila.get("mi_rol")}
+        for fila in filas
+    ]
 from mesas_api.app.controllers.sesiones_controller import (
     SesionNotFoundError,
     cerrar_sesion_controller,
@@ -23,9 +34,15 @@ from mesas_api.app.controllers.solicitudes_controller import (
 )
 from mesas_api.app.middleware.auth import requerir_roles, usuario_actual
 from mesas_api.app.models.sesiones import listar_miembros
-from mesas_api.app.schemas import MesaCreate, MesaOut, MesaUpdate, SesionOut
+from mesas_api.app.schemas import MesaCreate, MesaMiaOut, MesaOut, MesaUpdate, SesionOut
 
 router = APIRouter(prefix="/api/v1/mesas")
+
+
+@router.get("/mias", response_model=list[MesaMiaOut])
+def mis_mesas(usuario: dict = Depends(usuario_actual)):
+    """F1: mesas donde el usuario es master o jugador (fuente del header)."""
+    return _con_mi_rol(listar_con_rol(int(usuario["sub"])))
 
 
 @router.get("/{mesa_id}/miembros")

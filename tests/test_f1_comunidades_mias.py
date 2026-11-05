@@ -7,8 +7,36 @@ front no tenía ninguna fuente real de "mis mesas" (leía el simulador demo).
 import uuid
 
 import pytest
+from fastapi.testclient import TestClient
+
+from feed_api.app.db import abrir_pool as abrir_pool_feed
+from feed_api.app.init_db import init_db as init_db_feed
+from feed_api.main import app as feed_app
 
 pytestmark = pytest.mark.integration
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _pools():
+    abrir_pool_feed()
+    init_db_feed()
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _limpieza_feed(_pools):
+    from feed_api.app.db import get_connection as feed_conn
+
+    with feed_conn() as conn:
+        conn.execute("TRUNCATE publicaciones, likes_post, follows RESTART IDENTITY CASCADE")
+    yield
+    with feed_conn() as conn:
+        conn.execute("TRUNCATE publicaciones, likes_post, follows RESTART IDENTITY CASCADE")
+
+
+@pytest.fixture
+def feed_client(_pools):
+    return TestClient(feed_app)
 
 
 @pytest.fixture

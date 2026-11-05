@@ -64,6 +64,12 @@ class MesaOut(BaseModel):
     fecha_creacion: str
 
 
+class MesaMiaOut(MesaOut):
+    """F1: la misma mesa + el rol del usuario peticionante (master | jugador)."""
+
+    mi_rol: str = "jugador"
+
+
 class AuthRegistro(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)

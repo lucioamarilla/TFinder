@@ -29,6 +29,7 @@ class PostCreate(BaseModel):
     autor: Optional[str] = None
     autorNombre: Optional[str] = None
     embed: Optional[dict] = None
+    comunidad: Optional[str] = None
 
 
 class PostNotFoundError(Exception):
@@ -48,6 +49,7 @@ def listar_publicaciones(
     tipo: str = None,
     autor_id: str = None,
     etiqueta: str = None,
+    comunidad: str = None,
     orden: str = "id",
     limit: int = 50,
     offset: int = 0,
@@ -81,6 +83,9 @@ def listar_publicaciones(
     if etiqueta:
         condiciones.append("p.etiqueta = %s")
         params.append(etiqueta)
+    if comunidad:
+        condiciones.append("p.comunidad = %s")
+        params.append(comunidad)
 
     where = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
     with get_connection() as conn:
@@ -93,6 +98,26 @@ def listar_publicaciones(
 
 
 # ---- P1.7: feed activo (RF-16/17/18) -----------------------------------------
+
+def _comunidad_normalizada(valor):
+    """Comunidad de texto: sin prefijos heredados (r/, t/) ni espacios extremos."""
+    texto = (valor or "").strip()
+    if len(texto) > 2 and texto[:2] in ("r/", "t/"):
+        texto = texto[2:]
+    return texto or None
+
+
+def listar_comunidades(limite: int = 50):
+    """F1: comunidades agregadas por conteo, fuente real del feed."""
+    with get_connection() as conn:
+        filas = conn.execute(
+            "SELECT comunidad, COUNT(*) AS cantidad FROM publicaciones"
+            " WHERE comunidad IS NOT NULL AND comunidad <> ''"
+            " GROUP BY comunidad ORDER BY cantidad DESC, comunidad LIMIT %s",
+            (limite,),
+        ).fetchall()
+    return [{"comunidad": f["comunidad"], "cantidad": int(f["cantidad"])} for f in filas]
+
 
 def crear_publicacion(usuario, datos):
     """RF-16: usuario autenticado publica su contenido (VAL-41 no vacío)."""
@@ -112,8 +137,8 @@ def crear_publicacion(usuario, datos):
     with get_connection() as conn:
         fila = conn.execute(
             "INSERT INTO publicaciones (tipo, autor_id, autor_nombre, iniciales,"
-            " tiempo, titulo, cuerpo, etiqueta, horas, embed)"
-            " VALUES (%s, %s, %s, %s, 'ahora', %s, %s, %s, 0, %s) RETURNING *",
+            " tiempo, titulo, cuerpo, etiqueta, horas, embed, comunidad)"
+            " VALUES (%s, %s, %s, %s, 'ahora', %s, %s, %s, 0, %s, %s) RETURNING *",
             (
                 tipo,
                 str(usuario["sub"]),
@@ -123,6 +148,7 @@ def crear_publicacion(usuario, datos):
                 cuerpo,
                 datos.get("etiqueta"),
                 Json(embed) if embed is not None else None,
+                _comunidad_normalizada(datos.get("comunidad")),
             ),
         ).fetchone()
     return _serializar(fila)

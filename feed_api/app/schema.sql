@@ -44,6 +44,9 @@ CREATE TABLE IF NOT EXISTS likes_post (
     UNIQUE (post_id, usuario_id)
 );
 
+-- F1: comunidades reales (t/<nombre>) como texto del campo comunidad.
+ALTER TABLE publicaciones ADD COLUMN IF NOT EXISTS comunidad TEXT;
+
 CREATE TABLE IF NOT EXISTS follows (
     id          SERIAL      PRIMARY KEY,
     seguidor_id TEXT        NOT NULL,

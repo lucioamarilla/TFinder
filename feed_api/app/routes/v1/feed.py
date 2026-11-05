@@ -5,6 +5,7 @@ from feed_api.app.controllers.feed import (
     PostCreate,
     crear_publicacion,
     dar_like,
+    listar_comunidades,
     listar_publicaciones,
     listar_siguimientos,
     seguir_a,
@@ -15,6 +16,12 @@ from feed_api.app.schemas import PostOut
 router = APIRouter(prefix="/api/v1")
 
 
+@router.get("/feed/comunidades")
+def listar_comunidades_endpoint():
+    """F1: lista real de comunidades del feed (conteo de publicaciones)."""
+    return listar_comunidades()
+
+
 @router.get("/feed", response_model=list[PostOut])
 def listar_feed(
     tipo: str | None = Query(
@@ -22,6 +29,7 @@ def listar_feed(
     ),
     autor_id: str | None = Query(None, description="Id del autor, tal como se publico"),
     etiqueta: str | None = Query(None, description="Etiqueta exacta de la publicacion"),
+    comunidad: str | None = Query(None, description="Comunidad exacta (sin prefijo t/)"),
     orden: str = Query("id", description="id | recientes | antiguos | votos"),
     limit: int = Query(50, ge=1, le=LIMITE_MAX, description="Cantidad maxima de items"),
     offset: int = Query(0, ge=0, description="Cantidad de items a saltear"),
@@ -35,6 +43,7 @@ def listar_feed(
         tipo=tipo,
         autor_id=autor_id,
         etiqueta=etiqueta,
+        comunidad=comunidad,
         orden=orden,
         limit=limit,
         offset=offset,
