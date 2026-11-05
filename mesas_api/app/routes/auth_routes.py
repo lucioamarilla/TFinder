@@ -6,7 +6,7 @@ from mesas_api.app.models.auth_model import (
     ROL_USUARIO,
     decodificar_token,
 )
-from mesas_api.app.schemas import AuthLogin, AuthRefresh, AuthRegistro
+from mesas_api.app.schemas import AuthLogin, AuthRefresh, AuthRegistro, PerfilUpdate
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -37,6 +37,23 @@ def logout(payload: dict = Depends(usuario_actual)):
 @router.get("/me")
 def me(payload: dict = Depends(usuario_actual)):
     return payload
+
+
+@router.get("/perfil")
+def ver_perfil(payload: dict = Depends(usuario_actual)):
+    return auth_controller.perfil(int(payload["sub"]))
+
+
+@router.patch("/perfil")
+def editar_perfil(payload: dict = Depends(usuario_actual), data: PerfilUpdate = None):
+    if data is None:
+        data = PerfilUpdate()
+    return auth_controller.actualizar_perfil(
+        int(payload["sub"]),
+        nombre=data.nombre,
+        bio=data.bio,
+        avatar_url=data.avatarUrl or data.avatar_url,
+    )
 
 
 @router.get("/admin-only")

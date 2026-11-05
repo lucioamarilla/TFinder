@@ -99,7 +99,8 @@ INSERT INTO miembros_mesa (mesa_id, usuario_id, rol)
 
 -- P0.4 vertical: propiedad de la mesa (RN-02: "el que crea es el propietario").
 -- Nullable por compatibilidad con filas históricas — todo flujo nuevo lo fija.
-ALTER TABLE mesas ADD COLUMN IF NOT EXISTS gm_id BIGINT REFERENCES usuarios (id);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS bio TEXT;
 
 -- RN-07 con concurrencia real: a lo sumo UNA solicitud pendiente por
 -- (mesa, usuario). El reingreso tras un rechazo sigue permitido (índice

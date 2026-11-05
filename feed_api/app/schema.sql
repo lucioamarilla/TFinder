@@ -74,3 +74,14 @@ CREATE TABLE IF NOT EXISTS wiki_contribuciones (
 
 CREATE INDEX IF NOT EXISTS idx_contribuciones_pagina
     ON wiki_contribuciones (pagina_id, estado);
+
+-- F5: uploads de imágenes (perfil, foro).
+CREATE TABLE IF NOT EXISTS uploads (
+    id        TEXT        PRIMARY KEY,
+    tipo      TEXT        NOT NULL CHECK (tipo IN ('imagen')),
+    contenido TEXT        NOT NULL,
+    tamano    INTEGER     NOT NULL,
+    owner_id  TEXT        NOT NULL,
+    ruta      TEXT        NOT NULL,
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);

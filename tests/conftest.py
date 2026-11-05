@@ -324,7 +324,12 @@ def tasa_atope_en_pruebas(request):
     """RNF-22 en producción (100/min); en pruebas el tope se levanta salvo que
     el test lo baje explícitamente (p. ej. test_infra_operativa fuerza 429)."""
     import mesas_api.main as mesas_main
+    import builds_api.main as builds_main
+    import feed_api.main as feed_main
+    import notif_api.main as notif_main
 
-    mesas_main.app.state.rate_limit_min = 1_000_000
+    for _app in (mesas_main.app, builds_main.app, feed_main.app, notif_main.app):
+        _app.state.rate_limit_min = 1_000_000
     yield
-    mesas_main.app.state.rate_limit_min = 100
+    for _app in (mesas_main.app, builds_main.app, feed_main.app, notif_main.app):
+        _app.state.rate_limit_min = 100

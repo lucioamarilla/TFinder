@@ -71,7 +71,18 @@ class MesaMiaOut(MesaOut):
     mi_rol: str = "jugador"
 
 
+class PerfilUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    nombre: Optional[str] = Field(default=None, min_length=1)
+    bio: Optional[str] = None
+    avatarUrl: Optional[str] = Field(default=None, alias="avatarUrl")
+    avatar_url: Optional[str] = None
+
+
 class AuthRegistro(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: EmailStr
     password: str = Field(min_length=8)
     nombre: str = Field(min_length=1)

@@ -86,3 +86,34 @@ def revocar_familia(jti: str, usuario_id):
         _r.delete(f"sesion:{j.decode() if isinstance(j, bytes) else j}")
     _r.delete(f"sesiones_usuario:{usuario_id}")
     _r.delete(f"sesion:{jti}")
+
+def obtener_perfil(usuario_id: int):
+    from mesas_api.app.models.usuarios_lookup import obtener_usuario_por_id
+
+    fila = obtener_usuario_por_id(usuario_id)
+    if fila is None:
+        return None
+    return {
+        "id": fila["id"],
+        "email": fila["email"],
+        "nombre": fila["nombre"],
+        "rol": fila["rol"],
+        "avatarUrl": fila.get("avatar_url"),
+        "bio": fila.get("bio"),
+    }
+
+
+def actualizar_perfil(usuario_id: int, nombre=None, bio=None, avatar_url=None):
+    from mesas_api.app.models.usuarios_lookup import actualizar_perfil as _ap
+
+    fila = _ap(usuario_id, nombre=nombre, bio=bio, avatar_url=avatar_url)
+    if fila is None:
+        return None
+    return {
+        "id": fila["id"],
+        "email": fila["email"],
+        "nombre": fila["nombre"],
+        "rol": fila["rol"],
+        "avatarUrl": fila.get("avatar_url"),
+        "bio": fila.get("bio"),
+    }

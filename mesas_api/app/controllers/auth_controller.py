@@ -63,6 +63,27 @@ def renovar_access(data: AuthRefresh):
     return {"access_token": access}
 
 
+def perfil(usuario_id: int):
+    from mesas_api.app.models.auth_model import obtener_perfil
+
+    fila = obtener_perfil(usuario_id)
+    if fila is None:
+        raise HTTPException(status_code=404, detail="El perfil no existe")
+    return fila
+
+
+def actualizar_perfil(usuario_id: int, nombre=None, bio=None, avatar_url=None):
+    from mesas_api.app.models.auth_model import actualizar_perfil as _ap
+
+    try:
+        fila = _ap(usuario_id, nombre=nombre, bio=bio, avatar_url=avatar_url)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+    if fila is None:
+        raise HTTPException(status_code=404, detail="El perfil no existe")
+    return fila
+
+
 def cerrar_sesion(jti: str, usuario_id=None):
     if usuario_id:
         revocar_familia(jti, usuario_id)

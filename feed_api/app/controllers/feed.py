@@ -134,6 +134,33 @@ def crear_publicacion(usuario, datos):
     from psycopg.types.json import Json
 
     embed = datos.get("embed") or None
+    if isinstance(embed, dict) and embed.get("build_id") is not None:
+        from app.infra.builds import obtener_build
+
+        try:
+            build = obtener_build(embed["build_id"], token=None)
+        except LookupError:
+            raise HTTPException(status_code=409, detail="El build adjunto no existe.") from None
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from None
+        if build.get("privacidad") not in ("publico",):
+            raise HTTPException(
+                status_code=409,
+                detail="No podés adjuntar builds privadas o borradores a una publicación.",
+            )
+        embed = {**embed, "build_privacidad": build.get("privacidad"), "build_clase": build.get("clase")}
+
+    imagenes = datos.get("imagenes") or datos.get("imagen_ids") or []
+    if imagenes:
+        with get_connection() as conn:
+            existentes = conn.execute(
+                "SELECT id FROM uploads WHERE id = ANY(%s)", (list(imagenes),)
+            ).fetchall()
+        encontrados = {r["id"] for r in existentes}
+        if any(i not in encontrados for i in imagenes):
+            raise HTTPException(status_code=409, detail="Una de las imágenes adjuntas no existe.")
+        embed = {**(embed or {}), "imagenes": list(imagenes)}
+
     with get_connection() as conn:
         fila = conn.execute(
             "INSERT INTO publicaciones (tipo, autor_id, autor_nombre, iniciales,"
