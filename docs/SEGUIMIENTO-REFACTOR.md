@@ -14,6 +14,7 @@
 | F4 Wiki colaborativa | ✅ completa | 2026-11-05 |
 | F5 Foro/Builds/Perfil + uploads | ✅ completa | 2026-11-05 |
 | F6 Pruebas 6 cuentas | ✅ completa | 2026-11-05 |
+| P2 Calidad (CSS + dead files + SSE verificado) | ✅ completa | 2026-11-05 |
 
 ## FASE 1 — tareas
 
