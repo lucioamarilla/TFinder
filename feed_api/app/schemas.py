@@ -1,6 +1,12 @@
 from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+class DiarioCreate(BaseModel):
+    """Contenido de la publicación del diario de sesión."""
+
+    titulo: str = Field(min_length=1)
+    cuerpo: str = Field(min_length=1)
 
 
 class PostOut(BaseModel):

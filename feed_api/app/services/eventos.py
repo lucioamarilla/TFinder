@@ -45,3 +45,23 @@ def publicar_diario_pdf(mesa_id, sesion_id: int, correlation_id: str = "-") -> s
         correlation_id=correlation_id,
     )
     return doc_id
+
+
+def publicar_sesion_diario(
+    mesa_id, sesion_id: int, usuario_id: int, titulo: str, correlation_id: str = "-"
+):
+    """Emite sesion.diario_publicado (cierre AE2).
+
+    notif-api la consume: persiste la notificación de la mesa, la emite por SSE
+    y manda el email "Diario de sesión publicado" a los miembros del grupo.
+    """
+    return publicar(
+        "sesion.diario_publicado",
+        {
+            "mesa_id": mesa_id,
+            "sesion_id": int(sesion_id),
+            "usuario_id": int(usuario_id),
+            "titulo": titulo,
+        },
+        correlation_id=correlation_id,
+    )
