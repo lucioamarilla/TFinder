@@ -8,12 +8,20 @@ from fastapi.responses import JSONResponse
 
 from app.infra.errors import body_error as _body_error
 from app.infra.errors import manejar_error_interno, manejar_http, manejar_validacion
-from mesas_api.app.controllers.mesas import MesaNotFoundError
+from mesas_api.app.controllers.mesas import (
+    CupoMenorError,
+    MesaNotFoundError,
+    MesaUsurpadoError,
+)
 from mesas_api.app.controllers.sesiones_controller import SesionNotFoundError
 from mesas_api.app.controllers.solicitudes_controller import (
+    AccionInvalidaError,
     CupoAgotadoError,
+    MesaCerradaError,
     MesaNoExisteError,
-    SolicitudEnProcesoError,
+    SolicitudDuplicadaError,
+    SolicitudNoExisteError,
+    SolicitudProhibidaError,
 )
 from mesas_api.app.services.qr_asistencia import _Conflict, _Invalid
 
@@ -23,10 +31,13 @@ __all__ = [
     "manejar_http",
     "manejar_mesa_inexistente",
     "manejar_no_encontrado",
+    "manejar_prohibido",
     "manejar_qr_conflicto",
     "manejar_qr_invalido",
     "manejar_sesion_inexistente",
+    "manejar_solicitud_inexistente",
     "manejar_validacion",
+    "manejar_accion_invalida",
 ]
 
 
@@ -36,6 +47,18 @@ def manejar_no_encontrado(request, exc: MesaNotFoundError):
 
 def manejar_conflicto(request, exc):
     return JSONResponse(status_code=409, content=_body_error(409, str(exc)))
+
+
+def manejar_prohibido(request, exc: MesaUsurpadoError | SolicitudProhibidaError):
+    return JSONResponse(status_code=403, content=_body_error(403, str(exc)))
+
+
+def manejar_solicitud_inexistente(request, exc: SolicitudNoExisteError):
+    return JSONResponse(status_code=404, content=_body_error(404, str(exc)))
+
+
+def manejar_accion_invalida(request, exc: AccionInvalidaError):
+    return JSONResponse(status_code=400, content=_body_error(400, str(exc)))
 
 
 def manejar_mesa_inexistente(request, exc: MesaNoExisteError):

@@ -32,6 +32,7 @@ CAMPOS_MESA = {
     "id",
     "nombre",
     "sistema",
+    "gm_id",  # P0.4 vertical: propietario (RN-02)
     "descripcion",
     "tono",
     "horario",
@@ -139,7 +140,7 @@ def test_mesas_crud_congelado(client, token_gm):
     auth = {"Authorization": f"Bearer {token_gm}"}
     creacion = client.post(
         "/api/v1/mesas",
-        json={"nombre": "Mesa congelada", "sistema": "PF1e", "jugadores_max": 4},
+        json={"nombre": "Mesa congelada", "sistema": "pf1e", "jugadores_max": 4},
         headers=auth,
     )
     assert creacion.status_code == 201
@@ -200,7 +201,8 @@ def test_solicitud_con_idempotencia_congelado(client, token_gm, token_jugador):
     primera = client.post(f"/api/v1/mesas/{mesa_id}/solicitudes", headers=auth)
     assert primera.status_code == 201
     cuerpo = primera.json()
-    assert cuerpo["estado"] == "aceptada"
+    # P0.4: la solicitud nace 'pendiente'; el cupo se consume al ACEPTAR (RF-15).
+    assert cuerpo["estado"] == "pendiente"
 
     segunda = client.post(f"/api/v1/mesas/{mesa_id}/solicitudes", headers=auth)
     assert segunda.status_code == 201
@@ -213,8 +215,9 @@ def test_solicitar_por_evento_pendiente_congelado(client, token_gm, token_jugado
         f"/api/v1/mesas/{mesa_id}/solicitar",
         headers={"Authorization": f"Bearer {token_jugador}"},
     )
-    assert r.status_code == 202
-    assert r.json() == {"estado": "pendiente"}
+    assert r.status_code == 201
+    # Alias legado de POST /solicitudes: crea la fila pendiente (no solo evento).
+    assert r.json()["estado"] == "pendiente"
 
 
 # ---- sesiones + QR ----------------------------------------------------------

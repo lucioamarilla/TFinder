@@ -14,9 +14,9 @@ DEMO_USERS = (
 )
 
 DEMO_MESAS = (
-    ("Mesa Demo Abierta", "PF1e", "Campaña abierta para explorar el flujo principal.", "Exploración y%", "Viernes 20:00", "abierta", 1, 4, 2),
-    ("Mesa Demo Casi Llena", "PF1e", "Campaña con una sola vacante para probar concurrencia.", "Táctica y misterio", "Sábado 18:00", "abierta", 3, 4, 3),
-    ("Mesa Demo Cerrada", "D&D 5e", "Campaña histórica que ya no acepta solicitudes.", "Narrativa", "Sin reuniones", "cerrada", 5, 6, 0),
+    ("Mesa Demo Abierta", "pf1e", "Campaña abierta para explorar el flujo principal.", "Exploración y%", "Viernes 20:00", "abierta", 1, 4, 2),
+    ("Mesa Demo Casi Llena", "pf1e", "Campaña con una sola vacante para probar concurrencia.", "Táctica y misterio", "Sábado 18:00", "abierta", 3, 4, 3),
+    ("Mesa Demo Cerrada", "pf1e", "Campaña histórica que ya no acepta solicitudes.", "Narrativa", "Sin reuniones", "cerrada", 5, 6, 0),
 )
 
 
@@ -43,8 +43,8 @@ def seed_demo_if_enabled():
             ).fetchone()
             if fila is None:
                 fila = conn.execute(
-                    "INSERT INTO mesas (nombre, sistema, descripcion, tono, horario, estado, nivel_inicial, jugadores_max, jugadores_actuales) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
-                    (nombre, sistema, descripcion, tono, horario, estado, nivel, maximo, ocupacion),
+                    "INSERT INTO mesas (nombre, sistema, gm_id, descripcion, tono, horario, estado, nivel_inicial, jugadores_max, jugadores_actuales) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    (nombre, sistema, usuarios["gm@tfinder.dev"], descripcion, tono, horario, estado, nivel, maximo, ocupacion),
                 ).fetchone()
             mesas[nombre] = fila["id"]
 

@@ -1,6 +1,14 @@
 from mesas_api.app.db import get_connection
 
 
+class CupoAgotadoError(Exception):
+    """El UPDATE de mesa no ganó ninguna vacante: no hay cupo disponible."""
+
+
+class SolicitudNoProcesableError(Exception):
+    """La solicitud ya no está 'pendiente': fue aceptada o rechazada."""
+
+
 def crear_solicitud(mesa_id: int, usuario_id: int, estado: str = "pendiente", idem_key: str = None):
     with get_connection() as conn:
         cursor = conn.execute(
@@ -28,3 +36,104 @@ def listar_solicitudes(mesa_id: int):
             (mesa_id,),
         ).fetchall()
         return [dict(fila) for fila in filas]
+
+
+def listar_solicitudes_con_estado(mesa_id: int, estado=None):
+    with get_connection() as conn:
+        if estado:
+            filas = conn.execute(
+                "SELECT * FROM solicitudes_uniones WHERE mesa_id = %s AND estado = %s"
+                " ORDER BY id DESC",
+                (mesa_id, estado),
+            ).fetchall()
+        else:
+            filas = listar_solicitudes(mesa_id)
+        return [dict(fila) for fila in filas]
+
+
+def obtener_solicitud(mesa_id: int, solicitud_id: int):
+    with get_connection() as conn:
+        fila = conn.execute(
+            "SELECT * FROM solicitudes_uniones WHERE mesa_id = %s AND id = %s",
+            (mesa_id, solicitud_id),
+        ).fetchone()
+        return dict(fila) if fila else None
+
+
+def existe_solicitud_pendiente(mesa_id: int, usuario_id: int) -> bool:
+    with get_connection() as conn:
+        fila = conn.execute(
+            "SELECT 1 FROM solicitudes_uniones WHERE mesa_id = %s AND usuario_id = %s"
+            " AND estado = 'pendiente'",
+            (mesa_id, usuario_id),
+        ).fetchone()
+        return fila is not None
+
+
+def aceptar_solicitud(solicitud_id: int, mesa_id: int):
+    """Acepta (RF-15/RN-08) en una sola transacción: estado + cupo.
+
+    La aceptación consume la última vacante atómicamente: si el UPDATE de mesa
+    no gana el cupo, la excepción revierte el estado de la solicitud a
+    'pendiente' (postcondición preservada).
+    """
+    with get_connection() as conn, conn.transaction():
+        cursor = conn.execute(
+            "UPDATE solicitudes_uniones SET estado = 'aceptada'"
+            " WHERE id = %s AND mesa_id = %s AND estado = 'pendiente' RETURNING *",
+            (solicitud_id, mesa_id),
+        )
+        fila = cursor.fetchone()
+        if fila is None:
+            raise SolicitudNoProcesableError("La solicitud ya ha sido procesada.")
+        cursor_mesa = conn.execute(
+            "UPDATE mesas SET jugadores_actuales = jugadores_actuales + 1"
+            " WHERE id = %s AND (jugadores_max IS NULL OR jugadores_actuales < jugadores_max)"
+            " RETURNING id",
+            (mesa_id,),
+        )
+        if cursor_mesa.fetchone() is None:
+            raise CupoAgotadoError("Cupo agotado: no quedan vacantes")
+        return dict(fila)
+
+
+def rechazar_solicitud(solicitud_id: int, mesa_id: int):
+    with get_connection() as conn, conn.transaction():
+        cursor = conn.execute(
+            "UPDATE solicitudes_uniones SET estado = 'rechazada'"
+            " WHERE id = %s AND mesa_id = %s AND estado = 'pendiente' RETURNING *",
+            (solicitud_id, mesa_id),
+        )
+        fila = cursor.fetchone()
+        if fila is None:
+            raise SolicitudNoProcesableError("La solicitud ya ha sido procesada.")
+        return dict(fila)
+
+
+def expulsar_miembro(mesa_id: int, usuario_id: int):
+    """Elimina la membresía aceptada (y cualquier pendiente viva) y libera cupo.
+
+    Postcondición: se emite mesa.expulsada, no queda solicitud activa del
+    usuario en esa mesa, y la vacante vuelve (greatest(...,0)).
+    """
+    with get_connection() as conn, conn.transaction():
+        cursor = conn.execute(
+            "DELETE FROM solicitudes_uniones"
+            " WHERE mesa_id = %s AND usuario_id = %s AND estado = 'aceptada' RETURNING id",
+            (mesa_id, usuario_id),
+        )
+        hubo = cursor.fetchone() is not None
+        conn.execute(
+            "DELETE FROM solicitudes_uniones"
+            " WHERE mesa_id = %s AND usuario_id = %s AND estado = 'pendiente'",
+            (mesa_id, usuario_id),
+        )
+        nuevo_cupo = None
+        if hubo:
+            fila = conn.execute(
+                "UPDATE mesas SET jugadores_actuales = greatest(jugadores_actuales - 1, 0)"
+                " WHERE id = %s RETURNING jugadores_actuales",
+                (mesa_id,),
+            ).fetchone()
+            nuevo_cupo = fila["jugadores_actuales"] if fila else None
+    return hubo, nuevo_cupo

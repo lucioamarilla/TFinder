@@ -108,25 +108,23 @@ def test_actualizar_cupo_bajo_el_numero_actual_de_jugadores_da_409(
 ):
     mesa_id = client.post(
         "/api/v1/mesas",
-        json={"nombre": "Mesa cupo", "sistema": "pf1e", "jugadores_max": 1},
+        json={"nombre": "Mesa cupo", "sistema": "pf1e", "jugadores_max": 4},
         headers={"Authorization": f"Bearer {token_gm}"},
     ).json()["id"]
 
-    headers = {"Authorization": f"Bearer {token_jugador}"}
-    client.post(f"/api/v1/mesas/{mesa_id}/solicitudes", headers=headers)
-    sol = client.get(
-        f"/api/v1/mesas/{mesa_id}/solicitudes",
-        headers={"Authorization": f"Bearer {token_gm}"},
-    ).json()
-    client.post(
-        f"/api/v1/mesas/{mesa_id}/solicitudes/{sol[0]['id']}/aceptar",
-        headers={"Authorization": f"Bearer {token_gm}"},
-    )
+    gm = {"Authorization": f"Bearer {token_gm}"}
+    for _ in range(2):
+        usuario = _usuario(client)
+        sol_id = client.post(
+            f"/api/v1/mesas/{mesa_id}/solicitudes",
+            headers={"Authorization": f"Bearer {usuario['access_token']}"},
+        ).json()["id"]
+        client.post(f"/api/v1/mesas/{mesa_id}/solicitudes/{sol_id}/aceptar", headers=gm)
 
     r = client.put(
         f"/api/v1/mesas/{mesa_id}",
         json={"jugadores_max": 1},
-        headers={"Authorization": f"Bearer {token_gm}"},
+        headers=gm,
     )
     assert r.status_code == 409, "VAL-15: no puede bajar el cupo debajo de los jugadores actuales"
 

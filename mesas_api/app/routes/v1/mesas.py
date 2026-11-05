@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, Request, Response
+from typing import Literal
+
+from fastapi import APIRouter, Depends, Query, Request, Response
 
 from mesas_api.app.controllers.mesas import (
     actualizar_mesa_controller,
@@ -14,10 +16,13 @@ from mesas_api.app.controllers.sesiones_controller import (
     crear_sesion_controller,
     listar_sesiones_controller,
 )
+from mesas_api.app.controllers.solicitudes_controller import (
+    crear_solicitud_controller,
+    expulsar_miembro_controller,
+)
 from mesas_api.app.middleware.auth import requerir_roles, usuario_actual
 from mesas_api.app.models.sesiones import listar_miembros
 from mesas_api.app.schemas import MesaCreate, MesaOut, MesaUpdate, SesionOut
-from mesas_api.app.services.eventos import publicar_solicitud
 
 router = APIRouter(prefix="/api/v1/mesas")
 
@@ -28,9 +33,33 @@ def miembros_mesa(mesa_id: int, _=Depends(usuario_actual)):
     return {"mesa_id": mesa_id, "miembros": listar_miembros(mesa_id)}
 
 
+@router.delete("/{mesa_id}/miembros/{usuario_id}")
+def expulsar_miembro_mesa(
+    mesa_id: int,
+    usuario_id: int,
+    request: Request,
+    usuario: dict = Depends(usuario_actual),
+):
+    """El GM propietario expulsa a un miembro (libera cupo y notifica)."""
+    return expulsar_miembro_controller(
+        mesa_id,
+        usuario_id,
+        usuario,
+        correlation_id=request.scope.get("correlation_id"),
+    )
+
+
 @router.get("", response_model=list[MesaOut])
-def listar_mesas():
-    return listar_mesas_controller()
+def listar_mesas(
+    estado: Literal["abierta", "cerrada"] | None = None,
+    sistema: str | None = Query(default=None, max_length=32),
+    tono: str | None = Query(default=None, max_length=64),
+    orden: Literal["id", "recientes", "nombre"] = "id",
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=50),
+):
+    """Listado con filtros RF-04/13: estado, sistema, tono, orden y pagina."""
+    return listar_mesas_controller(estado, sistema, tono, orden, page, limit)
 
 
 @router.get("/{mesa_id}", response_model=MesaOut)
@@ -39,34 +68,38 @@ def obtener_mesa(mesa_id: int):
 
 
 @router.post("", response_model=MesaOut, status_code=201)
-def crear_mesa(payload: MesaCreate, _=Depends(usuario_actual)):
-    return crear_mesa_controller(payload)
+def crear_mesa(payload: MesaCreate, usuario: dict = Depends(usuario_actual)):
+    return crear_mesa_controller(payload, usuario)
 
 
 @router.put("/{mesa_id}", response_model=MesaOut)
-def actualizar_mesa(mesa_id: int, payload: MesaUpdate, _=Depends(usuario_actual)):
-    return actualizar_mesa_controller(mesa_id, payload)
+def actualizar_mesa(
+    mesa_id: int,
+    payload: MesaUpdate,
+    usuario: dict = Depends(usuario_actual),
+):
+    return actualizar_mesa_controller(mesa_id, payload, usuario)
 
 
 @router.delete("/{mesa_id}", status_code=204)
-def eliminar_mesa(mesa_id: int, _=Depends(usuario_actual)):
-    eliminar_mesa_controller(mesa_id)
+def eliminar_mesa(mesa_id: int, usuario: dict = Depends(usuario_actual)):
+    eliminar_mesa_controller(mesa_id, usuario)
     return Response(status_code=204)
 
 
-@router.post("/{mesa_id}/solicitar", status_code=202)
+@router.post("/{mesa_id}/solicitar", status_code=201)
 def solicitar_union(
     mesa_id: int,
     request: Request,
     usuario: dict = Depends(usuario_actual),
 ):
-    obtener_mesa_controller(mesa_id)
-    publicar_solicitud(
+    """Alias legado de POST /solicitudes: crea la solicitud 'pendiente'."""
+    return crear_solicitud_controller(
         mesa_id,
         int(usuario["sub"]),
         correlation_id=request.scope.get("correlation_id"),
+        idem_key=None,
     )
-    return {"estado": "pendiente"}
 
 
 # ---- Sesiones de juego (cierre AE2) -----------------------------------------

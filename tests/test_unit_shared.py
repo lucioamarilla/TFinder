@@ -46,8 +46,8 @@ def test_password_hash_no_guarda_texto_plano():
 
 
 @pytest.mark.parametrize("payload", [
-    {"nombre": "Mesa", "sistema": "PF1e"},
-    {"nombre": "Mesa", "sistema": "PF1e", "jugadores_max": 4},
+    {"nombre": "Mesa", "sistema": "pf1e"},
+    {"nombre": "Mesa", "sistema": "pf1e", "jugadores_max": 4},
 ])
 def test_schema_mesa_acepta_datos_validos(payload):
     assert MesaCreate(**payload).nombre == "Mesa"
@@ -55,7 +55,7 @@ def test_schema_mesa_acepta_datos_validos(payload):
 
 def test_schema_mesa_rechaza_jugadores_invalidos():
     with pytest.raises(ValueError):
-        MesaCreate(nombre="Mesa", sistema="PF1e", jugadores_max=0)
+        MesaCreate(nombre="Mesa", sistema="pf1e", jugadores_max=0)
 
 
 def test_schema_update_permite_campos_parciales():

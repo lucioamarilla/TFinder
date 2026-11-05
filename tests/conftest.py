@@ -302,7 +302,7 @@ def crear_mesa(client, token, nombre="Mesa test", jugadores_max=4):
         "/api/v1/mesas",
         json={
             "nombre": nombre,
-            "sistema": "PF1e",
+            "sistema": "pf1e",
             "jugadores_max": jugadores_max,
         },
         headers={"Authorization": f"Bearer {token}"},

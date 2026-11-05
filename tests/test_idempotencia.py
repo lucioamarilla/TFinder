@@ -19,9 +19,11 @@ def test_misma_key_no_duplica_solicitud_ni_vacante(client, token_gm, token_jugad
 
     assert primera.status_code == segunda.status_code == 201
     assert primera.json() == segunda.json()
+    assert primera.json()["estado"] == "pendiente"
 
     fila = client.get(
         f"/api/v1/mesas/{mesa_id}",
         headers={"Authorization": f"Bearer {token_gm}"},
     ).json()
-    assert fila["jugadores_actuales"] == 1
+    # P0.4: la solicitud nace pendiente; ocupa vacante el ACEPTAR (RF-15).
+    assert fila["jugadores_actuales"] == 0

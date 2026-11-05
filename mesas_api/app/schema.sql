@@ -75,3 +75,14 @@ CREATE INDEX IF NOT EXISTS idx_sesiones_mesa ON sesiones (mesa_id);
 -- las sesiones históricas no la registraban, y confirmar es idempotente
 -- (reconfirmar no vuelve a publicar el evento)
 ALTER TABLE sesiones ADD COLUMN IF NOT EXISTS confirmada_at TIMESTAMPTZ;
+
+-- P0.4 vertical: propiedad de la mesa (RN-02: "el que crea es el propietario").
+-- Nullable por compatibilidad con filas históricas — todo flujo nuevo lo fija.
+ALTER TABLE mesas ADD COLUMN IF NOT EXISTS gm_id BIGINT REFERENCES usuarios (id);
+
+-- RN-07 con concurrencia real: a lo sumo UNA solicitud pendiente por
+-- (mesa, usuario). El reingreso tras un rechazo sigue permitido (índice
+-- parcial): la carrera de creación se decide en Postgres, no en Python.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_solicitud_activa
+    ON solicitudes_uniones (mesa_id, usuario_id)
+    WHERE estado = 'pendiente';

@@ -5,23 +5,35 @@ El andamiaje (lifespan, middlewares, salud, errores) lo aporta crear_app
 """
 
 from mesas_api.app import db as mesas_db
-from mesas_api.app.controllers.mesas import MesaNotFoundError
+from mesas_api.app.controllers.mesas import (
+    CupoMenorError,
+    MesaNotFoundError,
+    MesaUsurpadoError,
+)
 from mesas_api.app.controllers.sesiones_controller import (
     SesionCerradaError,
     SesionNotFoundError,
 )
 from mesas_api.app.controllers.solicitudes_controller import (
+    AccionInvalidaError,
     CupoAgotadoError,
+    MesaCerradaError,
     MesaNoExisteError,
-    SolicitudEnProcesoError,
+    SolicitudDuplicadaError,
+    SolicitudNoExisteError,
+    SolicitudNoProcesableError,
+    SolicitudProhibidaError,
 )
 from mesas_api.app.errors import (
+    manejar_accion_invalida,
     manejar_conflicto,
     manejar_mesa_inexistente,
     manejar_no_encontrado,
+    manejar_prohibido,
     manejar_qr_conflicto,
     manejar_qr_invalido,
     manejar_sesion_inexistente,
+    manejar_solicitud_inexistente,
 )
 from mesas_api.app.init_db import init_db as mesas_init_db
 from mesas_api.app.routes.auth_routes import router as auth_router
@@ -49,8 +61,15 @@ app = crear_app(
     adicionales={
         MesaNotFoundError: manejar_no_encontrado,
         CupoAgotadoError: manejar_conflicto,
-        SolicitudEnProcesoError: manejar_conflicto,
+        SolicitudNoProcesableError: manejar_conflicto,
         MesaNoExisteError: manejar_mesa_inexistente,
+        MesaCerradaError: manejar_conflicto,
+        MesaUsurpadoError: manejar_prohibido,
+        CupoMenorError: manejar_conflicto,
+        SolicitudDuplicadaError: manejar_conflicto,
+        SolicitudNoExisteError: manejar_solicitud_inexistente,
+        SolicitudProhibidaError: manejar_prohibido,
+        AccionInvalidaError: manejar_accion_invalida,
         SesionNotFoundError: manejar_sesion_inexistente,
         SesionCerradaError: manejar_conflicto,
         _Conflict: manejar_qr_conflicto,

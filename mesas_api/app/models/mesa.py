@@ -8,9 +8,30 @@ def _normalizar_create(data):
     return MesaCreate(**data)
 
 
-def listar_mesas():
+def listar_mesas(
+    estado=None, sistema=None, tono=None, orden="id", page=1, limit=20
+):
+    """Listado con filtros (RF-04/RF-13) y paginación (techo 50)."""
+    ordenes = {
+        "id": "id ASC",
+        "recientes": "fecha_creacion DESC, id DESC",
+        "nombre": "nombre ASC, id ASC",
+    }
+    where, params = [], []
+    if estado:
+        where.append("estado = %s")
+        params.append(estado)
+    if sistema:
+        where.append("sistema = %s")
+        params.append(sistema)
+    if tono:
+        where.append("tono ILIKE %s")
+        params.append(f"%{tono}%")
+    sql = f"SELECT * FROM mesas{(' WHERE ' + ' AND '.join(where)) if where else ''}"
+    sql += f" ORDER BY {ordenes[orden]} LIMIT %s OFFSET %s"
+    params += [limit, (page - 1) * limit]
     with get_connection() as conn:
-        filas = conn.execute("SELECT * FROM mesas ORDER BY id").fetchall()
+        filas = conn.execute(sql, params).fetchall()
         return [dict(fila) for fila in filas]
 
 
@@ -20,8 +41,9 @@ def obtener_mesa_por_id(mesa_id):
         return dict(fila) if fila else None
 
 
-def crear_mesa(data):
+def crear_mesa(data, gm_id: int):
     datos = _normalizar_create(data).model_dump()
+    datos["gm_id"] = gm_id
     columnas = ", ".join(datos.keys())
     placeholders = ", ".join(["%s"] * len(datos))
     with get_connection() as conn:
@@ -69,7 +91,20 @@ def ocupar_vacante(mesa_id) -> bool:
     with get_connection() as conn:
         cursor = conn.execute(
             "UPDATE mesas SET jugadores_actuales = jugadores_actuales + 1"
-            " WHERE id = %s AND jugadores_actuales < jugadores_max RETURNING id",
+            " WHERE id = %s AND (jugadores_max IS NULL OR jugadores_actuales < jugadores_max)"
+            " RETURNING id",
             (mesa_id,),
         )
         return cursor.fetchone() is not None
+
+
+def liberar_vacante(mesa_id):
+    """Devuelve una vacante (expulsión/baja). Nunca baja de 0."""
+    with get_connection() as conn:
+        cursor = conn.execute(
+            "UPDATE mesas SET jugadores_actuales = greatest(jugadores_actuales - 1, 0)"
+            " WHERE id = %s RETURNING jugadores_actuales",
+            (mesa_id,),
+        )
+        fila = cursor.fetchone()
+        return fila["jugadores_actuales"] if fila else None

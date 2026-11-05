@@ -6,6 +6,9 @@ EstadoMesa = Literal["abierta", "cerrada"]
 
 ROLES = Literal["usuario", "gm", "admin"]
 
+# VAL-08: en el MVP el único sistema válido es Pathfinder 1e.
+SistemaMesa = Literal["pf1e"]
+
 EDITABLE_FIELDS = {
     "nombre",
     "sistema",
@@ -22,7 +25,7 @@ class MesaCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     nombre: str = Field(min_length=1)
-    sistema: str = Field(min_length=1)
+    sistema: SistemaMesa
     descripcion: Optional[str] = None
     tono: Optional[str] = None
     horario: Optional[str] = None
@@ -35,7 +38,7 @@ class MesaUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     nombre: Optional[str] = Field(default=None, min_length=1)
-    sistema: Optional[str] = Field(default=None, min_length=1)
+    sistema: Optional[SistemaMesa] = None
     descripcion: Optional[str] = None
     tono: Optional[str] = None
     horario: Optional[str] = None
@@ -50,6 +53,7 @@ class MesaOut(BaseModel):
     id: int
     nombre: str
     sistema: str
+    gm_id: Optional[int] = None
     descripcion: Optional[str] = None
     tono: Optional[str] = None
     horario: Optional[str] = None
