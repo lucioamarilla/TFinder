@@ -10,10 +10,10 @@
 | F0 Auditoría | ✅ completa | 2026-11-05 |
 | F1 Navegación/UX | ✅ completa | 2026-11-05 |
 | F2 Membresías/permisos | ✅ completa | 2026-11-05 |
-| F3 Bitácora de sesión | ⏳ próxima | — |
-| F4 Wiki colaborativa | ⏳ | — |
-| F5 Foro/Builds/Perfil + uploads | ⏳ | — |
-| F6 Pruebas 6 cuentas | ⏳ | — |
+| F3 Bitácora de sesión | ✅ completa | 2026-11-05 |
+| F4 Wiki colaborativa | ✅ completa | 2026-11-05 |
+| F5 Foro/Builds/Perfil + uploads | ✅ completa | 2026-11-05 |
+| F6 Pruebas 6 cuentas | ✅ completa | 2026-11-05 |
 
 ## FASE 1 — tareas
 
