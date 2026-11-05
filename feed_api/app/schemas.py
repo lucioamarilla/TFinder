@@ -30,9 +30,11 @@ class PostOut(BaseModel):
 
 class PaginaOut(BaseModel):
     id: int
+    mesaId: Optional[str] = None
     carpeta: Optional[str] = "notas"
     titulo: str
     tipo: Optional[str] = "NOTA"
     fecha: Optional[str] = None
     resumen: Optional[str] = None
+    visibilidad: Optional[str] = "jugadores"
     contenido: list = []

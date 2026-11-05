@@ -29,3 +29,20 @@ def requerir_roles(*roles):
         return payload
 
     return inner
+
+
+def auth_opcional(request) -> dict | None:
+    """Payload del JWT si viene y es válido; None si falta (lecturas públicas)."""
+    header = request.headers.get("Authorization") or ""
+    if not header.startswith("Bearer "):
+        return None
+    creds = header.removeprefix("Bearer ").strip()
+    if not creds:
+        return None
+    try:
+        payload = decodificar_token(creds)
+    except Exception:
+        return None
+    if payload.get("tipo") == "refresh" or not sesion_valida(payload["jti"]):
+        return None
+    return payload

@@ -32,3 +32,6 @@ CREATE TABLE IF NOT EXISTS wiki_paginas (
 );
 
 CREATE INDEX IF NOT EXISTS idx_wiki_mesa_id ON wiki_paginas (mesa_id);
+
+-- P1.6: visibilidad por página (RN-05: privada | jugadores | publica).
+ALTER TABLE wiki_paginas ADD COLUMN IF NOT EXISTS visibilidad TEXT NOT NULL DEFAULT 'jugadores';

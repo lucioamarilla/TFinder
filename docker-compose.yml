@@ -144,6 +144,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
       JWT_SECRET: ${JWT_SECRET:-dev-secret}  # B03: valida access_token de mesas-api
+      MESA_URL: http://mesas-api:8001        # P1.6: contratos REST para visibilidad de wiki (B09)
+      MESAS_URL: http://mesas-api:8001       # alias de compatibilidad
       DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
       DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-DemoTFinder123!}
       PORT: "8001"
