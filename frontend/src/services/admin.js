@@ -1,22 +1,40 @@
-// Consola admin (sin datos demo).
-export async function getModeracion() { return [] }
-export async function ocultarCaso(id) { return true }
-export async function restaurarCaso(id) { return true }
-export async function eliminarCaso(id) { return true }
-export async function getAdminUsuarios(filtros = {}) { return [] }
-export async function suspenderUsuario(id) { return true }
-export async function activarUsuario(id) { return true }
-export async function getEstadisticas() { return {} }
-export async function getPlataforma() { return {} }
-export async function getTrazabilidad() { return [] }
-export async function getObservabilidad() { return {} }
-export async function getDlq() { return [] }
-export async function reintentarMensaje(id) { return true }
-export async function descartarMensaje(id) { return true }
-export async function drenarCola() { return true }
-export async function getResiliencia() { return {} }
-export async function guardarResiliencia(limites) { return true }
-export async function simularCaida() { return true }
-export async function getComparador() { return {} }
-export async function consultarMetrica(query) { return {} }
-export async function getPrometheus() { return {} }
+// F09/D-15: consola admin contra notif-api real (roles 'admin').
+// Endpoints verificados: GET /event-log, GET/POST/DELETE /dlq, GET /emails.
+import { api } from '@/api/http'
+
+function peticion(ruta, opciones = {}) {
+  return api('notif', ruta, opciones)
+}
+
+export async function getEventos(params = {}) {
+  const q = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '')
+  ).toString()
+  const { datos } = await peticion(`/api/v1/event-log${q ? `?${q}` : ''}`)
+  return datos ?? []
+}
+
+export async function getDlq(limite = 50) {
+  const { datos } = await peticion(`/api/v1/dlq?limite=${limite}`)
+  return datos ?? []
+}
+
+export async function reintentarDlq(id) {
+  const { datos } = await peticion(`/api/v1/dlq/${id}/reintentar`, { metodo: 'POST' })
+  return datos ?? { id }
+}
+
+export async function descartarDlq(id) {
+  await peticion(`/api/v1/dlq/${id}`, { metodo: 'DELETE' })
+  return true
+}
+
+export async function getEmails(limite = 50) {
+  const { datos } = await peticion(`/api/v1/emails?limite=${limite}`)
+  return datos ?? []
+}
+
+export async function reintentarEmail(id) {
+  const { datos } = await peticion(`/api/v1/emails/${id}/reintentar`, { metodo: 'POST' })
+  return datos ?? { id, estado: 'enviado' }
+}

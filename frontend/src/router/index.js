@@ -57,7 +57,11 @@ const GestionDiarioEditorView = () => import('@/views/gestion/DiarioEditorView.v
 const GestionJugadoresView = () => import('@/views/gestion/JugadoresView.vue')
 const GestionBuildsView = () => import('@/views/gestion/BuildsView.vue')
 const AdminLayout = () => import('@/layouts/AdminLayout.vue')
-// Retirado: consola admin (views mock; backend admin existe pero FE no conectado)
+const AdminPanelView = () => import('@/views/admin/AdminPanelView.vue')
+const AdminEventosView = () => import('@/views/admin/AdminEventosView.vue')
+const AdminDlqView = () => import('@/views/admin/AdminDlqView.vue')
+const AdminEmailsView = () => import('@/views/admin/AdminEmailsView.vue')
+// F09/D-15: consola admin RE-implementada sobre notif-api (event-log, DLQ, emails)
 
 export const routes = [
   { path: '/', name: 'landing', component: LandingView },
@@ -127,7 +131,18 @@ export const routes = [
   { path: '/encuentros', name: 'encuentros', component: EncuentrosView },
   { path: '/tags', name: 'tags', component: TagsView },
 
-  // Consola admin retirada (sin frontend real).
+  // Consola admin (F09/D-15): roles ['admin'] en cada nivel del merge.
+  {
+    path: '/admin',
+    component: AdminLayout,
+    meta: { roles: ['admin'] },
+    children: [
+      { path: '', name: 'admin-panel', component: AdminPanelView, meta: { roles: ['admin'] } },
+      { path: 'eventos', name: 'admin-eventos', component: AdminEventosView, meta: { roles: ['admin'] } },
+      { path: 'dlq', name: 'admin-dlq', component: AdminDlqView, meta: { roles: ['admin'] } },
+      { path: 'emails', name: 'admin-emails', component: AdminEmailsView, meta: { roles: ['admin'] } }
+    ]
+  },
   { path: '/proximamente/:feature', name: 'proximamente', component: ComingSoonView, props: true },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView }
 ]

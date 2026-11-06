@@ -21,7 +21,10 @@ export const NAV = {
     { label: 'Notificaciones', to: '/notificaciones' }
   ],
   admin: [
-    // Ciclo 14 (F09): se re-agregan junto con las rutas /admin reales.
+    { label: 'Panel admin', to: '/admin' },
+    { label: 'Eventos', to: '/admin/eventos' },
+    { label: 'DLQ', to: '/admin/dlq' },
+    { label: 'Emails', to: '/admin/emails' }
   ]
 }
 
@@ -38,6 +41,9 @@ export const FOOTER_NAV = {
     item('Encuentros', '/encuentros', 'encuentros')
   ],
   admin: [
-    // Ciclo 14 (F09): se re-agregan junto con las rutas /admin reales.
+    { label: 'Panel admin', to: '/admin' },
+    { label: 'Eventos', to: '/admin/eventos' },
+    { label: 'DLQ', to: '/admin/dlq' },
+    { label: 'Emails', to: '/admin/emails' }
   ]
 }
