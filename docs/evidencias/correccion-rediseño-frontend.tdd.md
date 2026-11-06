@@ -73,3 +73,38 @@
 5. **D-20/D-21 documentados:** en modo demo `perfilDe` sigue dejando `id: null` (no afecta modo `api`, usado en producción); el 401 de invitados ya no rompe el detalle de mesa (ciclo 1).
 6. **Checkpoint commits:** uno RED y uno GREEN por ciclo (`test(ciclo-N)` / `fix(ciclo-N)`). Ninguno se aplastó; todos en la rama activa.
 7. **Fuera de alcance (deuda abierta):** portar F07/F08/F09 desde `tfinder-vue` no es posible (la rama de referencia no existe en este repo); la consola admin se re-implementó sobre lo que notif-api ya expone. Moderación de contenidos, gestión de usuarios y resiliencia configurable siguen sin backend (quedan fuera de `/admin`).
+
+## 7. Auditoría de navegación (post-entrega) y fixes backend
+
+### 7.1 Síntoma reportado por el usuario
+"Muchísimos errores al navegar; no entiendo nada": mesas que "desaparecen", listas vacías, notificaciones que llevan a pantallas en blanco.
+
+### 7.2 Causa raíz identificada (reproducida con 4 usuarios reales)
+1. **Rate limit compartido por IP del proxy.** `app/middleware/rate_limit.py` usaba `request.client.host` (siempre la IP del contenedor nginx en el despliegue). Todos los usuarios del mismo entorno compartían un único cubo de 100/min → navegando 2-3 pantallas en secuencia (cada una con 8-10 llamadas + 3 del header en `router.afterEach`) saltaba 429. El frontend convertía el 429 en "No encontramos la mesa"/"Silencio: nada sin leer", así que el usuario percibía que su mesa desaparecía.
+2. **Enlaces muertos generados por el backend** en notificaciones: `/mesas/demo` (seed viejo) y `/mesas/{id}/gestion/solicitudes` (ruta inexistente; la bandeja vive en `/gestion/jugadores`).
+3. **`/builds/nuevo` colisionaba** con `/builds/:id` (frontend, ruta muerta).
+4. **Dashboard "Jugador (undefined)"** por usar `m.personaje` inexistente en el normalizador (frontend).
+5. **Sesión expirada silenciosa** (frontend redirigía sin banner).
+
+### 7.3 Fixes aplicados (solo backend/datos, sin tocar el frontend)
+- `app/middleware/rate_limit.py`: `_cliente_real()` respeta `X-Forwarded-For` (nginx ya lo firma) con fallback a `client.host`; cada cliente real tiene su propio cupo (RNF-22 intacto). La 429 firma `Retry-After`.
+- `notif_api/app/consumers/mesa.py`: enlace de la notificación `mesa.solicitada` → `/mesas/{id}/gestion/jugadores` (ruta real).
+- `scripts/limpiar_enlaces_notificaciones.py`: sanea enlaces legacy (`/mesas/demo` → `/mesas`; `/gestion/solicitudes` → `/gestion/jugadores`). Ejecutado en dev: 2 remapeos + 1 corrección.
+- Tests nuevos: `tests/test_rate_limit_xff.py` (3 specs) + ampliación de `tests/test_contrato_enlace.py` (1 spec). Suite backend completa: **307 passed, 1 skipped**.
+
+### 7.4 Verificación live (post-fix)
+- `docker compose build` + `up -d` (apis + frontend) → 9 contenedores healthy.
+- Live: 429 aparece recién en la llamada 101 con XFF propio; un cliente B inmediatamente después recibe 200 (cupos separados).
+- Playwright E2E: **3/3** (login real, feed, mesas).
+- Auditoría de navegación con 4 usuarios (invitado, jugador nuevo, GM, admin): rutas resuelven, sin NotFound/undefined/NaN; la notificación de solicitud ahora lleva a `/mesas/4/gestion/jugadores` (verificado con click real).
+
+### 7.5 Deuda abierta (no tocada por la regla "no cambiar el frontend")
+- `/builds/nuevo` → redirigir a `/builds/asistente` (1 línea de FE).
+- `http.js` → manejar 429 con mensaje honesto + dedupe de llamadas.
+- `LoginView` → banner "Tu sesión venció" cuando viene `?sesion=expirada`.
+- `DashboardView` → `m.personaje` undefined + actividad vacía (stubs).
+- `MisMesasJugadorView` excluye mesas donde el usuario es master (filtro por rol; UX confuso).
+- `BuildsListView` default tab "Públicos" (confunde post-creación).
+- `admin@tfinder.dev` no existe por defecto (bootstrap CLI manual).
+
+Estas quedan documentadas para una iteración posterior; el producto funciona de punta a punta con el flujo core (mesas + gestión + calendario + sesiones + wiki + jugadores + builds + notificaciones).
