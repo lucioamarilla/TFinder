@@ -19,7 +19,7 @@
           <div style="padding: var(--space-md);">
             <div style="display: flex; gap: var(--space-2xs); flex-wrap: wrap; margin-bottom: var(--space-2xs);">
               <span class="tag tag--ink">PF1e, nivel {{ mesa.nivel }}</span>
-              <span class="tag" :class="mesa.estado === 'cerrada' ? 'tag--ember' : 'tag--acid'">{{ mesa.estado === 'cerrada' ? 'Cerrada' : (mesaCompleta(mesa) ? 'Completa' : 'Abierta') }}</span>
+              <span class="tag" :class="esMesaCerrada(mesa) ? 'tag--ember' : 'tag--acid'">{{ esMesaCerrada(mesa) ? 'Cerrada' : (mesaCompleta(mesa) ? 'Completa' : 'Abierta') }}</span>
               <span v-if="pendiente" class="tag tag--ink">Solicitud enviada</span>
               <span v-if="yaMiembro" class="tag tag--acid">Ya eres miembro</span>
               <span class="tag tag--ink">{{ mesa.horario }}</span>
@@ -28,11 +28,11 @@
             <p class="lead" style="font-size: var(--text-md);">Dirigida por {{ mesa.gm }}, {{ mesa.ubicacion }}.</p>
             <p style="font-size: var(--text-sm); color: var(--color-ink-2); margin-top: var(--space-sm);">{{ mesa.descripcion }}</p>
             <div style="display: flex; align-items: center; gap: var(--space-md); margin-top: var(--space-md); flex-wrap: wrap;">
-              <span class="seats" :aria-label="ocupacionN(mesa) + ' de ' + (cupoDe(mesa) ?? '∞') + ' asientos'">
-                <i v-for="i in ocupacionN(mesa)" :key="'on' + i"></i>
-                <i v-for="i in Math.max(0, (cupoDe(mesa) ?? 0) - ocupacionN(mesa))" :key="'off' + i" class="off"></i>
+              <span class="seats" :aria-label="ocupacionDe(mesa) + ' de ' + ((cupoDe(mesa)) ?? '∞') + ' asientos'">
+                <i v-for="i in ocupacionDe(mesa)" :key="'on' + i"></i>
+                <i v-for="i in Math.max(0, ((cupoDe(mesa)) ?? 0) - ocupacionDe(mesa))" :key="'off' + i" class="off"></i>
               </span>
-              <span class="num" style="font-size: var(--text-sm);">{{ ocupacionN(mesa) }}/{{ cupoDe(mesa) ?? '∞' }}</span>
+              <span class="num" style="font-size: var(--text-sm);">{{ ocupacionDe(mesa) }}/{{ (cupoDe(mesa)) ?? '∞' }}</span>
               <button class="btn" :disabled="!puedoPedir" @click="unirse">Solicitar unión</button>
               <RouterLink class="btn btn--secondary" to="/wiki">Wiki de la campaña</RouterLink>
             </div>
@@ -61,7 +61,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { getMesa } from '@/services/mesas'
+import { getMesa, esMesaAbierta, esMesaCerrada, cupoDe, ocupacionDe } from '@/services/mesas'
 import { getMiembros } from '@/services/jugadores'
 import { mesasApi } from '@/api/endpoints'
 
@@ -78,15 +78,13 @@ const tab = ref('resumen')
 const tabs = [{ key: 'resumen', label: 'Resumen' }, { key: 'personajes', label: 'Personajes' }]
 
 function iniciales(n) { return (n || '').trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || 'AV' }
-function cupoDe(m) { return m?.plazas ?? m?.cupo ?? null }
-function ocupacionN(m) { return m?.jugadores ?? 0 }
-function mesaCompleta(m) { return m?.plazas != null && m?.jugadores >= m?.plazas }
-function estadoCrudo(m) { return String(m?.estado ?? '').toLowerCase() }
+// D-09/D-10: helpers únicos de estado y cupo (/services/mesas).
+function mesaCompleta(m) { return cupoDe(m) != null && ocupacionDe(m) >= cupoDe(m) }
 
 const pendiente = ref(false)
 const yaMiembro = ref(false)
 
-const puedoPedir = computed(() => isAuthenticated.value && mesa.value && estadoCrudo(mesa.value) === 'abierta' && !mesaCompleta(mesa.value))
+const puedoPedir = computed(() => isAuthenticated.value && mesa.value && esMesaAbierta(mesa.value) && !mesaCompleta(mesa.value))
 
 onMounted(async () => {
   // D-01: la mesa define la existencia; los datos protegidos (miembros) no

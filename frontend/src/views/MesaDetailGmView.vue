@@ -28,15 +28,15 @@
             <p class="label">{{ mesa.nombre }}, por {{ mesa.gm }}</p>
           </div>
           <div style="display: flex; gap: var(--space-2xs); align-items: center;">
-            <span class="tag" :class="mesa.estado === 'cerrada' ? 'tag--ember' : 'tag--acid'">{{ mesa.estado === 'cerrada' ? 'Cerrada' : 'Abierta' }}</span>
-            <button class="btn btn--secondary btn--sm" @click="toggleEstado">{{ mesa.estado === 'cerrada' ? 'Reabrir mesa' : 'Cerrar mesa' }}</button>
+            <span class="tag" :class="esMesaCerrada(mesa) ? 'tag--ember' : 'tag--acid'">{{ esMesaCerrada(mesa) ? 'Cerrada' : 'Abierta' }}</span>
+            <button class="btn btn--secondary btn--sm" @click="toggleEstado">{{ esMesaCerrada(mesa) ? 'Reabrir mesa' : 'Cerrar mesa' }}</button>
           </div>
         </div>
 
         <div class="grid-3">
           <div class="metrica"><p class="figure-lg ember" style="font-size: 40px;">{{ pendientes.length }}</p><p class="label">Solicitudes</p></div>
-          <div class="metrica"><p class="figure-lg" style="font-size: 40px;">{{ ocupacion }}/{{ mesa.cupo }}</p><p class="label">Asientos</p></div>
-          <div class="metrica"><p class="figure-lg acid" style="font-size: 40px;">{{ mesa.cupo - ocupacion }}</p><p class="label">Vacantes</p></div>
+          <div class="metrica"><p class="figure-lg" style="font-size: 40px;">{{ ocupacion }}/{{ cupoDe(mesa) ?? '∞' }}</p><p class="label">Asientos</p></div>
+          <div class="metrica"><p class="figure-lg acid" style="font-size: 40px;">{{ vacantes }}</p><p class="label">Vacantes</p></div>
         </div>
 
         <div class="card" style="padding: var(--space-md);">
@@ -92,7 +92,7 @@
 import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { getMesa, actualizarMesa } from '@/services/mesas'
+import { getMesa, actualizarMesa, esMesaCerrada, cupoDe } from '@/services/mesas'
 import { getMiembros, getSolicitudes, aceptarSolicitud, rechazarSolicitud } from '@/services/jugadores'
 import { mesasApi } from '@/api/endpoints'
 // sin demo
@@ -112,6 +112,13 @@ const errorEdicion = ref(null)
 const edicion = reactive({ nombre: '', horario: '', cupo: null })
 
 const esGM = computed(() => !!mesa.value && !!user.value && mesa.value.gmId === Number(user.value?.id ?? user.value?.sub))
+
+// D-10: vacantes calculadas sobre plazas reales (nunca NaN con undefined).
+const vacantes = computed(() => {
+  const cupo = cupoDe(mesa.value)
+  if (cupo === null) return null
+  return Math.max(0, Number(cupo) - Number(ocupacion.value))
+})
 
 onMounted(async () => {
   // D-01: mesa define existencia; ocupación y bandeja fallan de forma aislada.
@@ -165,10 +172,12 @@ async function rechazar(s) {
 }
 
 async function toggleEstado() {
-  const nuevo = mesa.value.estado === 'cerrada' ? 'abierta' : 'cerrada'
+  // D-09: comparaciones por helpers (acepta 'Cerrada' y 'cerrada'); el
+  // contrato del PUT siempre en literal del backend.
+  const nuevo = esMesaCerrada(mesa.value) ? 'abierta' : 'cerrada'
   try {
-    await actualizarMesa(mesa.value.id, { estado: nuevo })
-    mesa.value.estado = nuevo
+    const actualizada = await actualizarMesa(mesa.value.id, { estado: nuevo })
+    mesa.value = actualizada
     // ok
   } catch (e) {
     // ok
@@ -187,8 +196,8 @@ async function guardar() {
     const actualizada = await actualizarMesa(mesa.value.id, { nombre: edicion.nombre, horario: edicion.horario, cupo: edicion.cupo })
     mesa.value.nombre = actualizada.nombre
     mesa.value.horario = actualizada.horario
-    mesa.value.cupo = actualizada.plazas
     mesa.value.plazas = actualizada.plazas
+    mesa.value.jugadores = actualizada.jugadores
     // ok
   } catch (e) {
     errorEdicion.value = e?.message || 'No se pudo actualizar.'

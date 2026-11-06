@@ -5,6 +5,30 @@ export function ultimaMedicion() {
   return ultimaMedicionMs
 }
 
+// D-09: el literal del contrato es 'abierta'|'cerrada'; los normalizadores
+// exponen 'Abierta'/'Cerrada' para la UI. Un único punto de comparación.
+export function estadoCrudo(mesa) {
+  return String(mesa?.estado ?? '').trim().toLowerCase()
+}
+
+export function esMesaAbierta(mesa) {
+  return estadoCrudo(mesa) === 'abierta'
+}
+
+export function esMesaCerrada(mesa) {
+  return estadoCrudo(mesa) === 'cerrada'
+}
+
+// D-10: cupo/plazas/jugadores_max son el mismo dato con tres nombres.
+export function cupoDe(mesa) {
+  return mesa?.plazas ?? mesa?.cupo ?? null
+}
+
+export function ocupacionDe(mesa) {
+  return mesa?.jugadores ?? 0
+}
+
+
 export function normalizarMesa(m) {
   // MesaOut del backend → forma de pergamino del frontend.
   if (m && (m.gmId !== undefined || m.gm_id !== undefined || m.jugadoresActuales !== undefined || m.jugadores_actuales !== undefined || m.jugadoresMax !== undefined || m.jugadores_max !== undefined || m.plazas === undefined)) {
