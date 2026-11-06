@@ -10,16 +10,7 @@ import { useNotifications } from '@/composables/useNotifications'
 const router = useRouter()
 const { unreadCount, loadCount } = useNotifications()
 
-const AVATARES = {
-  'Guía de Build': 'bg-[#D4AF37] text-[#1A1A1A] border-[#8B5A2B]',
-  'Debate Táctico': 'bg-[#9C6734] text-[#FDF8EE] border-[#573312]',
-  'Debate de Reglas': 'bg-[#9C6734] text-[#FDF8EE] border-[#573312]',
-  'Entrada de Wiki': 'bg-[#6B8E23] text-[#FDF8EE] border-[#4F6A19]',
-  'Crónica de Sesión': 'bg-[#8B1A1A] text-[#FDF8EE] border-[#5E0F0F]',
-  'Pregunta de Reglas OGL': 'bg-[#8B5A2B] text-[#FDF8EE] border-[#573312]'
-}
-
-const avatarDe = (post) => AVATARES[post.etiqueta] || AVATARES['Debate Táctico']
+const roleColor = (post) => (post.etiqueta === 'Guía de Build' ? 'tag--ember' : 'tag--ink')
 
 const membresias = ref([])
 const actividad = ref([])
@@ -53,11 +44,7 @@ async function load() {
 const activas = computed(() => membresias.value.filter((m) => m.estado !== 'Cerrada').length)
 const sesionesProximas = computed(() => eventos.value.filter((e) => e.tipo.startsWith('Sesión')).length)
 
-const colorEstado = (estado) => {
-  if (estado === 'Abierta') return 'bg-[#6B8E23] text-[#FDF8EE]'
-  if (estado === 'Cerrada') return 'bg-[#8B1A1A] text-[#FDF8EE]'
-  return 'bg-[#8B7D6B] text-[#FDF8EE]'
-}
+const tagEstado = (estado) => (estado === 'Abierta' ? 'tag--acid' : estado === 'Cerrada' ? 'tag--ember' : 'tag--ink')
 
 const destinoMesa = (m) => (m.rol === 'gm' ? `/mesas/${m.id}/gestion` : `/mesas/${m.id}`)
 
@@ -76,100 +63,94 @@ onMounted(() => load())
 </script>
 
 <template>
-  <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8" aria-label="Dashboard personal">
-    <div class="bg-[#FDF8EE]/95 border-2 border-[#C2A980] shadow-2xl rounded-sm flex flex-col lg:flex-row overflow-hidden">
-      <div v-if="isLoading" class="w-full p-12 flex flex-col items-center gap-4" role="status" aria-live="polite">
-        <div class="animate-pulse space-y-3 w-full max-w-md">
-          <div class="h-4 bg-[#C2A980]/40 rounded w-2/3"></div>
-          <div class="h-2.5 bg-[#C2A980]/25 rounded w-full"></div>
-          <div class="h-2.5 bg-[#C2A980]/25 rounded w-full"></div>
-          <div class="h-2.5 bg-[#C2A980]/25 rounded w-1/2"></div>
+  <main class="dash" aria-label="Dashboard personal">
+    <div class="dash-card">
+      <div v-if="isLoading" class="cargando" role="status" aria-live="polite">
+        <div class="sckels">
+          <div class="linea linea--grande"></div>
+          <div class="linea"></div>
+          <div class="linea"></div>
+          <div class="linea linea--mitad"></div>
         </div>
-        <p class="font-tarzana text-xs uppercase tracking-widest text-[#8B7D6B]">Abriendo el Códex...</p>
+        <p class="label">Abriendo el Códex...</p>
       </div>
 
-      <div v-else-if="error" class="w-full p-12 text-center" role="alert">
-        <p class="font-tarzana uppercase tracking-widest text-xs text-[#8B1A1A] font-bold mb-1">Error al cargar el dashboard</p>
-        <p class="font-minion text-[#5A4A3A]">{{ error }}</p>
-        <button type="button" class="btn-gold mt-4 px-6 py-2 font-tarzana font-bold uppercase tracking-wider text-sm" @click="load">Reintentar</button>
+      <div v-else-if="error" class="cargando" role="alert">
+        <p class="label contra">Error al cargar el dashboard</p>
+        <p class="label">{{ error }}</p>
+        <button type="button" class="btn reintentar" @click="load">Reintentar</button>
       </div>
 
       <template v-else>
         <!-- COLUMNA IZQUIERDA (70%) -->
-        <section class="w-full lg:w-[70%] p-6 sm:p-8 flex flex-col space-y-8">
-          <!-- Stat Summary -->
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" aria-label="Resumen rápido">
-            <div class="bg-[#1A1A1A] border border-[#B8860B] rounded-sm px-4 py-3 text-center">
-              <p class="font-tarzana text-[0.68rem] uppercase tracking-widest text-[#B8860B]">Campañas activas</p>
-              <p class="font-mason text-2xl font-bold text-[#D4AF37] mt-1">{{ activas }}</p>
+        <section class="col-principal">
+          <!-- Resumen -->
+          <div class="resumen" aria-label="Resumen rápido">
+            <div class="chip-numero">
+              <p class="label resumen-clave">Campañas activas</p>
+              <p class="num resumen-num">{{ activas }}</p>
             </div>
-            <div class="bg-[#1A1A1A] border border-[#B8860B] rounded-sm px-4 py-3 text-center">
-              <p class="font-tarzana text-[0.68rem] uppercase tracking-widest text-[#B8860B]">Sesiones próximas</p>
-              <p class="font-mason text-2xl font-bold text-[#D4AF37] mt-1">{{ sesionesProximas }}</p>
+            <div class="chip-numero">
+              <p class="label resumen-clave">Sesiones próximas</p>
+              <p class="num resumen-num">{{ sesionesProximas }}</p>
             </div>
-            <div class="bg-[#1A1A1A] border border-[#B8860B] rounded-sm px-4 py-3 text-center">
-              <p class="font-tarzana text-[0.68rem] uppercase tracking-widest text-[#B8860B]">Notificaciones</p>
-              <p class="font-mason text-2xl font-bold text-[#D4AF37] mt-1">{{ unreadCount }}</p>
+            <div class="chip-numero">
+              <p class="label resumen-clave">Notificaciones</p>
+              <p class="num resumen-num">{{ unreadCount }}</p>
             </div>
           </div>
 
           <!-- Mis Mesas -->
           <article aria-label="Mis mesas">
-            <div class="flex items-center justify-between pb-2 border-b border-[#C2A980] mb-4">
-              <h2 class="font-mason text-xl font-bold text-[#8B5A2B] tracking-wide flex items-center gap-2">
-                <span class="text-[#8B5A2B] text-xs">◆</span> Mis Mesas
-              </h2>
-              <span class="font-tarzana text-xs text-[#8B7D6B] uppercase tracking-wider">
+            <div class="seccion-cabecera">
+              <h2 class="subtitulo">◆ Mis Mesas</h2>
+              <span class="label conteo">
                 {{ membresias.length }} {{ membresias.length === 1 ? 'Campaña activa' : 'Campañas activas' }}
               </span>
             </div>
 
-            <div class="space-y-2.5">
+            <div class="lista-mesas">
               <RouterLink
                 v-for="m in membresias"
                 :key="m.mesaId"
                 :to="destinoMesa(m)"
-                class="h-auto sm:h-[72px] bg-[#FDF8EE] border border-[#C2A980] border-l-4 border-l-[#D4AF37] shadow-sm px-4 py-3 rounded-r-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-stone-50 transition-colors"
+                class="card fila-mesa"
               >
-                <div class="space-y-1 min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <h3 class="font-mason text-base font-bold text-[#8B5A2B] hover:underline truncate">{{ m.nombre }}</h3>
-                    <span class="font-tarzana text-[0.7rem] bg-[#1A1A1A] text-[#FDF8EE] px-2 py-0.5 rounded leading-none">{{ m.sistema }}</span>
-                    <span class="font-tarzana text-[0.7rem] px-2 py-0.5 rounded leading-none" :class="colorEstado(m.estado)">{{ m.estado }}</span>
+                <div class="fila-mesa-ident">
+                  <div class="fila-mesa-chips">
+                    <h3 class="mesa-nombre">{{ m.nombre }}</h3>
+                    <span class="tag tag--ink">{{ m.sistema }}</span>
+                    <span class="tag" :class="tagEstado(m.estado)">{{ m.estado }}</span>
                   </div>
-                  <p class="font-minion italic text-[0.85rem] text-[#1A1A1A] truncate">
+                  <p class="label">
                     Rol:
-                    <span class="font-semibold not-italic">{{ m.rol === 'gm' ? 'Director de Juego (GM)' : `Jugador (${m.personaje})` }}</span>
+                    <strong>{{ m.rol === 'gm' ? 'Director de Juego (GM)' : `Jugador (${m.personaje})` }}</strong>
                   </p>
                 </div>
-                <span class="inline-flex items-center font-minion font-bold text-sm text-[#8B5A2B] hover:text-[#5c3b1c] self-end sm:self-center shrink-0">
-                  Entrar <span class="ml-1 text-base leading-none">→</span>
-                </span>
+                <span class="text-link">Entrar →</span>
               </RouterLink>
             </div>
           </article>
 
           <!-- Actividad Reciente -->
           <article aria-label="Actividad reciente">
-            <div class="flex items-center justify-between pb-2 border-b border-[#C2A980] mb-3">
-              <h2 class="font-mason text-xl font-bold text-[#8B5A2B] tracking-wide flex items-center gap-2">
-                <span class="text-[#8B5A2B] text-xs">◆</span> Actividad Reciente
-              </h2>
-              <span class="font-tarzana text-xs text-[#8B7D6B] uppercase tracking-wider">Actualizaciones de Campaña</span>
+            <div class="seccion-cabecera">
+              <h2 class="subtitulo">◆ Actividad Reciente</h2>
+              <span class="label conteo">Actualizaciones de Campaña</span>
             </div>
 
-            <div class="bg-[#FDF8EE] border border-[#C2A980] p-4 sm:p-5 rounded shadow-sm relative divide-y divide-[#B8A68B]/40">
-              <div v-for="item in actividad" :key="item.id" class="py-3 flex items-start space-x-3.5 first:pt-1">
-                <div class="p-1.5 bg-[#E8DCC8] rounded text-[#8B5A2B] shrink-0 border border-[#B8A68B]/40 mt-0.5">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" v-html="iconoActividad(item.icono)"></svg>
+            <div class="card lista-actividad">
+              <div v-for="item in actividad" :key="item.id" class="actividad">
+                <div class="crt icono-actividad">
+                  <svg class="glifo-actividad" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" v-html="iconoActividad(item.icono)"></svg>
                 </div>
-                <div class="flex-grow flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 min-w-0">
-                  <p class="font-minion text-[0.95rem] text-[#1A1A1A] leading-snug">
-                    <span v-if="item.fuerte" class="font-bold text-[#8B5A2B]">{{ item.fuerte }}</span>
+                <div class="actividad-cuerpo">
+                  <p class="actividad-texto">
+                    <strong v-if="item.fuerte">{{ item.fuerte }}</strong>
                     {{ item.cuerpo }}
-                    <span v-if="item.citado" class="italic text-stone-700">"{{ item.citado }}"</span>
+                    <em v-if="item.citado">“{{ item.citado }}”</em>
                   </p>
-                  <span class="font-tarzana text-[0.72rem] text-[#8B7D6B] shrink-0 whitespace-nowrap">{{ item.tiempo }}</span>
+                  <span class="label actividad-tiempo">{{ item.tiempo }}</span>
                 </div>
               </div>
             </div>
@@ -177,28 +158,21 @@ onMounted(() => load())
 
           <!-- Próximos Eventos -->
           <article aria-label="Próximos eventos">
-            <div class="flex items-center justify-between pb-2 border-b border-[#C2A980] mb-3">
-              <h2 class="font-mason text-xl font-bold text-[#8B5A2B] tracking-wide flex items-center gap-2">
-                <span class="text-[#8B5A2B] text-xs">◆</span> Próximos Eventos
-              </h2>
-              <span class="font-tarzana text-xs text-[#8B7D6B] uppercase tracking-wider">Convocatorias y votaciones</span>
+            <div class="seccion-cabecera">
+              <h2 class="subtitulo">◆ Próximos Eventos</h2>
+              <span class="label conteo">Convocatorias y votaciones</span>
             </div>
 
-            <div class="space-y-2.5">
-              <div v-for="ev in eventos" :key="ev.id" class="bg-[#FDF8EE]/80 border border-[#C2A980] rounded-sm px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="flex items-center gap-3 min-w-0">
-                  <span
-                    class="font-tarzana text-[0.7rem] uppercase tracking-wide font-bold px-2 py-1 rounded shrink-0 text-[#FDF8EE]"
-                    :class="ev.tipo.startsWith('Sesión') ? 'bg-[#6B8E23]' : 'bg-[#8B1A1A]'"
-                  >
-                    {{ ev.tipo }}
-                  </span>
-                  <div class="min-w-0">
-                    <p class="font-mason font-bold text-[#8B5A2B]">{{ ev.titulo }}</p>
-                    <p class="font-tarzana text-xs text-[#8B7D6B] truncate">{{ ev.mesaNombre }} · {{ ev.nota }}</p>
+            <div class="lista-eventos">
+              <div v-for="ev in eventos" :key="ev.id" class="fila-evento">
+                <div class="evento-ident">
+                  <span class="tag" :class="ev.tipo.startsWith('Sesión') ? 'tag--acid' : 'tag--ember'">{{ ev.tipo }}</span>
+                  <div class="min-w">
+                    <p class="evento-titulo">{{ ev.titulo }}</p>
+                    <p class="label">{{ ev.mesaNombre }} · {{ ev.nota }}</p>
                   </div>
                 </div>
-                <RouterLink :to="`/mesas/${ev.mesaId}`" class="font-tarzana text-xs font-bold uppercase tracking-wider text-[#8B5A2B] hover:underline shrink-0">
+                <RouterLink :to="`/mesas/${ev.mesaId}`" class="text-link">
                   Ver mesa →
                 </RouterLink>
               </div>
@@ -207,67 +181,47 @@ onMounted(() => load())
         </section>
 
         <!-- COLUMNA DERECHA (30%) -->
-        <aside class="w-full lg:w-[30%] bg-[#E8DCC8]/80 border-t lg:border-t-0 lg:border-l border-[#B8A68B] p-6 sm:p-7 flex flex-col justify-between" aria-label="Feed rápido">
-          <div class="space-y-6">
-            <div class="flex items-center space-x-2 pb-2 border-b border-[#B8A68B]">
-              <span class="text-[#D4AF37] text-xs">❖</span>
-              <h2 class="font-mason text-base font-bold text-[#8B5A2B] tracking-wide uppercase">Feed Rápido</h2>
+        <aside class="col-lateral" aria-label="Feed rápido">
+          <div class="lateral-cuerpo">
+            <div class="seccion-cabecera">
+              <h2 class="subtitulo lateral-titulo">❖ Feed Rápido</h2>
             </div>
 
-            <div class="space-y-5">
-              <div v-for="post in posts" :key="post.id" class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-2">
-                    <div
-                      class="w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-mason font-bold"
-                      :class="avatarDe(post)"
-                    >
-                      {{ post.iniciales }}
-                    </div>
-                    <span class="font-minion font-bold text-[0.9rem] text-[#1A1A1A]">{{ post.autor }}</span>
-                  </div>
-                  <span class="font-tarzana text-[0.7rem] text-[#8B7D6B]">{{ post.tiempo }}</span>
+            <div class="posts">
+              <div v-for="post in posts" :key="post.id" class="post">
+                <div class="post-cabeza">
+                  <div class="crt avatar">{{ post.iniciales }}</div>
+                  <span class="post-autor">{{ post.autor }}</span>
+                  <span class="label post-tiempo">{{ post.tiempo }}</span>
                 </div>
-                <p class="font-minion text-[0.82rem] text-[#1A1A1A] leading-snug line-clamp-2 italic">"{{ post.cuerpo }}"</p>
-                <RouterLink to="/feed" class="inline-block font-minion font-semibold text-[0.78rem] text-[#8B5A2B] hover:underline">
-                  Leer más en Feed →
-                </RouterLink>
+                <p class="post-cuerpo">“{{ post.cuerpo }}”</p>
+                <RouterLink to="/feed" class="text-link">Leer más en Feed →</RouterLink>
               </div>
             </div>
 
-            <div class="mt-6 pt-5 border-t border-[#B8A68B] space-y-3">
-              <span class="font-tarzana text-[0.75rem] text-[#8B7D6B] uppercase tracking-widest block font-semibold">Grimorio de Personajes</span>
-              <div class="p-3 bg-[#FDF8EE]/80 border border-[#C2A980] rounded text-center">
-                <p class="font-minion text-xs text-stone-700 mb-2">
-                  Exporta y sincroniza tus fichas bajo licencia OGL v1.0a Paizo con un clic.
-                </p>
-                <RouterLink
-                  to="/builds/nuevo"
-                  class="block w-full py-1.5 px-3 bg-gradient-to-b from-[#8B5A2B] to-[#6d441e] hover:from-[#9c6632] hover:to-[#7d4e23] text-[#FDF8EE] font-minion text-xs font-semibold rounded border border-[#5a3818] shadow-sm transition-colors"
-                >
+            <div class="lateral-bloque">
+              <span class="label">Grimorio de Personajes</span>
+              <div class="lateral-caja">
+                <p class="label">Exporta y sincroniza tus fichas bajo licencia OGL v1.0a Paizo con un clic.</p>
+                <RouterLink to="/builds/nuevo" class="btn btn--sm">
                   Crear Ficha / Build OGL
                 </RouterLink>
               </div>
             </div>
 
-            <div class="mt-6 pt-5 border-t border-[#B8A68B] space-y-3">
-              <span class="font-tarzana text-[0.75rem] text-[#8B7D6B] uppercase tracking-widest block font-semibold">Encuentros</span>
-              <div class="p-3 bg-[#FDF8EE]/80 border border-[#C2A980] rounded text-center">
-                <p class="font-minion text-xs text-stone-700 mb-2">
-                  Anuncios y buscadores de partida de la comunidad.
-                </p>
-                <RouterLink
-                  to="/encuentros"
-                  class="block w-full py-1.5 px-3 bg-gradient-to-b from-[#D4AF37] to-[#B8860B] hover:from-[#e0bd48] hover:to-[#c99208] text-[#1A1A1A] font-minion text-xs font-bold rounded border border-[#8a6a10] shadow-sm transition-colors"
-                >
+            <div class="lateral-bloque">
+              <span class="label">Encuentros</span>
+              <div class="lateral-caja">
+                <p class="label">Anuncios y buscadores de partida de la comunidad.</p>
+                <RouterLink to="/encuentros" class="btn btn--secondary btn--sm">
                   Buscar Aventureros Afines
                 </RouterLink>
               </div>
             </div>
           </div>
 
-          <div class="mt-8 pt-4 border-t border-[#B8A68B]/60 text-center">
-            <p class="font-mason text-[0.68rem] text-stone-600 tracking-wider uppercase">Sistema D20 • Pathfinder RPG 1e</p>
+          <div class="lateral-pie">
+            <p class="label">Sistema D20 • Pathfinder RPG 1e</p>
           </div>
         </aside>
       </template>
@@ -277,11 +231,74 @@ onMounted(() => load())
     <button
       type="button"
       aria-label="Crear nueva mesa"
-      class="fixed bottom-8 right-8 z-50 group w-14 h-14 rounded-full bg-gradient-to-b from-[#D4AF37] to-[#B8860B] border-2 border-[#FFE885] shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.6)] flex items-center justify-center text-[#1A1A1A] hover:scale-105 transition-all cursor-pointer"
+      class="fab"
       title="Crear nueva mesa"
       @click="router.push('/mesas/nueva')"
     >
-      <span class="font-mason font-extrabold text-3xl leading-none select-none pb-0.5 group-hover:rotate-90 transition-transform duration-200">+</span>
+      +
     </button>
   </main>
 </template>
+
+<style scoped>
+.dash { max-width: 72rem; width: 100%; margin-inline: auto; padding: var(--space-md); display: block; }
+.dash-card { background: var(--color-paper); border: var(--rule-bar) solid var(--color-rule); display: flex; flex-direction: column; overflow: hidden; min-height: 60vh; }
+@media (min-width: 60rem) { .dash-card { flex-direction: row; align-items: stretch; } }
+.contra { color: var(--color-error); }
+.cargando { padding: var(--space-lg); text-align: center; display: grid; gap: var(--space-sm); justify-items: center; width: 100%; }
+.sckels { width: 100%; max-width: 28rem; display: grid; gap: var(--space-2xs); }
+.linea { height: 10px; border-radius: 999px; background: var(--color-paper-3); }
+.linea--grande { width: 66%; height: 16px; }
+.linea--mitad { width: 50%; }
+.col-principal { display: flex; flex-direction: column; gap: var(--space-lg); padding: var(--space-md); width: 100%; }
+@media (min-width: 60rem) { .col-principal { width: 70%; padding: var(--space-lg); } }
+.resumen { display: grid; gap: var(--space-2xs); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 40rem) { .resumen { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.chip-numero { background: var(--color-ink); border: var(--rule-hair) solid var(--color-accent); padding: var(--space-sm); text-align: center; border-radius: var(--radius-card); }
+.resumen-clave { text-transform: uppercase; letter-spacing: .14em; font-size: var(--text-xs); color: var(--color-accent); margin: 0; }
+.resumen-num { color: var(--color-accent); font-family: var(--font-display); font-size: var(--text-xl); margin: var(--space-3xs) 0 0; font-weight: 700; }
+.seccion-cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); border-bottom: var(--rule-hair) solid var(--color-rule); padding-bottom: var(--space-2xs); margin-bottom: var(--space-sm); }
+.subtitulo { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
+.lateral-titulo { font-size: var(--text-md); text-transform: uppercase; }
+.conteo { text-transform: uppercase; letter-spacing: .06em; }
+.lista-mesas { display: grid; gap: var(--space-2xs); }
+.fila-mesa { display: flex; flex-direction: column; gap: var(--space-2xs); border-left: var(--rule-bar) solid var(--color-accent); padding: var(--space-sm) var(--space-md); text-decoration: none; align-items: flex-start; }
+@media (min-width: 40rem) { .fila-mesa { flex-direction: row; align-items: center; justify-content: space-between; min-height: 72px; } }
+.fila-mesa:hover { background: var(--color-paper-3); }
+.fila-mesa-ident { display: grid; gap: var(--space-3xs); min-width: 0; }
+.fila-mesa-chips { display: flex; align-items: center; gap: var(--space-2xs); flex-wrap: wrap; }
+.mesa-nombre { margin: 0; font-size: var(--text-md); font-weight: 700; color: var(--color-ink); }
+.lista-actividad { padding: var(--space-sm) var(--space-md); display: grid; }
+.actividad { padding-block: var(--space-sm); border-bottom: var(--rule-hair) solid var(--color-rule); display: flex; gap: var(--space-sm); align-items: flex-start; }
+.actividad:last-child { border-bottom: 0; }
+.icono-actividad { padding: var(--space-3xs); background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); color: var(--color-accent-2); flex-shrink: 0; }
+.glifo-actividad { width: 16px; height: 16px; }
+.actividad-cuerpo { display: flex; flex-direction: column; gap: var(--space-3xs); min-width: 0; flex: 1; }
+@media (min-width: 40rem) { .actividad-cuerpo { flex-direction: row; justify-content: space-between; align-items: baseline; } }
+.actividad-texto { margin: 0; color: var(--color-ink); font-size: var(--text-sm); line-height: 1.4; min-width: 0; }
+.actividad-texto strong { color: var(--color-accent-2); }
+.actividad-tiempo { white-space: nowrap; color: var(--color-muted); }
+.lista-eventos { display: grid; gap: var(--space-2xs); }
+.fila-evento { display: flex; flex-direction: column; gap: var(--space-2xs); border: var(--rule-hair) solid var(--color-rule); background: var(--color-paper); padding: var(--space-2xs) var(--space-sm); }
+@media (min-width: 40rem) { .fila-evento { flex-direction: row; align-items: center; justify-content: space-between; } }
+.evento-ident { display: flex; align-items: center; gap: var(--space-2xs); min-width: 0; }
+.min-w { min-width: 0; }
+.evento-titulo { margin: 0; font-weight: 700; color: var(--color-ink); }
+.col-lateral { border-top: var(--rule-bar) solid var(--color-rule); width: 100%; display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-md); padding: var(--space-md); background: var(--color-paper-2); }
+@media (min-width: 60rem) { .col-lateral { width: 30%; border-top: 0; border-left: var(--rule-bar) solid var(--color-rule); } }
+.lateral-cuerpo { display: grid; gap: var(--space-md); }
+.posts { display: grid; gap: var(--space-md); }
+.post { display: grid; gap: var(--space-3xs); }
+.post-cabeza { display: grid; grid-template-columns: auto auto 1fr; gap: var(--space-2xs); align-items: center; }
+.avatar { width: 22px; height: 22px; display: grid; place-content: center; border-radius: 999px; background: var(--color-accent-2); color: var(--color-paper); font-weight: 700; font-size: 10px; }
+.post-autor { font-weight: 700; font-size: var(--text-sm); color: var(--color-ink); }
+.post-tiempo { text-align: right; color: var(--color-muted); }
+.post-cuerpo { margin: 0; font-size: var(--text-sm); color: var(--color-ink-2); font-style: italic; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lateral-bloque { display: grid; gap: var(--space-2xs); border-top: var(--rule-hair) solid var(--color-rule); padding-top: var(--space-sm); }
+.lateral-caja { padding: var(--space-sm); border: var(--rule-hair) solid var(--color-rule); text-align: center; display: grid; gap: var(--space-2xs); justify-items: center; }
+.lateral-pie { border-top: var(--rule-hair) solid var(--color-rule); padding-top: var(--space-sm); text-align: center; }
+.lateral-pie .label { margin: 0; text-transform: uppercase; letter-spacing: .14em; }
+.reintentar { justify-self: center; }
+.fab { position: fixed; bottom: 2rem; right: 2rem; width: 3.5rem; height: 3.5rem; border-radius: 999px; background: var(--color-accent); border: 2px solid var(--color-accent-ink); box-shadow: 0 4px 16px var(--color-shade), inset 0 1px 1px var(--color-paper); color: var(--color-accent-ink); font-size: 1.75rem; font-weight: 900; line-height: 1; display: grid; place-content: center; cursor: pointer; z-index: 50; padding-block-end: 2px; }
+.fab:hover { transform: scale(1.05); }
+</style>

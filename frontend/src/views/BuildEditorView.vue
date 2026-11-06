@@ -239,86 +239,71 @@ async function guardarSimple() {
 </script>
 
 <template>
-  <main class="flex-grow w-full max-w-[1200px] mx-auto px-4 py-8">
-    <div v-if="cargando" class="py-16 flex flex-col items-center gap-4" role="status" aria-live="polite">
-      <div class="animate-pulse space-y-3 w-full max-w-md">
-        <div class="h-5 bg-[#C2A980]/40 rounded w-2/3"></div>
-        <div class="h-3 bg-[#C2A980]/25 rounded w-full"></div>
+  <main class="forja">
+    <div v-if="cargando" class="cargando" role="status" aria-live="polite">
+      <div class="sckels">
+        <div class="linea linea--grande"></div>
+        <div class="linea"></div>
       </div>
-      <p class="font-tarzana text-xs uppercase tracking-widest text-[#8B7D6B]">Abriendo la mesa de forja...</p>
+      <p class="label">Abriendo la mesa de forja...</p>
     </div>
 
-    <div v-else-if="error" class="py-16 text-center" role="alert">
-      <p class="font-tarzana uppercase tracking-widest text-xs text-[#8B1A1A] font-bold mb-1">No se pudo editar</p>
-      <p class="font-minion text-[#5A4A3A]">{{ error }}</p>
-      <RouterLink to="/builds" class="btn-copper-outline inline-block mt-5 px-5 py-2 font-tarzana font-bold uppercase tracking-wider text-sm">← Volver a mis builds</RouterLink>
+    <div v-else-if="error" class="cargando" role="alert">
+      <p class="label contra">No se pudo editar</p>
+      <p class="label">{{ error }}</p>
+      <RouterLink to="/builds" class="btn btn--secondary volver-error">← Volver a mis builds</RouterLink>
     </div>
 
     <template v-else-if="esPersonaje">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4 px-1">
-        <div class="flex items-center space-x-2 font-tarzana text-xs tracking-wider text-[#A0A0A0]">
-          <RouterLink to="/builds" class="hover:text-[#D4AF37] transition duration-150 font-bold">INICIO</RouterLink>
-          <span class="text-[#555] font-bold">/</span>
-          <RouterLink to="/builds" class="hover:text-[#D4AF37] transition duration-150 font-bold">BUILDS</RouterLink>
-          <span class="text-[#555] font-bold">/</span>
-          <span class="text-[#D4AF37] font-bold">NUEVA FICHA DE PERSONAJE</span>
+      <div class="miga">
+        <div class="miga-ruta">
+          <RouterLink to="/builds" class="text-link">INICIO</RouterLink>
+          <span class="label">/</span>
+          <RouterLink to="/builds" class="text-link">BUILDS</RouterLink>
+          <span class="label">/</span>
+          <span class="label miga-actual">NUEVA FICHA DE PERSONAJE</span>
         </div>
-        <RouterLink to="/builds" class="text-[#D4AF37] hover:underline flex items-center space-x-1.5 font-bold font-tarzana text-xs tracking-wider">
-          <span>←</span>
-          <span>VOLVER A MIS BUILDS</span>
-        </RouterLink>
+        <RouterLink to="/builds" class="text-link volver">← VOLVER A MIS BUILDS</RouterLink>
       </div>
 
-      <form class="relative rounded-sm p-6 sm:p-10 border-2 border-[#C2A980] bg-[#FDF8EE] shadow-xl space-y-10" @submit.prevent="publicarFicha">
-        <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-[#8B5A2B]"></div>
-        <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#8B5A2B]"></div>
-        <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#8B5A2B]"></div>
-        <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[#8B5A2B]"></div>
-
-        <header class="border-b-2 border-[#8B1A1A] pb-4">
-          <div class="flex flex-wrap items-baseline justify-between gap-2">
-            <h1 class="font-mason text-2xl sm:text-3xl font-black text-[#8B5A2B] tracking-wide uppercase">Crear Personaje</h1>
-            <span class="font-tarzana text-xs uppercase tracking-widest text-[#8B7D6B] font-semibold">Formulario Oficial PF1e SRD</span>
+      <form class="card hoja" @submit.prevent="publicarFicha">
+        <header class="seccion seccion--cabecera">
+          <div class="cabecera-fila">
+            <h1 class="titulo">Crear Personaje</h1>
+            <span class="label">Formulario Oficial PF1e SRD</span>
           </div>
-          <p class="font-minion italic text-[#4A3B32] text-base sm:text-lg mt-1">
-            Forja tu héroe para Pathfinder Primera Edición según las reglas canónicas de Paizo OGL.
-          </p>
+          <p class="label intro">Forja tu héroe para Pathfinder Primera Edición según las reglas canónicas de Paizo OGL.</p>
         </header>
 
-        <section data-purpose="character-identity">
-          <div class="flex items-center space-x-2 border-b border-[#8B1A1A] pb-1.5 mb-5">
-            <h2 class="font-cinzel text-sm sm:text-base font-bold text-[#8B5A2B] uppercase tracking-wider">✦ 1. Identidad y Avance</h2>
-            <div class="flex-1 border-t border-dotted border-[#C2A980]"></div>
+        <section data-purpose="character-identity" class="seccion">
+          <div class="seccion-titulo">
+            <h2 class="rotulo">✦ 1. Identidad y Avance</h2>
+            <div class="punteado"></div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-6 bg-[#FAF5EB] p-5 border border-[#C2A980]/50 rounded-sm">
-            <div class="md:col-span-5 flex flex-col justify-between">
-              <label for="char-name" class="block font-tarzana text-xs font-bold text-[#8B5A2B] tracking-wider uppercase mb-1">
-                Nombre del Personaje <span class="text-[#8B1A1A]">*</span>
-              </label>
-              <input id="char-name" v-model="nombre" type="text" class="w-full bg-[#FAF5EB] border border-[#8B7D6B] px-3 py-2 text-[#1A1A1A] font-minion text-lg focus:ring-1 focus:ring-[#8B5A2B] focus:border-[#8B5A2B] rounded-none placeholder-gray-400" placeholder="ej. Valeros el Temerario" required />
-              <p class="text-[11px] font-tarzana text-[#6B5E50] mt-1.5 italic">Título heroico y renombre en las tierras de Golarion.</p>
+          <div class="card bloque-identidad">
+            <div class="ident-campo">
+              <label for="char-name" class="label etiqueta">Nombre del Personaje <span class="obligatorio">*</span></label>
+              <input id="char-name" v-model="nombre" type="text" class="input" placeholder="ej. Valeros el Temerario" required />
+              <p class="label nota">Título heroico y renombre en las tierras de Golarion.</p>
             </div>
 
-            <div class="md:col-span-3 flex flex-col justify-between border-y md:border-y-0 md:border-x border-[#C2A980]/40 py-2 md:py-0 md:px-4">
-              <div class="flex items-center justify-between mb-1">
-                <label for="char-level" class="font-tarzana text-xs font-bold text-[#8B5A2B] tracking-wider uppercase">Nivel</label>
-                <span class="font-mason text-xl font-black text-[#8B5A2B]">Nivel {{ nivel }}</span>
+            <div class="ident-campo ident-campo--borde">
+              <div class="nivel-cabeza">
+                <label for="char-level" class="label etiqueta">Nivel</label>
+                <span class="num nivel-ghost">Nivel {{ nivel }}</span>
               </div>
-              <div class="py-2">
-                <input id="char-level" v-model.number="nivel" class="slider-horizontal" max="20" min="1" type="range" />
-                <div class="flex justify-between text-[10px] font-tarzana text-[#8B7D6B] font-bold px-1 mt-1">
-                  <span>1</span><span>5</span><span>10</span><span>15</span><span>20</span>
-                </div>
+              <div class="slider-bloque">
+                <input id="char-level" v-model.number="nivel" class="slider" max="20" min="1" type="range" />
+                <div class=".Customer" aria-hidden="true"></div>
+                <div class="escalas num" aria-hidden="true"><span>1</span><span>5</span><span>10</span><span>15</span><span>20</span></div>
               </div>
-              <p class="text-[11px] font-tarzana text-[#6B5E50] italic">Progresión BAB &amp; Habilidades.</p>
+              <p class="label nota">Progresión BAB &amp; Habilidades.</p>
             </div>
 
-            <div class="md:col-span-4 flex flex-col justify-between">
-              <label for="char-class" class="block font-tarzana text-xs font-bold text-[#8B5A2B] tracking-wider uppercase mb-1">
-                Clase de Personaje <span class="text-[#8B1A1A]">*</span>
-              </label>
-              <div class="space-y-2">
-                <select id="char-class" v-model="clase" class="w-full bg-[#FAF5EB] border border-[#8B7D6B] px-3 py-1.5 text-[#1A1A1A] font-tarzana text-sm rounded-none">
+            <div class="ident-campo">
+              <label for="char-class" class="label etiqueta">Clase de Personaje <span class="obligatorio">*</span></label>
+              <div class="clases">
+                <select id="char-class" v-model="clase" class="input">
                   <option>Guerrero (Fighter)</option>
                   <option>Paladín</option>
                   <option>Mago Arcanista</option>
@@ -328,102 +313,95 @@ async function guardarSimple() {
                   <option>Bárbaro</option>
                   <option>Explorador</option>
                 </select>
-                <input v-model="arquetipo" type="text" class="w-full bg-[#FAF5EB] border border-[#8B7D6B] px-3 py-1 text-[#1A1A1A] font-tarzana text-xs italic rounded-none" placeholder="Arquetipo (opcional)" />
+                <input v-model="arquetipo" type="text" class="input arquetipo" placeholder="Arquetipo (opcional)" />
               </div>
             </div>
           </div>
         </section>
 
-        <section data-purpose="ability-scores">
-          <div class="flex flex-wrap items-center justify-between border-b border-[#8B1A1A] pb-1.5 mb-5 gap-2">
-            <h2 class="font-cinzel text-sm sm:text-base font-bold text-[#8B5A2B] uppercase tracking-wider">✦ 2. Puntuaciones de Característica (Buy-Points OGL)</h2>
-            <div class="flex items-center space-x-3 text-xs font-tarzana font-semibold">
-              <span class="bg-[#EAD8B7] px-2.5 py-0.5 border border-[#8B5A2B]/40 rounded" :class="sinCupo ? 'text-[#8B1A1A]' : 'text-[#8B5A2B]'">Puntos restantes: {{ puntosRestantes }}</span>
-              <span class="text-[#6B5E50] hidden sm:inline">Fantasy Buy: 20 pts</span>
+        <section data-purpose="ability-scores" class="seccion">
+          <div class="seccion-titulo">
+            <h2 class="rotulo">✦ 2. Puntuaciones de Característica (Buy-Points OGL)</h2>
+            <div class="puntos-info">
+              <span class="tag" :class="sinCupo ? 'tag--ember' : 'tag--ink'">Puntos restantes: {{ puntosRestantes }}</span>
+              <span class="label nota">Fantasy Buy: 20 pts</span>
             </div>
           </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-            <div v-for="r in rasgos" :key="r.etiqueta" class="bg-[#FAF5EB] border border-[#C2A980] p-3 flex flex-col items-center justify-between rounded shadow-sm text-center">
-              <span class="font-tarzana font-black text-xs text-[#8B5A2B] tracking-widest uppercase">{{ r.etiqueta }}</span>
-              <span class="font-mason text-2xl font-bold text-[#1A1A1A] my-1">{{ r.valor }}</span>
-              <span class="font-tarzana text-xs font-black bg-[#EFE3CF] border border-[#C2A980] px-2 py-0.5 rounded mb-2" :class="Number(mod(r.valor)) < 0 ? 'text-[#8B1A1A]' : 'text-[#8B5A2B]'">{{ mod(r.valor) }}</span>
-              <div class="h-[125px] flex items-center justify-center my-1">
-                <input class="slider-vertical" type="range" min="7" max="20" :value="r.valor" @input="r.valor = Number($event.target.value)" />
+          <div class="atributos">
+            <div v-for="r in rasgos" :key="r.etiqueta" class="card atributo">
+              <span class="label atributo-clave">{{ r.etiqueta }}</span>
+              <span class="num atributo-valor">{{ r.valor }}</span>
+              <span class="tag" :class="Number(mod(r.valor)) < 0 ? 'tag--ember' : 'tag--ink'">{{ mod(r.valor) }}</span>
+              <div class="slider-atributo">
+                <input class="slider" type="range" min="7" max="20" :value="r.valor" @input="r.valor = Number($event.target.value)" />
               </div>
-              <div class="flex items-center justify-between w-full mt-2 px-1">
-                <button type="button" class="w-6 h-6 border border-[#8B7D6B] bg-white text-xs font-bold hover:bg-[#E8DCC8]" aria-label="Reducir {{ r.etiqueta }}" @click="ajustar(r.fila, -1)">-</button>
-                <button type="button" class="w-6 h-6 border border-[#8B7D6B] bg-white text-xs font-bold hover:bg-[#E8DCC8]" aria-label="Aumentar {{ r.etiqueta }}" @click="ajustar(r.fila, 1)">+</button>
+              <div class="atributo-botones">
+                <button type="button" class="btn-atributo" aria-label="Reducir" @click="ajustar(r.fila, -1)">-</button>
+                <button type="button" class="btn-atributo" aria-label="Aumentar" @click="ajustar(r.fila, 1)">+</button>
               </div>
             </div>
           </div>
         </section>
 
-        <section data-purpose="feats-selection">
-          <div class="flex flex-wrap items-center justify-between border-b border-[#8B1A1A] pb-1.5 mb-5 gap-2">
+        <section data-purpose="feats-selection" class="seccion">
+          <div class="seccion-titulo">
             <div>
-              <h2 class="font-cinzel text-sm sm:text-base font-bold text-[#8B5A2B] uppercase tracking-wider">✦ 3. Dotes Seleccionadas ({{ cupoDotes }})</h2>
-              <p class="text-xs font-tarzana text-[#776655] italic">Dotes de nivel y de clase de Guerrero.</p>
+              <h2 class="rotulo">✦ 3. Dotes Seleccionadas ({{ cupoDotes }})</h2>
+              <p class="label nota">Dotes de nivel y de clase de Guerrero.</p>
             </div>
-            <span v-if="dotes.length >= 5" class="text-xs font-tarzana bg-[#EAD8B7] px-2 py-0.5 border border-[#8B5A2B]/40 text-[#8B5A2B] font-bold rounded">Cupo Completo</span>
+            <span v-if="dotes.length >= 5" class="tag tag--ember">Cupo Completo</span>
           </div>
-          <div class="flex flex-col sm:flex-row gap-2 mb-4">
-            <div class="relative flex-1">
-              <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#8B5A2B]">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
-                </svg>
-              </span>
-              <input v-model="busquedaDotes" type="text" class="w-full bg-[#FAF5EB] border border-[#8B7D6B] pl-9 pr-3 py-2 text-xs font-tarzana placeholder-gray-500 rounded-none" placeholder="Buscar dotes en el Compendio OGL (ej. Ataque Poderoso, Esquiva...)" />
-            </div>
-            <button type="button" class="px-5 py-2 bg-[#8B5A2B] text-[#FAF5EB] font-tarzana font-bold text-xs uppercase tracking-wider hover:bg-[#6E421F] transition" @click="dotesFiltradas[0] && anadirDote(dotesFiltradas[0])">Añadir</button>
+          <div class="busqueda-fila">
+            <input v-model="busquedaDotes" type="text" class="input" placeholder="Buscar dotes en el Compendio OGL (ej. Ataque Poderoso, Esquiva...)" />
+            <button type="button" class="btn btn--sm" @click="dotesFiltradas[0] && anadirDote(dotesFiltradas[0])">Añadir</button>
           </div>
-          <div class="bg-[#FAF5EB] p-4 border border-[#C2A980]/70 rounded-sm">
-            <div class="flex flex-wrap gap-2.5">
-              <div v-for="(d, i) in dotes" :key="d.nombre" class="inline-flex items-center space-x-2 bg-[#F6EFE2] border-[1.5px] border-[#8B5A2B] px-3 py-1.5 rounded-sm">
-                <span class="font-tarzana font-bold text-xs text-[#1A1A1A]">{{ d.nombre }}</span>
-                <span class="bg-[#E0D3C1] text-[#8B5A2B] text-[10px] font-tarzana font-bold px-1.5 py-0.5 rounded">{{ d.fuente }}</span>
-                <button type="button" class="text-[#8B1A1A] hover:text-red-800 font-black text-sm leading-none pl-1" title="Eliminar" @click="quitarDote(i)">×</button>
+          <div class="card grupo">
+            <div class="chips">
+              <div v-for="(d, i) in dotes" :key="d.nombre" class="chip-eleccion">
+                <span class="chip-nombre">{{ d.nombre }}</span>
+                <span class="tag tag--ink">{{ d.fuente }}</span>
+                <button type="button" class="quitar" title="Eliminar" @click="quitarDote(i)">×</button>
               </div>
-              <p v-if="dotes.length === 0" class="text-xs font-tarzana text-[#8B7D6B] italic">Ninguna dote seleccionada todavía.</p>
+              <p v-if="dotes.length === 0" class="label vacio-chips">Ninguna dote seleccionada todavía.</p>
             </div>
-            <div v-if="dotesFiltradas.length" class="mt-4 pt-3 border-t border-dashed border-[#C2A980]/50 flex flex-wrap items-center gap-2">
-              <span class="text-xs font-tarzana font-bold text-[#8B5A2B] uppercase">Sugerencias:</span>
-              <button v-for="sug in dotesFiltradas.slice(0, 3)" :key="sug.nombre" type="button" class="min-h-[44px] inline-flex items-center px-2 py-0.5 bg-white border border-dashed border-[#8B5A2B] text-xs font-tarzana text-[#6E421F] hover:bg-[#F2E5D0] rounded" @click="anadirDote(sug)">+ {{ sug.nombre }}</button>
+            <div v-if="dotesFiltradas.length" class="sugerencias">
+              <span class="label sugerencias-etiqueta">Sugerencias:</span>
+              <button v-for="sug in dotesFiltradas.slice(0, 3)" :key="sug.nombre" type="button" class="btn btn--secondary btn--sm" @click="anadirDote(sug)">+ {{ sug.nombre }}</button>
             </div>
           </div>
         </section>
 
-        <section data-purpose="spells-and-magic-abilities">
-          <div class="flex flex-wrap items-center justify-between border-b border-[#8B1A1A] pb-1.5 mb-5 gap-2">
+        <section data-purpose="spells-and-magic-abilities" class="seccion">
+          <div class="seccion-titulo">
             <div>
-              <h2 class="font-cinzel text-sm sm:text-base font-bold text-[#8B5A2B] uppercase tracking-wider">✦ 4. Conjuros y Objetos Activables</h2>
-              <p class="text-xs font-tarzana text-[#776655] italic">Capacidades de conjuración, varitas o dones sagrados.</p>
+              <h2 class="rotulo">✦ 4. Conjuros y Objetos Activables</h2>
+              <p class="label nota">Capacidades de conjuración, varitas o dones sagrados.</p>
             </div>
-            <span class="text-xs font-tarzana text-[#776655]">{{ magia.length }} {{ magia.length === 1 ? 'elemento asignado' : 'elementos asignados' }}</span>
+            <span class="label">{{ magia.length }} {{ magia.length === 1 ? 'elemento asignado' : 'elementos asignados' }}</span>
           </div>
-          <div class="mb-4">
-            <input v-model="busquedaMagia" type="text" class="w-full bg-[#FAF5EB] border border-[#8B7D6B] px-3 py-2 text-xs font-tarzana placeholder-gray-500 rounded-none" placeholder="Buscar en el Grimorio Arcano/Divino..." />
+          <div class="busqueda-fila">
+            <input v-model="busquedaMagia" type="text" class="input" placeholder="Buscar en el Grimorio Arcano/Divino..." />
           </div>
-          <div class="bg-[#FAF5EB] p-4 border border-[#C2A980]/70 rounded-sm">
-            <div class="flex flex-wrap gap-2.5">
-              <div v-for="(m2, i) in magia" :key="m2.nombre" class="inline-flex items-center space-x-2 bg-[#F6EFE2] border-[1.5px] border-[#8B5A2B] px-3 py-1.5 rounded-sm">
-                <span class="font-tarzana font-bold text-xs text-[#1A1A1A]">{{ m2.nombre }}</span>
-                <span class="bg-[#E0D3C1] text-[#8B5A2B] text-[10px] font-tarzana font-bold px-1.5 py-0.5 rounded">{{ m2.fuente }}</span>
-                <button type="button" class="text-[#8B1A1A] hover:text-red-800 font-black text-sm leading-none pl-1" title="Eliminar" @click="quitarMagia(i)">×</button>
+          <div class="card grupo">
+            <div class="chips">
+              <div v-for="(m2, i) in magia" :key="m2.nombre" class="chip-eleccion">
+                <span class="chip-nombre">{{ m2.nombre }}</span>
+                <span class="tag tag--ink">{{ m2.fuente }}</span>
+                <button type="button" class="quitar" title="Eliminar" @click="quitarMagia(i)">×</button>
               </div>
-              <p v-if="magia.length === 0" class="text-xs font-tarzana text-[#8B7D6B] italic">Sin capacidades mágicas registradas.</p>
+              <p v-if="magia.length === 0" class="label vacio-chips">Sin capacidades mágicas registradas.</p>
             </div>
-            <div v-if="magiaFiltrada.length" class="mt-4 pt-3 border-t border-dashed border-[#C2A980]/50 flex flex-wrap items-center gap-2">
-              <span class="text-xs font-tarzana font-bold text-[#8B5A2B] uppercase">Disponibles:</span>
-              <button v-for="op in magiaFiltrada.slice(0, 3)" :key="op.nombre" type="button" class="min-h-[44px] inline-flex items-center px-2 py-0.5 bg-white border border-dashed border-[#8B5A2B] text-xs font-tarzana text-[#6E421F] hover:bg-[#F2E5D0] rounded" @click="anadirMagia(op)">+ {{ op.nombre }}</button>
+            <div v-if="magiaFiltrada.length" class="sugerencias">
+              <span class="label sugerencias-etiqueta">Disponibles:</span>
+              <button v-for="op in magiaFiltrada.slice(0, 3)" :key="op.nombre" type="button" class="btn btn--secondary btn--sm" @click="anadirMagia(op)">+ {{ op.nombre }}</button>
             </div>
           </div>
         </section>
 
-        <div class="flex flex-col sm:flex-row justify-end gap-3 pt-2 border-t border-[#C2A980]/60">
-          <button type="button" class="btn-copper-outline px-6 py-2.5 font-tarzana font-bold uppercase tracking-wider text-sm" :disabled="guardando" @click="router.push(`/builds/${id}`)">Cancelar</button>
-          <button type="button" class="btn-bronze px-6 py-2.5 font-tarzana font-bold uppercase tracking-wider text-sm" :disabled="guardando" @click="guardarBorrador">Guardar Borrador</button>
-          <button type="submit" class="btn-gold-relief px-7 py-2.5 font-tarzana font-extrabold uppercase tracking-wider text-sm" :disabled="guardando">
+        <div class="acciones">
+          <button type="button" class="btn btn--secondary" :disabled="guardando" @click="router.push(`/builds/${id}`)">Cancelar</button>
+          <button type="button" class="btn btn--secondary" :disabled="guardando" @click="guardarBorrador">Guardar Borrador</button>
+          <button type="submit" class="btn" :disabled="guardando">
             {{ guardando ? 'Guardando…' : 'Publicar Ficha' }}
           </button>
         </div>
@@ -431,10 +409,10 @@ async function guardarSimple() {
     </template>
 
     <template v-else>
-      <form class="relative rounded-sm p-6 sm:p-10 border-2 border-[#C2A980] bg-[#FDF8EE] shadow-xl space-y-6" @submit.prevent="guardarSimple">
-        <header class="border-b-2 border-[#8B1A1A] pb-4">
-          <h1 class="font-mason text-2xl sm:text-3xl font-black text-[#8B5A2B] tracking-wide uppercase">Editar {{ tipo }}</h1>
-          <p class="font-minion italic text-[#4A3B32] text-base sm:text-lg mt-1">Editá el contenido y los detalles de esta creación.</p>
+      <form class="card hoja" @submit.prevent="guardarSimple">
+        <header class="seccion seccion--cabecera">
+          <h1 class="titulo">Editar {{ tipo }}</h1>
+          <p class="label intro">Editá el contenido y los detalles de esta creación.</p>
         </header>
         <div class="field">
           <label class="label" for="simple-nombre">Nombre</label>
@@ -444,9 +422,9 @@ async function guardarSimple() {
           <label class="label" for="simple-detalle">Descripción / cuerpo</label>
           <textarea id="simple-detalle" v-model="detalle" rows="6" class="input"></textarea>
         </div>
-        <div class="flex flex-col sm:flex-row justify-end gap-3 pt-2 border-t border-[#C2A980]/60">
-          <button type="button" class="btn-copper-outline px-6 py-2.5 font-tarzana font-bold uppercase tracking-wider text-sm" :disabled="guardando" @click="router.push(`/builds/${id}`)">Cancelar</button>
-          <button type="submit" class="btn-gold-relief px-7 py-2.5 font-tarzana font-extrabold uppercase tracking-wider text-sm" :disabled="guardando">
+        <div class="acciones">
+          <button type="button" class="btn btn--secondary" :disabled="guardando" @click="router.push(`/builds/${id}`)">Cancelar</button>
+          <button type="submit" class="btn" :disabled="guardando">
             {{ guardando ? 'Guardando…' : 'Guardar' }}
           </button>
         </div>
@@ -454,3 +432,64 @@ async function guardarSimple() {
     </template>
   </main>
 </template>
+
+<style scoped>
+.forja { width: 100%; max-width: 75rem; margin-inline: auto; padding: var(--space-lg) var(--gutter); display: grid; gap: var(--space-md); align-items: start; }
+.contra { color: var(--color-error); }
+.cargando { padding-block: var(--space-xl); text-align: center; display: grid; gap: var(--space-sm); justify-items: center; }
+.sckels { width: 100%; max-width: 28rem; display: grid; gap: var(--space-2xs); }
+.linea { height: 10px; border-radius: 999px; background: var(--color-paper-3); }
+.linea--grande { width: 66%; height: 20px; }
+.volver-error { justify-self: center; margin-top: var(--space-sm); }
+.miga { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); padding-inline: var(--space-3xs); flex-wrap: wrap; }
+.miga-ruta { display: inline-flex; align-items: center; gap: var(--space-2xs); font-size: var(--text-xs); color: var(--color-muted); letter-spacing: .06em; }
+.miga-actual { color: var(--color-accent); font-weight: 700; }
+.volver { font-weight: 700; font-size: var(--text-xs); letter-spacing: .06em; display: inline-flex; gap: var(--space-3xs); }
+.hoja { padding: var(--space-lg); display: grid; gap: var(--space-lg); border: var(--rule-bar) solid var(--color-rule); }
+.seccion { display: grid; gap: var(--space-sm); }
+.seccion--cabecera { border-bottom: var(--rule-bar) solid var(--color-rule); padding-bottom: var(--space-sm); }
+.cabecera-fila { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2xs); }
+.titulo { margin: 0; font-size: var(--text-title); color: var(--color-ink); text-transform: uppercase; }
+.intro { font-style: italic; color: var(--color-ink-2); }
+.seccion-titulo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2xs); border-bottom: var(--rule-hair) solid var(--color-rule); padding-bottom: var(--space-3xs); }
+.rotulo { margin: 0; font-size: var(--text-sm); font-weight: 700; color: var(--color-ink); text-transform: uppercase; letter-spacing: .08em; }
+.punteado { flex: 1; border-top: var(--rule-hair) dashed var(--color-rule); }
+.bloque-identidad { display: grid; gap: var(--space-md); padding: var(--space-md); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 60rem) { .bloque-identidad { grid-template-columns: 5fr 3fr 4fr; } }
+.ident-campo { display: grid; gap: var(--space-3xs); align-content: space-between; }
+.ident-campo--borde { border-block: var(--rule-hair) solid var(--color-rule); padding-block: var(--space-2xs); }
+@media (min-width: 60rem) { .ident-campo--borde { border: 0; border-inline: var(--rule-hair) solid var(--color-rule); padding-inline: var(--space-md); } }
+.etiqueta { text-transform: uppercase; letter-spacing: .06em; color: var(--color-accent-2); }
+.obligatorio { color: var(--color-error); font-weight: 900; }
+.nota { color: var(--color-ink-2); font-style: italic; margin: 0; }
+.nivel-cabeza { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); }
+.nivel-ghost { font-family: var(--font-display); font-size: var(--text-xl); color: var(--color-accent-2); font-weight: 900; }
+.slider-bloque { display: grid; gap: 2px; padding-block: var(--space-2xs); }
+.slider { width: 100%; accent-color: var(--color-accent-2); }
+.escalas { display: flex; justify-content: space-between; color: var(--color-muted); font-size: 10px; font-weight: 700; padding-inline: var(--space-3xs); }
+.clases { display: grid; gap: var(--space-2xs); }
+.arquetipo { font-style: italic; font-size: var(--text-xs); }
+.atributos { display: grid; gap: var(--space-2xs); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 40rem) { .atributos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 60rem) { .atributos { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.atributo { padding: var(--space-2xs); display: grid; gap: var(--space-3xs); justify-items: center; text-align: center; }
+.atributo-clave { text-transform: uppercase; letter-spacing: .16em; font-weight: 900; color: var(--color-accent-2); }
+.atributo-valor { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700; color: var(--color-ink); }
+.slider-atributo { height: 7rem; display: grid; place-content: center; width: 100%; }
+.atributo-botones { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.btn-atributo { width: 24px; height: 24px; border: var(--rule-hair) solid var(--color-rule); background: var(--color-paper); color: var(--color-ink); font-weight: 700; cursor: pointer; display: grid; place-content: center; }
+.btn-atributo:hover { background: var(--color-paper-3); }
+.busqueda-fila { display: flex; flex-direction: column; gap: var(--space-2xs); }
+@media (min-width: 40rem) { .busqueda-fila { flex-direction: row; align-items: center; } .busqueda-fila .input { flex: 1; } }
+.grupo { padding: var(--space-sm) var(--space-md); display: grid; gap: var(--space-sm); align-content: start; }
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2xs); align-items: center; }
+.chip-eleccion { display: inline-flex; align-items: center; gap: var(--space-2xs); border: var(--rule-bar) solid var(--color-accent-2); background: var(--color-paper-3); padding: var(--space-3xs) var(--space-sm); }
+.chip-nombre { font-weight: 700; font-size: var(--text-xs); color: var(--color-ink); }
+.quitar { background: transparent; border: 0; color: var(--color-error); font-weight: 900; cursor: pointer; font-size: var(--text-sm); padding-inline: var(--space-3xs); }
+.vacio-chips { margin: 0; font-style: italic; }
+.sugerencias { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs); border-top: var(--rule-hair) dashed var(--color-rule); padding-top: var(--space-2xs); }
+.sugerencias-etiqueta { text-transform: uppercase; color: var(--color-accent-2); font-weight: 700; }
+.acciones { display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-2xs); border-top: var(--rule-hair) solid var(--color-rule); padding-top: var(--space-2xs); }
+@media (min-width: 40rem) { .acciones { flex-direction: row; } }
+.Customer { height: 4px; background: var(--color-paper-3); border-radius: 999px; }
+</style>

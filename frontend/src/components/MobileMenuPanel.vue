@@ -28,23 +28,45 @@ function onLogout() {
 </script>
 
 <template>
-  <div v-if="mobileOpen" class="sim-panel" data-sim-panel data-test="panel-movil" @click.self="closeMenu">
-    <nav class="sim-panel-nav" aria-label="Menú móvil">
+  <div v-if="mobileOpen" class="panel" data-test="panel-movil" @click.self="closeMenu">
+    <nav class="panel-nav" aria-label="Menú móvil">
       <RouterLink
         v-for="l in nav"
         :key="l.to"
         :to="navTarget(l)"
-        :class="l.cta ? 'sim-cta' : ''"
         @click="go"
       >
         {{ l.label }}
-        <span v-if="l.feature && !isFeatureEnabled(l.feature)" class="block text-[0.65rem] uppercase opacity-80">Próximamente</span>
+        <span v-if="l.feature && !isFeatureEnabled(l.feature)" class="proximamente">Próximamente</span>
       </RouterLink>
       <template v-if="role !== 'guest'">
-        <RouterLink class="sim-panel-perfil" :to="comingSoonPath('perfil')" @click="go">Mi perfil · Próximamente</RouterLink>
-        <button type="button" class="sim-panel-btn sim-logout" @click="onLogout">Cerrar sesión</button>
+        <RouterLink class="perfil" to="/perfil" @click="go">Mi perfil</RouterLink>
+        <button type="button" class="salir" @click="onLogout">Cerrar sesión</button>
       </template>
-      <span v-else class="sim-badge">PF1e · OGL v1.0a</span>
+      <span v-else class="label lema-adicional">PF1e · OGL v1.0a</span>
     </nav>
   </div>
 </template>
+
+<style scoped>
+.panel {
+  position: fixed; inset: 0; z-index: 900;
+  display: flex; flex-direction: column;
+  background: var(--color-ink);
+  border-top: var(--rule-bar) solid var(--color-accent);
+  padding: var(--space-lg) var(--gutter);
+}
+.panel-nav { display: flex; flex-direction: column; gap: var(--space-3xs); }
+.panel-nav a, .panel-nav button {
+  color: var(--color-paper); text-decoration: none;
+  padding: var(--space-2xs) var(--space-sm); border-radius: var(--radius-card);
+  font-weight: 700; font-size: var(--text-md); text-align: left;
+  background: transparent; border: 0; cursor: pointer;
+}
+.panel-nav a:hover, .panel-nav button:hover { background: var(--color-paper-3); color: var(--color-accent); }
+.panel-nav .salir { color: var(--color-error); border: var(--rule-hair) solid var(--color-error); font-weight: 900; }
+.panel-nav .salir:hover { background: var(--color-error); color: var(--color-paper); }
+.proximamente { display: block; font-size: var(--text-xs); text-transform: uppercase; color: var(--color-muted); }
+.perfil { color: var(--color-muted); }
+.lema-adicional { padding-top: var(--space-sm); color: var(--color-muted); text-transform: uppercase; letter-spacing: .14em; font-size: var(--text-xs); }
+</style>

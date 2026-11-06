@@ -119,7 +119,7 @@ describe('MesaGestionShell con cargas parciales (D-02)', () => {
 
   it('todo responde: cuenta wiki, sesiones y ocupacion reales + acciones GM con rol master', async () => {
     const w = await montar(cuerpoCompleto(), sesionGM())
-    expect(w.text()).toContain('EDITAR MESA') // esGM reconoce mi_rol 'master'
+    expect(w.text()).toContain('Editar mesa') // esGM reconoce mi_rol 'master'
     const nav = w.text()
     expect(nav).toContain('2/5') // ocupacion real: 2 miembros de 5 plazas
     expect(nav).not.toMatch(/undefined/)

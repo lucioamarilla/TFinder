@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useToast } from '@/composables/useToast.js'
-import MesaGestionShell from '@/components/mesa/MesaGestionShell.vue'
 import { getWiki, getPagina } from '@/services/wiki.js'
 
 const props = defineProps({ mesaId: { type: String, required: true }, paginaId: { type: String, required: true } })
@@ -35,7 +34,7 @@ const indiceFiltrado = computed(() => {
   return indice.value.filter((p) => p.titulo.toLowerCase().includes(q))
 })
 
-const TIPOS_BADGE = { LUGAR: 'badge-place', NPC: 'badge-npc', CRIATURA: 'badge-creature', NOTA: 'badge-note' }
+const TIPO_TAG = { LUGAR: 'tag--ember', NPC: 'tag--ink', CRIATURA: 'tag--ember', NOTA: 'tag--acid' }
 
 function publicar() {
   const texto = nuevoComentario.value.trim()
@@ -64,41 +63,28 @@ watch(() => props.paginaId, cargar)
 </script>
 
 <template>
-  <MesaGestionShell :mesa-id="mesaId">
-    <div v-if="cargando" class="text-center py-16 font-tarzana text-xs uppercase tracking-widest text-[#8B7D6B]">
+      <div v-if="cargando" class="label central">
       Abriendo la página del código…
     </div>
 
-    <div v-else-if="falta" class="text-center py-16 font-minion text-[#5C4A32]">
+    <div v-else-if="falta" class="falta">
       Esta página fue borrada del grimorio.
-      <RouterLink :to="`/mesas/${mesaId}/wiki`" class="block mt-3 font-tarzana font-bold text-[#8B5A2B] hover:underline">← Volver al Códice</RouterLink>
+      <RouterLink :to="`/mesas/${mesaId}/wiki`" class="text-link">← Volver al Códice</RouterLink>
     </div>
 
-    <div v-else-if="pagina" class="grid grid-cols-1 md:grid-cols-10 gap-6">
+    <div v-else-if="pagina" class="pagina">
       <!-- Índice lateral -->
-      <aside class="md:col-span-3">
-        <div class="bg-[#F6EDDC] border border-[#C2A980] rounded p-4 sticky top-24">
-          <h2 class="font-mason text-[1.05rem] font-bold text-[#8B5A2B] uppercase tracking-wide mb-3">Índice del Códice</h2>
-          <div class="relative mb-3">
-            <svg class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8B7D6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            <input
-              v-model="busqueda"
-              type="text"
-              placeholder="Filtrar notas, lugares, PNJs..."
-              class="w-full bg-[#FDF8EE] border border-[#C2A980] text-xs font-minion px-3 py-1.5 pl-8 rounded text-[#1A1A1A] placeholder-[#8B7D6B] focus:outline-none focus:border-[#8B5A2B]"
-            />
-          </div>
-          <nav class="space-y-0.5 max-h-[520px] overflow-y-auto pr-1">
+      <aside>
+        <div class="card arbol">
+          <h2 class="rotulo">Índice del Códice</h2>
+          <input v-model="busqueda" type="text" placeholder="Filtrar notas, lugares, PNJs..." class="input buscador" />
+          <nav class="ramas">
             <RouterLink
               v-for="p in indiceFiltrado"
               :key="p.id"
               :to="`/mesas/${mesaId}/wiki/${p.id}`"
-              class="block px-2 py-1.5 text-[0.88rem] rounded transition border-l-2"
-              :class="p.id === pagina.id
-                ? 'bg-[#FDF8EE]/90 border-[#8B5A2B] text-[#8B5A2B] font-semibold'
-                : 'border-transparent text-[#1A1A1A] hover:bg-[#FDF8EE]/80 hover:text-[#8B5A2B]'"
+              class="rama"
+              :class="p.id === pagina.id ? 'rama--activa' : ''"
             >
               {{ p.titulo.split(' (')[0] }}
             </RouterLink>
@@ -107,94 +93,89 @@ watch(() => props.paginaId, cargar)
       </aside>
 
       <!-- Artículo -->
-      <article class="md:col-span-7">
-        <RouterLink
-          :to="`/mesas/${mesaId}/wiki`"
-          class="inline-flex items-center gap-1.5 font-tarzana text-xs font-bold text-[#8B5A2B] hover:text-[#5C3817] uppercase tracking-wider mb-3"
-        >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-          </svg>
-          Volver a la Lista
-        </RouterLink>
+      <article class="articulo">
+        <RouterLink :to="`/mesas/${mesaId}/wiki`" class="text-link volver">← Volver a la Lista</RouterLink>
 
-        <div class="flex flex-wrap items-center gap-2 mb-1">
-          <span class="font-tarzana text-[0.7rem] px-2 py-0.5 rounded" :class="TIPOS_BADGE[pagina.tipo] || 'badge-note'">
-            {{ pagina.tipo }}
-          </span>
-          <span class="font-tarzana text-xs text-[#8B7D6B]">Carpeta: {{ pagina.carpeta }}</span>
+        <div class="cabeza">
+          <span class="tag" :class="TIPO_TAG[pagina.tipo] || 'tag--acid'">{{ pagina.tipo }}</span>
+          <span class="label">Carpeta: {{ pagina.carpeta }}</span>
         </div>
-        <h1 class="font-mason text-2xl md:text-3xl text-[#8B5A2B] font-bold tracking-wide mb-2">
-          {{ pagina.titulo }}
-        </h1>
-        <p class="font-minion italic text-sm text-[#736351] mb-6">{{ pagina.resumen }}</p>
+        <h1 class="titulo">{{ pagina.titulo }}</h1>
+        <p class="subtitulo">{{ pagina.resumen }}</p>
 
-        <div class="space-y-5">
+        <div class="cuerpo">
           <template v-for="(bloque, i) in pagina.contenido" :key="i">
-            <p v-if="bloque.tipo === 'parrafo'" class="font-minion text-[1rem] text-[#1A1A1A] leading-relaxed">
-              {{ bloque.texto }}
-            </p>
-            <h2 v-else-if="bloque.tipo === 'subtitle'" class="font-mason text-[1.4rem] text-[#8B5A2B] font-bold pt-2 border-b border-[#C2A980]/50 pb-1">
-              {{ bloque.texto }}
-            </h2>
-            <p v-else-if="bloque.tipo === 'cita'" class="font-minion italic text-[0.95rem] text-[#5C4A32] border-l-4 border-[#C2A980] bg-[#F6EDDC]/60 pl-4 py-2 rounded-r">
-              {{ bloque.texto }}
-            </p>
+            <p v-if="bloque.tipo === 'parrafo'" class="parrafo">{{ bloque.texto }}</p>
+            <h2 v-else-if="bloque.tipo === 'subtitle'" class="sub-bloque">{{ bloque.texto }}</h2>
+            <p v-else-if="bloque.tipo === 'cita'" class="cita">{{ bloque.texto }}</p>
             <div v-else-if="bloque.tipo === 'lista'">
-              <h3 class="font-mason text-[1.1rem] text-[#8B5A2B] font-bold pt-1 mb-1.5">{{ bloque.titulo }}</h3>
-              <ul class="list-disc pl-6 space-y-1 font-minion text-[0.98rem] text-[#1A1A1A]">
+              <h3 class="sub-bloque sub-bloque--tercer">{{ bloque.titulo }}</h3>
+              <ul class="lista">
                 <li v-for="(item, k) in bloque.items" :key="k">{{ item }}</li>
               </ul>
             </div>
           </template>
         </div>
 
-        <div class="mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t border-[#C2A980]/50">
-          <span class="font-minion text-xs text-[#8B7D6B] italic">
-            Última edición: <strong class="text-[#5C4A32]">{{ pagina.fecha }}</strong> por Aldren (GM)
-          </span>
-          <RouterLink
-            :to="`/mesas/${mesaId}/wiki/${pagina.id}/editar`"
-            class="btn-copper-outline px-4 py-2 rounded font-tarzana text-xs font-bold flex items-center gap-2"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-            </svg>
-            EDITAR PÁGINA
+        <div class="pie">
+          <span class="label">Última edición: <strong>{{ pagina.fecha }}</strong> por Aldren (GM)</span>
+          <RouterLink :to="`/mesas/${mesaId}/wiki/${pagina.id}/editar`" class="btn btn--secondary btn--sm">
+            Editar página
           </RouterLink>
         </div>
 
         <!-- Discusión -->
-        <section class="mt-8">
-          <h2 class="font-mason text-[1rem] font-bold text-[#8B5A2B] uppercase tracking-wider mb-3">
-            Discusión del Códice ({{ comentarios.length }})
-          </h2>
-          <div class="space-y-3">
-            <div v-for="(c, i) in comentarios" :key="i" class="flex gap-3 bg-[#FBF4E6] border border-[#E8DCC8] rounded p-3.5">
-              <div class="w-8 h-8 rounded-full bg-[#8B5A2B] text-[#FDF8EE] flex items-center justify-center font-mason text-[0.65rem] font-bold shrink-0">
-                {{ c.avatar }}
-              </div>
+        <section class="discusion">
+          <h2 class="rotulo">Discusión del Códice ({{ comentarios.length }})</h2>
+          <div class="comentarios">
+            <div v-for="(c, i) in comentarios" :key="i" class="card comentario">
+              <div class="crt avatar">{{ c.avatar }}</div>
               <div>
-                <div class="text-xs font-tarzana font-bold text-[#8B5A2B]">
-                  {{ c.autor }}
-                  <span class="font-normal text-[#8B7D6B]">· {{ c.fecha }}</span>
-                </div>
-                <p class="text-sm font-minion text-[#1A1A1A] mt-0.5">{{ c.texto }}</p>
+                <div class="autor">{{ c.autor }} <span class="label">· {{ c.fecha }}</span></div>
+                <p class="comentario-texto">{{ c.texto }}</p>
               </div>
             </div>
 
-            <form class="flex gap-2" @submit.prevent="publicar">
-              <input
-                v-model="nuevoComentario"
-                type="text"
-                placeholder="Aporta una anotación al códice…"
-                class="flex-1 bg-[#FDF8EE] border border-[#C2A980] text-sm font-minion px-3 py-2 rounded text-[#1A1A1A] placeholder-[#8B7D6B] focus:outline-none focus:border-[#8B5A2B]"
-              />
-              <button type="submit" class="btn-gold-emboss px-4 py-2 rounded font-tarzana text-xs font-bold">PUBLICAR</button>
+            <form class="formulario" @submit.prevent="publicar">
+              <input v-model="nuevoComentario" type="text" placeholder="Aporta una anotación al códice…" class="input" />
+              <button type="submit" class="btn btn--sm">Publicar</button>
             </form>
           </div>
         </section>
       </article>
     </div>
-  </MesaGestionShell>
 </template>
+
+<style scoped>
+.pagina { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 60rem) { .pagina { grid-template-columns: minmax(0, 3fr) minmax(0, 7fr); gap: var(--space-lg); } }
+.central { text-align: center; padding-block: var(--space-xl); }
+.falta { text-align: center; padding-block: var(--space-xl); display: grid; gap: var(--space-sm); justify-items: center; color: var(--color-ink-2); }
+.arbol { padding: var(--space-md); display: grid; gap: var(--space-sm); align-content: start; position: sticky; top: 96px; }
+.rotulo { margin: 0; font-size: var(--text-md); font-weight: 700; color: var(--color-ink); text-transform: uppercase; letter-spacing: .04em; }
+.buscador { font-size: var(--text-sm); }
+.ramas { display: grid; gap: 2px; max-height: 32rem; overflow-y: auto; padding-right: var(--space-3xs); }
+.rama { display: block; padding: var(--space-3xs) var(--space-2xs); border-left: var(--rule-bar) solid transparent; color: var(--color-ink-2); text-decoration: none; font-size: var(--text-sm); }
+.rama:hover { color: var(--color-accent-2); background: var(--color-paper-3); }
+.rama--activa { border-left-color: var(--color-accent-2); background: var(--color-paper-3); color: var(--color-accent-2); font-weight: 700; }
+.articulo { min-width: 0; display: grid; gap: var(--space-sm); align-content: start; }
+.volver { font-weight: 700; font-size: var(--text-sm); }
+.cabeza { display: flex; align-items: center; gap: var(--space-2xs); flex-wrap: wrap; }
+.titulo { margin: 0; font-size: var(--text-display-s); color: var(--color-ink); }
+.subtitulo { margin: 0; color: var(--color-ink-2); font-style: italic; font-size: var(--text-sm); }
+.cuerpo { display: grid; gap: var(--space-md); }
+.parrafo { margin: 0; color: var(--color-ink); line-height: 1.6; }
+.sub-bloque { margin: 0; padding-bottom: var(--space-3xs); border-bottom: var(--rule-hair) solid var(--color-rule); font-size: var(--text-title); color: var(--color-ink); font-weight: 700; }
+.sub-bloque--tercer { font-size: var(--text-md); }
+.cita { margin: 0; color: var(--color-ink-2); font-style: italic; border-left: var(--rule-bar) solid var(--color-rule); background: var(--color-paper-3); padding: var(--space-2xs) var(--space-sm); }
+.lista { margin: 0; padding-left: var(--space-lg); display: grid; gap: var(--space-3xs); color: var(--color-ink); }
+.pie { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); padding-top: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); flex-wrap: wrap; }
+.discusion { display: grid; gap: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); padding-top: var(--space-md); }
+.comentarios { display: grid; gap: var(--space-sm); }
+.comentario { display: flex; gap: var(--space-sm); padding: var(--space-sm) var(--space-md); align-items: flex-start; }
+.avatar { width: 32px; height: 32px; display: grid; place-content: center; border-radius: 999px; background: var(--color-accent-2); color: var(--color-paper); font-weight: 700; font-size: var(--text-xs); flex-shrink: 0; }
+.autor { font-weight: 700; color: var(--color-ink); font-size: var(--text-sm); }
+.comentario-texto { margin: 2px 0 0; font-size: var(--text-sm); color: var(--color-ink); }
+.formulario { display: flex; gap: var(--space-2xs); flex-wrap: wrap; }
+.formulario .input { flex: 1; min-width: 12rem; }
+</style>

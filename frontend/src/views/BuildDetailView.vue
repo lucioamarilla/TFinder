@@ -116,9 +116,9 @@ function ponerEnBitacora() {
     <main class="stack">
  <div v-if="cargando" class="py-16 flex flex-col items-center gap-4" role="status" aria-live="polite">
  <div class="animate-pulse space-y-3 w-full max-w-md">
- <div class="h-5 bg-[#C2A980]/40 rounded w-2/3"></div>
- <div class="h-3 bg-[#C2A980]/25 rounded w-full"></div>
- <div class="h-3 bg-[#C2A980]/25 rounded w-1/2"></div>
+ <div class="h-5 bg-[var(--color-paper-3)]/40 rounded w-2/3"></div>
+ <div class="h-3 bg-[var(--color-paper-3)]/25 rounded w-full"></div>
+ <div class="h-3 bg-[var(--color-paper-3)]/25 rounded w-1/2"></div>
  </div>
  <p class=" text-xs uppercase tracking-widest text-[var(--color-muted)]">Cargando el pergamino del héroe...</p>
  </div>
@@ -131,7 +131,7 @@ function ponerEnBitacora() {
 
  <template v-else-if="build">
  <div class="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
- <RouterLink to="/builds" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-accent)] hover:text-[#5C3817] uppercase tracking-wider">
+ <RouterLink to="/builds" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-accent)] hover:text-[var(--color-accent)] uppercase tracking-wider">
  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
  </svg>
@@ -148,7 +148,7 @@ function ponerEnBitacora() {
  <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[var(--color-accent)]"></div>
  <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[var(--color-accent)]"></div>
 
- <div class="border-b border-[var(--color-rule)]/70 pb-3 mb-4">
+ <div class="border-b border-[color-mix(in_oklab,var(--color-rule)_70%,transparent)] pb-3 mb-4">
  <h1 class=" text-[1.8rem] text-[var(--color-accent)] font-bold leading-tight tracking-wide uppercase">
  {{ build.display }}
  </h1>
@@ -246,7 +246,7 @@ function ponerEnBitacora() {
  <div><strong class=" font-bold text-[var(--color-accent)] uppercase">Iniciativa:</strong> {{ build.ficha.estadisticas.iniciativa }}</div>
  <div><strong class=" font-bold text-[var(--color-accent)] uppercase">Sentidos:</strong> {{ build.ficha.estadisticas.sentidos }}</div>
  <div><strong class=" font-bold text-[var(--color-accent)] uppercase">Idiomas:</strong> {{ build.ficha.estadisticas.idiomas }}</div>
- <div class="pt-2 border-t border-[var(--color-rule)]/60 text-[11px] text-[var(--color-muted)] flex justify-between items-center">
+ <div class="pt-2 border-t border-[color-mix(in_oklab,var(--color-rule)_60%,transparent)] text-[11px] text-[var(--color-muted)] flex justify-between items-center">
  <span>ID de Build: {{ build.ficha.idBuild }}</span>
  <span class="text-[var(--color-success,#6B8E23)] font-bold">● Compatible Bestiario OGL</span>
  </div>
@@ -257,7 +257,7 @@ function ponerEnBitacora() {
  <div class="bg-[var(--color-paper-2)] border-2 border-[var(--color-rule)] rounded-sm p-4 shadow-md flex flex-wrap items-center justify-between gap-4">
  <div class="flex flex-wrap items-center gap-3">
  <button type="button" class="btn-bronze px-4 py-2 rounded text-xs font-bold tracking-wider uppercase flex items-center space-x-2" @click="router.push(`/builds/${build.id}/editar`)">
- <svg class="w-4 h-4 text-[#FDF8EE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ <svg class="w-4 h-4 text-[var(--color-paper)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
  </svg>
  <span>Editar</span>
@@ -278,7 +278,7 @@ function ponerEnBitacora() {
  <span>Bitácora</span>
  </button>
  <button type="button" class="btn-bronze px-4 py-2 rounded text-xs font-bold tracking-wider uppercase flex items-center space-x-2" @click="abrirAsociar = true">
- <svg class="w-4 h-4 text-[#FDF8EE]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+ <svg class="w-4 h-4 text-[var(--color-paper)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
  </svg>
  <span>{{ build.mesaId ? 'Cambiar Mesa' : 'Asociar a Mesa' }}</span>
@@ -364,7 +364,7 @@ function ponerEnBitacora() {
  <ul class=" text-sm text-[var(--color-ink)] space-y-2 divide-y divide-[#C2A980]/30">
  <li v-for="hab in build.ficha.habilidades" :key="hab.nombre" class="pt-1 flex items-center justify-between">
  <div class="flex items-center space-x-2">
- <span class="w-1.5 h-1.5 bg-[#8B5A2B] rounded-full"></span>
+ <span class="w-1.5 h-1.5 bg-[var(--color-accent-2)] rounded-full"></span>
  <span class="font-semibold">{{ hab.nombre }}</span>
  <span class="text-[11px] text-[var(--color-muted)] italic">{{ hab.abrev }}</span>
  </div>

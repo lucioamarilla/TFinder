@@ -4,10 +4,10 @@ import router from '@/router'
 import '@/styles/tokens.css'
 import '@/styles/base.css'
 import '@/styles/app.css'
-// D-07: Tailwind compilado + capas pergamino del prototipo (gestion/sim-*).
+// D-07 (corregido): SOLO utilidades de Tailwind (sin base/preflight):
+// el diseño visual proviene de tokens/base/app, que es el estilo del proyecto.
+// El prototipo pergamino (crono/harness) NO se carga.
 import '@/styles/tailwind.css'
-import '@/styles/crono.css'
-import '@/styles/harness.css'
 document.documentElement.classList.add('js')
 
 createApp(App).use(router).mount('#app')

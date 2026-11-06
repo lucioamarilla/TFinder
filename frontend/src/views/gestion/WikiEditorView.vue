@@ -2,7 +2,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast.js'
-import MesaGestionShell from '@/components/mesa/MesaGestionShell.vue'
 import ConfirmModal from '@/components/modals/ConfirmModal.vue'
 import { getWiki, getPagina, crearPagina, actualizarPagina, eliminarPagina } from '@/services/wiki.js'
 
@@ -146,100 +145,76 @@ onMounted(cargar)
 </script>
 
 <template>
-  <MesaGestionShell :mesa-id="mesaId">
-    <div class="space-y-5">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-[#C2A980] pb-4">
+      <div class="editor">
+      <div class="editor-cabecera">
         <div>
-          <h2 class="font-mason text-xl font-bold text-[#8B5A2B] uppercase tracking-wide flex items-center gap-2">
-            <span>✒</span> {{ esNueva ? 'Nueva Página del Códice' : 'Editar Página del Códice' }}
-          </h2>
-          <p class="font-minion italic text-xs text-[#736351] mt-0.5">
-            Formato ligero: líneas normales son párrafos, «## » encabeza, «- » crea listas y «&gt; » es citado.
-          </p>
+          <h2 class="titulo-seccion">✒ {{ esNueva ? 'Nueva Página del Códice' : 'Editar Página del Códice' }}</h2>
+          <p class="label">Formato ligero: líneas normales son párrafos, «## » encabeza, «- » crea listas y «&gt; » es citado.</p>
         </div>
       </div>
 
       <!-- Metadatos -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#FBF4E6] border border-[#E8DCC8] rounded p-4">
-        <label class="md:col-span-2 block">
-          <span class="font-tarzana text-xs font-bold text-[#8B5A2B] uppercase tracking-wide">Título de la Página *</span>
-          <input
-            v-model="titulo"
-            type="text"
-            placeholder="Ej. Ruinas del Fuerte Virmar"
-            class="mt-1 w-full bg-[#FDF8EE] border border-[#C2A980] text-sm font-minion px-3 py-2 rounded text-[#1A1A1A] placeholder-[#8B7D6B] focus:outline-none focus:border-[#8B5A2B]"
-          />
+      <div class="card meta">
+        <label class="field span2">
+          <span class="label">Título de la Página *</span>
+          <input v-model="titulo" type="text" placeholder="Ej. Ruinas del Fuerte Virmar" class="input" />
         </label>
 
-        <label class="block">
-          <span class="font-tarzana text-xs font-bold text-[#8B5A2B] uppercase tracking-wide">Tipo de Entrada</span>
-          <select
-            v-model="tipo"
-            class="mt-1 w-full bg-[#FDF8EE] border border-[#C2A980] text-sm font-minion px-3 py-2 rounded text-[#1A1A1A] focus:outline-none focus:border-[#8B5A2B]"
-          >
+        <label class="field">
+          <span class="label">Tipo de Entrada</span>
+          <select v-model="tipo" class="input">
             <option v-for="t in TIPOS" :key="t" :value="t">{{ t }}</option>
           </select>
         </label>
 
-        <label class="block">
-          <span class="font-tarzana text-xs font-bold text-[#8B5A2B] uppercase tracking-wide">Carpeta Padre</span>
-          <select
-            v-model="carpeta"
-            class="mt-1 w-full bg-[#FDF8EE] border border-[#C2A980] text-sm font-minion px-3 py-2 rounded text-[#1A1A1A] focus:outline-none focus:border-[#8B5A2B]"
-          >
+        <label class="field">
+          <span class="label">Carpeta Padre</span>
+          <select v-model="carpeta" class="input">
             <option v-for="c in carpetas" :key="c.id" :value="c.id">{{ c.nombre }}</option>
           </select>
         </label>
 
-        <label class="md:col-span-3 block">
-          <span class="font-tarzana text-xs font-bold text-[#8B5A2B] uppercase tracking-wide">Resumen / Vista previa en listado</span>
-          <input
-            v-model="resumen"
-            type="text"
-            placeholder="Una línea que resuma la entrada para el índice…"
-            class="mt-1 w-full bg-[#FDF8EE] border border-[#C2A980] text-sm font-minion px-3 py-2 rounded text-[#1A1A1A] placeholder-[#8B7D6B] focus:outline-none focus:border-[#8B5A2B]"
-          />
+        <label class="field span3">
+          <span class="label">Resumen / Vista previa en listado</span>
+          <input v-model="resumen" type="text" placeholder="Una línea que resuma la entrada para el índice…" class="input" />
         </label>
       </div>
 
       <!-- Barra de formato -->
-      <div class="flex flex-wrap items-center gap-1 bg-[#E8DCC8] border border-[#C2A980] rounded p-1.5">
-        <span class="font-tarzana text-[0.7rem] font-bold text-[#8B7D6B] px-2">HERRAMIENTAS:</span>
-        <button type="button" class="px-2 py-1 hover:bg-[#DFCDB4] rounded text-[#8B5A2B] font-bold text-sm" title="Encabezado H2" @click="insertar('## ')">H2</button>
-        <button type="button" class="px-2 py-1 hover:bg-[#DFCDB4] rounded text-[#8B5A2B] font-bold text-sm" title="Encabezado H3" @click="insertar('### ')">H3</button>
-        <button type="button" class="px-2 py-1 hover:bg-[#DFCDB4] rounded text-[#8B5A2B] font-bold text-sm" title="Lista de viñetas" @click="insertar('lista')">• Lista</button>
-        <button type="button" class="px-2 py-1 hover:bg-[#DFCDB4] rounded text-[#8B5A2B] font-bold text-sm" title="Cita / leyenda" @click="insertar('> ')">&gt; Cita</button>
-        <span class="flex-1"></span>
-        <span class="font-tarzana text-[0.7rem] text-[#8B7D6B]">{{ bloquesParseados.length }} bloques detectados</span>
+      <div class="herramientas">
+        <span class="label herramientas-etiqueta">HERRAMIENTAS:</span>
+        <button type="button" class="her" title="Encabezado H2" @click="insertar('## ')">H2</button>
+        <button type="button" class="her" title="Encabezado H3" @click="insertar('### ')">H3</button>
+        <button type="button" class="her" title="Lista de viñetas" @click="insertar('lista')">• Lista</button>
+        <button type="button" class="her" title="Cita / leyenda" @click="insertar('> ')">&gt; Cita</button>
+        <span class="herramientas-espacio"></span>
+        <span class="label">{{ bloquesParseados.length }} bloques detectados</span>
       </div>
 
       <textarea
         ref="area"
         v-model="contenido"
         rows="16"
-        placeholder="Escribe la entrada. Ej.:\n## Historia\nRavengro es una pequeña comunidad agrícola fundada en 4588 CA…\n- Punto uno\n- Punto dos"
-        class="w-full bg-[#FDF8EE] border border-[#C2A980] text-[0.95rem] font-minion px-4 py-3 rounded text-[#1A1A1A] placeholder-[#8B7D6B] leading-relaxed focus:outline-none focus:border-[#8B5A2B] resize-y"
+        placeholder='Escribe la entrada. Ej.:\n## Historia\nRavengro es una pequeña comunidad agrícola fundada en 4588 CA…\n- Punto uno\n- Punto dos'
+        class="input area"
       ></textarea>
 
       <!-- Barra de acciones -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+      <div class="acciones">
         <button
           v-if="!esNueva"
           type="button"
-          class="self-start sm:self-auto font-tarzana text-xs font-bold text-[#8B1A1A] hover:underline flex items-center gap-1.5"
+          class="enlace-peligro"
           @click="confirmarBorrado = true"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-          </svg>
           Eliminar página
         </button>
-        <div class="flex items-center gap-2 sm:ml-auto">
-          <button type="button" class="btn-copper-outline px-5 py-2.5 rounded font-tarzana text-xs font-bold" @click="cancelar">
-            CANCELAR
+        <div class="acciones-finales">
+          <button type="button" class="btn btn--secondary" @click="cancelar">
+            Cancelar
           </button>
-          <button type="button" :disabled="guardando" class="btn-gold-emboss px-6 py-2.5 rounded font-tarzana text-xs font-bold" @click="guardar">
-            {{ guardando ? 'GUARDANDO…' : 'GUARDAR PÁGINA' }}
+          <button type="button" :disabled="guardando" class="btn" @click="guardar">
+            {{ guardando ? 'Guardando…' : 'Guardar página' }}
           </button>
         </div>
       </div>
@@ -255,5 +230,26 @@ onMounted(cargar)
       @close="confirmarBorrado = false"
       @accept="borrar"
     />
-  </MesaGestionShell>
 </template>
+
+<style scoped>
+.editor { display: grid; gap: var(--space-md); }
+.editor-cabecera { display: flex; flex-direction: column; gap: var(--space-2xs); border-bottom: var(--rule-bar) solid var(--color-rule); padding-bottom: var(--space-sm); }
+.titulo-seccion { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
+.meta { display: grid; gap: var(--space-sm); grid-template-columns: minmax(0, 1fr); padding: var(--space-md); align-content: start; }
+@media (min-width: 60rem) { .meta { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.field { display: grid; gap: var(--space-3xs); }
+.span2 { grid-column: 1 / -1; }
+.span3 { grid-column: 1 / -1; }
+@media (min-width: 60rem) { .span2 { grid-column: span 2; } .span3 { grid-column: 1 / -1; } }
+.herramientas { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3xs); border: var(--rule-hair) solid var(--color-rule); background: var(--color-paper-3); padding: var(--space-3xs) var(--space-sm); }
+.herramientas-etiqueta { color: var(--color-muted); }
+.herramientas-espacio { flex: 1; }
+.her { background: transparent; border: 0; cursor: pointer; color: var(--color-accent-2); font-weight: 700; font-size: var(--text-sm); padding: var(--space-3xs) var(--space-2xs); }
+.her:hover { background: var(--color-paper-2); }
+.area { min-height: 20rem; resize: vertical; line-height: 1.6; font-family: var(--font-body); }
+.acciones { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); flex-wrap: wrap; }
+.acciones-finales { display: flex; align-items: center; gap: var(--space-2xs); margin-left: auto; }
+.enlace-peligro { background: transparent; border: 0; color: var(--color-error); font-weight: 700; cursor: pointer; font-size: var(--text-sm); display: inline-flex; gap: var(--space-3xs); align-items: center; }
+.enlace-peligro:hover { text-decoration: underline; }
+</style>

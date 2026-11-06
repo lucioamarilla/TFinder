@@ -1,6 +1,6 @@
-/* Ciclo 7 (D-07): hoja de entrada de Tailwind.
-   Las vistas de gestion/calendario/sesiones y el harness usan utilidades
-   Tailwind (clases arbitrarias bg-[#...], barras) que antes no compilaban. */
-@tailwind base;
-@tailwind components;
+/* D-07 (corregido): el arranque de la app define su imagen con los tokens del
+   proyecto (tokens/base/app). Tailwind compila SOLO utilidades para los
+   componentes que ya las usan; sin directiva de base (preflight) ni components
+   para no alterar el look global. El prototipo pergamino (crono/harness.css)
+   no forma parte del diseño del producto y no se importa. */
 @tailwind utilities;

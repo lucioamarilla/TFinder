@@ -8,15 +8,24 @@ const titulo = computed(() => featureLabel(route.params.feature))
 </script>
 
 <template>
-  <main class="flex-grow flex items-center justify-center px-6 py-16">
-    <section class="card-parchment w-full max-w-2xl text-center p-10 sm:p-14" role="status">
-      <p class="font-tarzana uppercase tracking-[0.25em] text-xs font-bold text-[#8B7D6B]">.Functionalidad en preparación</p>
-      <h1 class="font-mason text-3xl sm:text-4xl font-bold text-[#8B5A2B] mt-3">{{ titulo }}</h1>
-      <p class="font-narrative text-lg text-[#5A4A3A] mt-4">Próximamente</p>
-      <p class="font-minion text-[#5A4A3A] mt-2">Esta función estará disponible próximamente.</p>
-      <RouterLink to="/mesas" class="btn-gold inline-flex px-6 py-3 mt-8 font-tarzana font-bold uppercase tracking-wider text-sm">
+  <main class="espere">
+    <section class="card panel" role="status">
+      <p class="label linea">Funcionalidad en preparación</p>
+      <h1 class="titulo">{{ titulo }}</h1>
+      <p class="subtitulo">Próximamente</p>
+      <p class="label">Esta función estará disponible próximamente.</p>
+      <RouterLink to="/mesas" class="btn volver">
         Volver a explorar mesas
       </RouterLink>
     </section>
   </main>
 </template>
+
+<style scoped>
+.espere { display: flex; align-items: center; justify-content: center; padding: var(--space-xl) var(--gutter); }
+.panel { max-width: 42rem; width: 100%; text-align: center; padding: var(--space-xl) var(--space-lg); display: grid; gap: var(--space-2xs); justify-items: center; }
+.linea { text-transform: uppercase; letter-spacing: .25em; color: var(--color-ink-2); }
+.titulo { margin: var(--space-xs) 0 0; font-size: var(--text-display-s); color: var(--color-ink); }
+.subtitulo { margin: 0; font-size: var(--text-lead); color: var(--color-ink-2); }
+.volver { margin-top: var(--space-md); }
+</style>

@@ -2,8 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast.js'
-import MesaGestionShell from '@/components/mesa/MesaGestionShell.vue'
-import { getSesion, guardarDiario } from '@/services/sesiones.js'
+import { getSesion, getSesiones, guardarDiario } from '@/services/sesiones.js'
 import { getMiembros } from '@/services/jugadores.js'
 
 const props = defineProps({ mesaId: { type: String, required: true }, sesionId: { type: String, required: true } })
@@ -20,27 +19,39 @@ const recompensas = ref('')
 const contenido = ref('')
 const guardando = ref(false)
 
-const esPendiente = computed(() => sesion.value?.pendienteDiario)
+const rutaBase = computed(() => `/mesas/${props.mesaId}/gestion/sesiones`)
+// D-04: SesionOut no trae numero; el ordinal se deriva al leer la lista.
+const sesionesOrden = ref([])
 
 async function cargar() {
   try {
-    const [detalle, jugadores] = await Promise.all([getSesion(props.mesaId, props.sesionId), getMiembros(props.mesaId)])
+    const [lista, detalle, jugadores] = await Promise.all([
+      getSesiones(props.mesaId),
+      getSesion(props.mesaId, props.sesionId),
+      getMiembros(props.mesaId)
+    ])
+    sesionesOrden.value = lista
     sesion.value = detalle
-    miembros.value = jugadores.miembros.filter((m) => m.rol === 'Jugador')
-    presentes.value = miembros.value.reduce((acc, m) => ({ ...acc, [m.id]: m.estado === 'Activo' }), {})
-    tituloCapitulo.value = detalle.titulo
-    recompensas.value = detalle.estado === 'ejecutada' ? '+1.800 PX • 650 po repartidas' : ''
-    contenido.value = detalle.diario || ''
+    miembros.value = (jugadores.miembros ?? []).filter((m) => m.rol === 'Jugador' || m.rol === 'Master')
+    presentes.value = miembros.value.reduce((acc, m) => ({ ...acc, [m.id]: true }), {})
+    tituloCapitulo.value = `Sesión ${ordinalDe(detalle)}`
+    recompensas.value = ''
+    contenido.value = ''
   } catch {
     falta.value = true
   }
+}
+
+function ordinalDe(s) {
+  const idx = sesionesOrden.value.findIndex((x) => String(x.id) === String(s.id))
+  return `#${idx + 1}`
 }
 
 onMounted(cargar)
 watch(() => props.sesionId, cargar)
 
 function cancelar() {
-  router.push(`/mesas/${props.mesaId}/sesiones`)
+  router.push(rutaBase.value)
 }
 
 async function guardar() {
@@ -50,9 +61,9 @@ async function guardar() {
   }
   guardando.value = true
   try {
-    await guardarDiario(props.mesaId, props.sesionId, contenido.value.trim())
-    toast.ok(`Diario de la sesión ${sesion.value.numero} registrado en el archivo de campaña.`)
-    router.push(`/mesas/${props.mesaId}/sesiones`)
+    await guardarDiario(props.mesaId, props.sesionId, { titulo: tituloCapitulo.value, cuerpo: contenido.value.trim() })
+    toast.ok(`Diario de la sesión ${ordinalDe(sesion.value)} registrado en el archivo de campaña.`)
+    router.push(rutaBase.value)
   } catch (e) {
     toast.error(e.message || 'No pudimos guardar el diario.')
   } finally {
@@ -62,92 +73,82 @@ async function guardar() {
 </script>
 
 <template>
-  <MesaGestionShell :mesa-id="mesaId">
-    <div v-if="falta" class="text-center py-16 font-minion text-[#5C4A32]">
+      <div v-if="falta" class="falta">
       No encontramos esa sesión en el archivo de la campaña.
-      <RouterLink :to="`/mesas/${mesaId}/sesiones`" class="block mt-3 font-tarzana font-bold text-[#8B5A2B] hover:underline">← Volver al historial</RouterLink>
+      <RouterLink :to="rutaBase" class="text-link">← Volver al historial</RouterLink>
     </div>
 
-    <div v-else-if="sesion" class="space-y-6">
-      <div class="space-y-1">
-        <RouterLink
-          :to="`/mesas/${mesaId}/sesiones`"
-          class="inline-flex items-center gap-1.5 font-tarzana text-xs font-bold text-[#8B5A2B] hover:text-[#5C3817] uppercase tracking-wider"
-        >
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-          </svg>
-          VOLVER AL HISTORIAL DE SESIONES
-        </RouterLink>
-        <p class="font-minion text-sm text-[#5C4A32]">
-          Sesión {{ sesion.numero }} · {{ sesion.fechaGolarion }} • Estado:
-          <strong :class="esPendiente ? 'text-[#8B5A2B]' : 'text-[#6B8E23]'">
-            {{ esPendiente ? 'Pendiente de Diario' : 'Diario cargado' }}
-          </strong>
+    <div v-else-if="sesion" class="diario">
+      <div class="volver-fila">
+        <RouterLink :to="rutaBase" class="text-link volver">← Volver al historial de sesiones</RouterLink>
+        <p class="label">
+          Sesión {{ ordinalDe(sesion) }} · {{ sesion.fecha ? sesion.fecha.slice(0, 10) : '' }}
         </p>
       </div>
 
-      <h2 class="font-mason text-[1.5rem] font-bold text-[#8B5A2B] tracking-wide flex items-center gap-2 border-b-2 border-[#C2A980] pb-3">
-        <span>✒</span> {{ esPendiente ? 'Registrar Sesión' : 'Editar Diario' }} — {{ sesion.fechaGolarion }}
-      </h2>
+      <h2 class="crt titulo">✒ {{ tituloCapitulo }}</h2>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <label class="block">
-          <span class="block font-mason text-xs font-bold text-[#8B5A2B] uppercase tracking-wider mb-1">Título del Capítulo</span>
-          <input
-            v-model="tituloCapitulo"
-            type="text"
-            class="w-full bg-[#FDF8EE] border border-[#C2A980] text-sm font-minion px-3 py-2 rounded text-[#1A1A1A] focus:outline-none focus:border-[#8B5A2B]"
-          />
+      <div class="grupo-campos">
+        <label class="field">
+          <span class="label">Título del Capítulo</span>
+          <input v-model="tituloCapitulo" type="text" class="input" />
         </label>
-        <label class="block">
-          <span class="block font-mason text-xs font-bold text-[#8B5A2B] uppercase tracking-wider mb-1">XP / Tesoro (opcional)</span>
-          <input
-            v-model="recompensas"
-            type="text"
-            placeholder="Ej. +1.800 PX • 650 po repartidas"
-            class="w-full bg-[#FDF8EE] border border-[#C2A980] text-sm font-minion px-3 py-2 rounded text-[#1A1A1A] placeholder-[#8B7D6B] focus:outline-none focus:border-[#8B5A2B]"
-          />
+        <label class="field">
+          <span class="label">XP / Tesoro (opcional)</span>
+          <input v-model="recompensas" type="text" placeholder="Ej. +1.800 PX • 650 po repartidas" class="input" />
         </label>
       </div>
 
-      <label class="block">
-        <span class="block font-mason text-xs font-bold text-[#8B5A2B] uppercase tracking-wider mb-1">
-          Resumen de la Sesión <span class="text-[#8B1A1A]">*</span>
-        </span>
+      <label class="field">
+        <span class="label">Resumen de la Sesión <span class="obligatorio">*</span></span>
         <textarea
           v-model="contenido"
           rows="12"
           placeholder="Narra lo ocurrido: decisiones, combates, descubrimientos y ganchos pendientes…"
-          class="w-full bg-[#FDF8EE] border border-[#C2A980] text-[0.95rem] font-minion px-4 py-3 rounded text-[#1A1A1A] placeholder-[#8B7D6B] leading-relaxed focus:outline-none focus:border-[#8B5A2B] resize-y"
+          class="input area"
         ></textarea>
-        <span class="block mt-1 text-xs font-minion italic text-[#8B7D6B]">
-          Autoguardado local activo · los cambios se conservan en el grimorio de la mesa.
-        </span>
+        <span class="label nota">Autoguardado local activo · los cambios se conservan en el grimorio de la mesa.</span>
       </label>
 
-      <section v-if="miembros.length" class="bg-[#FBF4E6] border border-[#E8DCC8] rounded p-4">
-        <h3 class="block font-mason text-xs font-bold text-[#8B5A2B] uppercase tracking-wider mb-2">Personajes Presentes en la Mesa</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <label v-for="m in miembros" :key="m.id" class="flex items-center gap-2 font-minion text-sm text-[#1A1A1A] cursor-pointer">
-            <input v-model="presentes[m.id]" type="checkbox" class="accent-[#8B5A2B]" />
-            <span>{{ m.personaje }}</span>
-            <span class="font-tarzana text-[0.65rem] text-[#8B7D6B]">({{ m.clase }} Nvl {{ m.nivel }})</span>
+      <section v-if="miembros.length" class="card presentes">
+        <h3 class="label rotulo">Personajes presentados en la mesa</h3>
+        <div class="lista">
+          <label v-for="m in miembros" :key="m.id" class="presente">
+            <input v-model="presentes[m.id]" type="checkbox" />
+            <span class="cuando">{{ m.nombre }}</span>
+            <span class="label">({{ m.rol }})</span>
           </label>
         </div>
-        <p class="mt-3 text-xs font-minion text-[#5A4A36]">
-          <strong>Asistencia registrada:</strong> {{ sesion.asistencias }} · {{ sesion.quorum }}
-        </p>
       </section>
 
-      <div class="flex items-center gap-2 justify-end pt-1">
-        <button type="button" class="btn-copper-outline px-5 py-2.5 rounded font-tarzana text-xs font-bold" @click="cancelar">
-          CANCELAR
+      <div class="fila-envio">
+        <button type="button" class="btn btn--secondary" @click="cancelar">
+          Cancelar
         </button>
-        <button type="button" :disabled="guardando" class="btn-gold-emboss px-6 py-2.5 rounded font-tarzana text-xs font-bold" @click="guardar">
-          {{ guardando ? 'GUARDANDO…' : 'GUARDAR DIARIO' }}
+        <button type="button" :disabled="guardando" class="btn" @click="guardar">
+          {{ guardando ? 'Guardando…' : 'Guardar diario' }}
         </button>
       </div>
     </div>
-  </MesaGestionShell>
 </template>
+
+<style scoped>
+.diario { display: grid; gap: var(--space-md); }
+.falta { text-align: center; padding-block: var(--space-xl); display: grid; gap: var(--space-sm); justify-items: center; color: var(--color-ink-2); }
+.volver-fila { display: grid; gap: var(--space-3xs); }
+.volver { font-weight: 700; font-size: var(--text-sm); }
+.titulo { padding-bottom: var(--space-sm); border-bottom: var(--rule-bar) solid var(--color-rule); margin: 0; font-size: var(--text-title); color: var(--color-ink); }
+.grupo-campos { display: grid; gap: var(--space-sm); }
+.field { display: grid; gap: var(--space-3xs); }
+.obligatorio { color: var(--color-error); }
+.area { min-height: 16rem; resize: vertical; line-height: 1.6; }
+.rotulo { margin: 0 0 var(--space-2xs); }
+.presentes { padding: var(--space-sm) var(--space-md); }
+.lista { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: var(--space-2xs); }
+@media (min-width: 40rem) { .lista { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.presente { display: flex; align-items: center; gap: var(--space-2xs); cursor: pointer; color: var(--color-ink); }
+.cuando { font-weight: 700; }
+.nota { color: var(--color-ink-2); }
+.fila-envio { display: flex; gap: var(--space-2xs); justify-content: flex-end; }
+@media (max-width: 60rem) { .diario { padding-top: 0; } .grupo-campos { grid-template-columns: minmax(0, 1fr); } }
+</style>

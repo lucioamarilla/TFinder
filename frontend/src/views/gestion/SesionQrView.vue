@@ -93,87 +93,101 @@ onUnmounted(() => countdown && clearInterval(countdown))
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto px-4 py-10">
-    <header class="mb-6 flex items-center justify-between">
+  <div class="qrv">
+    <header class="qrv-cabecera">
       <button
         type="button"
-        class="font-tarzana text-xs uppercase tracking-wider text-[#8B5A2B] hover:underline"
-        @click="$router.push(`/mesas/${mesaId}/sesiones`)"
+        class="text-link back"
+        @click="$router.push(`/mesas/${mesaId}/gestion/sesiones`)"
       >
         ← Volver a sesiones
       </button>
-      <span class="px-3 py-1 rounded-full border border-[#D4AF37] text-[#8B5A2B] font-tarzana text-xs font-bold">
-        Sesión · QR de asistencia
-      </span>
+      <span class="tag tag--ink">Sesión · QR de asistencia</span>
     </header>
 
-    <section class="card-parchment corner p-6 sm:p-8 rounded-sm">
-      <h1 class="font-mason text-2xl text-[#8B5A2B] font-bold mb-2">✦ Pase de Asistencia</h1>
-      <p class="font-minion italic text-[#5C4633] mb-6">
+    <section class="card principal">
+      <h1 class="titulo">✦ Pase de Asistencia</h1>
+      <p class="label">
         QR single-use validado por el director de juego (TTL de 600 s en Redis).
       </p>
 
-      <p v-if="error" class="p-3 rounded-sm border border-[#8B1A1A]/60 bg-[#8B1A1A]/10 text-[#8B1A1A] font-minion text-sm mb-5" role="alert">
+      <p v-if="error" class="hint-error aviso" role="alert">
         {{ error }}
       </p>
 
-      <div v-if="cargando" class="text-center py-8 font-minion text-[#5C4633]">Generando el sello del gremio…</div>
+      <div v-if="cargando" class="label central">Generando el sello del gremio…</div>
 
       <template v-else-if="qr">
-        <div class="flex flex-col items-center">
+        <div class="cola">
           <img
             :src="`data:image/png;base64,${qr.png}`"
             alt="QR de asistencia"
-            class="w-56 h-56 rounded-sm border-2 border-[#C2A980] bg-white p-2"
+            class="imagen"
           />
-          <p class="mt-4 font-tarzana text-sm font-bold" role="timer" :aria-live="'polite'">
-            <span :class="segundosRestantes > 60 ? 'text-[#6B8E23]' : 'text-[#8B1A1A]'">
+          <p class="label" role="timer" aria-live="polite">
+            <span :class="segundosRestantes > 60 ? 'ok' : 'contra'">
               Vence en {{ segundosRestantes }} s
             </span>
           </p>
           <button
             type="button"
-            class="mt-4 min-h-[44px] px-4 py-2 border border-[#8B5A2B] text-[#8B5A2B] font-tarzana text-xs font-bold rounded-sm hover:bg-[#8B5A2B]/10 transition disabled:opacity-60"
+            class="btn btn--secondary btn--sm"
             :disabled="segundosRestantes > 0"
             @click="generar"
           >
             Generar otro QR
           </button>
 
-          <details class="mt-6 w-full">
-            <summary class="cursor-pointer font-tarzana text-xs uppercase tracking-wider text-[#8B5A2B]">
-              Datos del QR (para el GM)
-            </summary>
-            <code class="block mt-2 p-3 rounded-sm bg-[#1A1A1A] text-[#D4AF37] font-mono text-xs break-all">
-              {{ qr.data }}
-            </code>
+          <details class="datos">
+            <summary class="text-link">Datos del QR (para el GM)</summary>
+            <code class="codigo">{{ qr.data }}</code>
           </details>
         </div>
       </template>
     </section>
 
-    <section v-if="esGM" class="card-parchment corner p-6 sm:p-8 rounded-sm mt-6">
-      <h2 class="font-mason text-lg text-[#8B5A2B] font-bold mb-3">Panel del Director de Juego · Validar asistencia</h2>
-      <div class="flex flex-col sm:flex-row gap-3">
+    <section v-if="esGM" class="card principal">
+      <h2 class="sub">Panel del Director de Juego · Validar asistencia</h2>
+      <div class="validador">
         <input
           v-model="qrDataPegado"
           type="text"
           placeholder="Pegá el qr_data escaneado del jugador"
-          class="flex-1 min-h-[44px] px-3 rounded-sm bg-[#F4EAD6] border border-[#C2A980] font-minion text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/60"
+          class="input"
           :disabled="validando"
         />
         <button
           type="button"
-          class="min-h-[44px] px-5 py-2 bg-[#8B5A2B] text-[#FDF8EE] font-tarzana text-xs font-bold rounded-sm hover:brightness-110 transition disabled:opacity-60"
+          class="btn btn--sm"
           :disabled="validando || !qrDataPegado.trim()"
           @click="validar"
         >
           {{ validando ? 'Validando…' : 'Validar asistencia' }}
         </button>
       </div>
-      <p v-if="resultado" class="mt-4 font-tarzana text-sm font-bold" :class="usado && resultado !== 'Asistencia registrada' ? 'text-[#8B1A1A]' : 'text-[#6B8E23]'">
+      <p v-if="resultado" class="label" :class="usado && resultado !== 'Asistencia registrada' ? 'contra' : 'ok'">
         {{ resultado }}
       </p>
     </section>
   </div>
 </template>
+
+<style scoped>
+.qrv { max-width: 42rem; margin-inline: auto; padding: 112px var(--gutter) var(--space-lg); display: grid; gap: var(--space-md); }
+.qrv-cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-2xs); }
+.back { font-weight: 700; font-size: var(--text-sm); }
+.principal { padding: var(--space-md); display: grid; gap: var(--space-sm); }
+.titulo { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
+.sub { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
+.aviso { margin: 0; }
+.central { text-align: center; padding-block: var(--space-lg); }
+.cola { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); }
+.imagen { width: 14rem; height: 14rem; border: var(--rule-bar) solid var(--color-rule); background: #fff; padding: var(--space-2xs); }
+.datos { width: 100%; margin-top: var(--space-2xs); }
+.codigo { display: block; margin-top: var(--space-2xs); padding: var(--space-sm); background: var(--color-ink); color: var(--color-accent-2); font-family: var(--font-outlier); font-size: var(--text-xs); overflow-wrap: anywhere; border-radius: var(--radius-card); }
+.ok { color: var(--color-accent-2); font-weight: 700; }
+.contra { color: var(--color-error); font-weight: 700; }
+.validador { display: flex; flex-direction: column; gap: var(--space-2xs); }
+@media (min-width: 40rem) { .validador { flex-direction: row; } .validador .input { flex: 1; } }
+@media (max-width: 60rem) { .qrv { padding-top: 120px; } }
+</style>

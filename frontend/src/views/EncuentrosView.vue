@@ -43,8 +43,6 @@ const BESTIARIO = {
 
 const NOMBRES_ENCUENTRO = ['El Nido del Worg', 'La Guarida del Chamán', 'Emboscada de Medianoche', 'El Puente Podrido', 'La Madriguera Abandonada']
 
-
-
 const MODIFICADOR_DIFICULTAD = {
   'Trivial': -1,
   'Media': 0,
@@ -95,66 +93,81 @@ function guardarBestiario() {
 </script>
 
 <template>
-  <main class="tfinder-shell">
-    <h1 class="font-mason text-3xl text-[#8B5A2B] font-bold mb-2">✦ Generador de Encuentros</h1>
-    <p class="font-minion italic text-[#5C4633] mb-6">Forjá combates equilibrados contra el grupo según la guía CR de PF1e.</p>
+  <main class="encuentros">
+    <h1 class="titulo">✦ Generador de Encuentros</h1>
+    <p class="label intro">Forjá combates equilibrados contra el grupo según la guía CR de PF1e.</p>
 
-    <section class="parchment-sheet relative border border-[#C2A980] rounded-sm p-6 mb-5 shadow-md">
-      <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-[#8B5A2B]"></div>
-      <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[#8B5A2B]"></div>
-      <div class="grid sm:grid-cols-3 gap-4">
-        <div>
-          <label for="enc-nivel" class="font-tarzana text-xs uppercase tracking-wider text-[#8B5A2B]">Nivel del grupo</label>
-          <select id="enc-nivel" v-model="nivelGrupo" class="w-full py-2 px-3 rounded-sm bg-[#F4EAD6] border border-[#C2A980] font-minion text-sm">
+    <section class="card panel">
+      <div class="selectores">
+        <label class="field" for="enc-nivel">
+          <span class="label">Nivel del grupo</span>
+          <select id="enc-nivel" v-model="nivelGrupo" class="input">
             <option>Nivel 4 (5 héroes)</option>
             <option>Nivel 3</option>
             <option>Nivel 5</option>
             <option>Nivel 6</option>
           </select>
-        </div>
-        <div>
-          <label for="enc-dif" class="font-tarzana text-xs uppercase tracking-wider text-[#8B5A2B]">Dificultad</label>
-          <select id="enc-dif" v-model="dificultad" class="w-full py-2 px-3 rounded-sm bg-[#F4EAD6] border border-[#C2A980] font-minion text-sm">
+        </label>
+        <label class="field" for="enc-dif">
+          <span class="label">Dificultad</span>
+          <select id="enc-dif" v-model="dificultad" class="input">
             <option>Trivial</option>
             <option>Media</option>
             <option>Desafiante</option>
             <option>Épica</option>
           </select>
-        </div>
-        <div>
-          <label for="enc-entorno" class="font-tarzana text-xs uppercase tracking-wider text-[#8B5A2B]">Entorno</label>
-          <select id="enc-entorno" v-model="entorno" class="w-full py-2 px-3 rounded-sm bg-[#F4EAD6] border border-[#C2A980] font-minion text-sm">
+        </label>
+        <label class="field" for="enc-entorno">
+          <span class="label">Entorno</span>
+          <select id="enc-entorno" v-model="entorno" class="input">
             <option v-for="e in Object.keys(BESTIARIO)" :key="e">{{ e }}</option>
           </select>
-        </div>
+        </label>
       </div>
-      <div class="mt-4">
-        <button type="button" class="px-5 py-2.5 bg-[#D4AF37] text-[#1A1A1A] font-tarzana text-xs font-bold rounded-sm hover:brightness-110 transition" :disabled="lanzando" @click="lanzar">
+      <div class="envio">
+        <button type="button" class="btn" :disabled="lanzando" @click="lanzar">
           {{ lanzando ? 'Tirando el d20…' : 'Lanzar encuentro' }}
         </button>
       </div>
     </section>
 
-    <section v-if="resultado" class="parchment-sheet relative border border-[#C2A980] rounded-sm p-6 mb-5 shadow-md">
-      <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-[#8B5A2B]"></div>
-      <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[#8B5A2B]"></div>
-      <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
-        <h2 class="font-mason text-lg text-[#8B5A2B] font-bold">{{ resultado.nombre }}</h2>
-        <span class="font-tarzana text-xs px-3 py-1 rounded-sm bg-[#6B8E23]/15 text-[#6B8E23] font-bold">CR {{ resultado.crSugerido }} · d20 {{ resultado.d20 }}</span>
+    <section v-if="resultado" class="card panel">
+      <div class="resultado-cabecera">
+        <h2 class="titulo-resultado">{{ resultado.nombre }}</h2>
+        <span class="tag tag--acid">CR {{ resultado.crSugerido }} · d20 {{ resultado.d20 }}</span>
       </div>
-      <ul class="font-minion text-sm text-[#3A2E1F] space-y-1 mb-4">
+      <ul class="lista">
         <li v-for="c in resultado.grupo" :key="c.nombre">
-          <b>{{ c.nombre }}</b> ×{{ c.cantidad }} · CR {{ c.cr }} · {{ c.xp }} XP c/u
+          <strong>{{ c.nombre }}</strong> ×{{ c.cantidad }} · CR {{ c.cr }} · {{ c.xp }} XP c/u
         </li>
       </ul>
-      <div class="font-tarzana text-xs text-[#8B7D6B]">
-        XP estimada: <b>{{ resultado.xpTotal }}</b> · Botín: <b>{{ resultado.botin }}</b> · escondrijo tras la guarida (percepción DC 15)
-      </div>
+      <p class="label pie">
+        XP estimada: <strong>{{ resultado.xpTotal }}</strong> · Botín: <strong>{{ resultado.botin }}</strong> · esconderijo tras la guarida (percepción DC 15)
+      </p>
     </section>
 
-    <div class="flex flex-wrap gap-2">
-      <button type="button" class="px-5 py-2.5 bg-[#8B5A2B] text-[#FDF8EE] font-tarzana text-xs font-bold rounded-sm hover:brightness-110" :disabled="!resultado" @click="anadirSesion">Añadir a la sesión</button>
-      <button type="button" class="px-5 py-2.5 border border-[#8B5A2B] text-[#8B5A2B] font-tarzana text-xs font-bold rounded-sm" :disabled="!resultado" @click="guardarBestiario">Guardar en bestiario</button>
+    <div class="acciones">
+      <button type="button" class="btn" :disabled="!resultado" @click="anadirSesion">Añadir a la sesión</button>
+      <button type="button" class="btn btn--secondary" :disabled="!resultado" @click="guardarBestiario">Guardar en bestiario</button>
     </div>
   </main>
 </template>
+
+<style scoped>
+.encuentros { max-width: var(--container); margin-inline: auto; padding: 112px var(--gutter) var(--space-lg); display: grid; gap: var(--space-md); align-items: start; }
+.titulo { margin: 0 0 var(--space-2xs); font-size: var(--text-title); color: var(--color-ink); }
+.intro { color: var(--color-ink-2); margin: 0 0 var(--space-xs); }
+.panel { display: grid; gap: var(--space-sm); }
+.selectores { display: grid; gap: var(--space-sm); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 40rem) { .selectores { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.field { display: grid; gap: var(--space-3xs); }
+.selectores .input { width: 100%; }
+.envio { display: flex; justify-content: flex-start; }
+.resultado-cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); flex-wrap: wrap; }
+.titulo-resultado { margin: 0; font-size: var(--text-md); color: var(--color-ink); }
+.lista { margin: 0; padding-left: var(--space-lg); display: grid; gap: var(--space-3xs); color: var(--color-ink); font-size: var(--text-sm); }
+.pie { margin: 0; color: var(--color-ink-2); display: block; }
+.pie strong { color: var(--color-ink); }
+.acciones { display: flex; gap: var(--space-2xs); flex-wrap: wrap; }
+@media (max-width: 60rem) { .encuentros { padding-top: 120px; } }
+</style>

@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import MesaGestionShell from '@/components/mesa/MesaGestionShell.vue'
 import { getWiki } from '@/services/wiki.js'
 
 const props = defineProps({ mesaId: { type: String, required: true } })
@@ -13,7 +12,7 @@ const busqueda = ref('')
 
 const FILTROS = ['TODOS', 'LUGARES', 'PERSONAJES', 'CRIATURAS', 'NOTAS']
 
-const TIPOS_BADGE = { LUGAR: 'badge-place', NPC: 'badge-npc', CRIATURA: 'badge-creature', NOTA: 'badge-note' }
+const TIPO_TAG = { LUGAR: 'tag--ember', NPC: 'tag--ink', CRIATURA: 'tag--ember', NOTA: 'tag--acid' }
 
 const ICONOS = {
   user: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z',
@@ -77,171 +76,180 @@ watch(() => props.mesaId, cargar)
 </script>
 
 <template>
-  <MesaGestionShell :mesa-id="mesaId">
-    <div class="grid grid-cols-1 md:grid-cols-10 gap-6">
+      <div class="codice">
       <!-- Sidebar árbol -->
-      <aside class="md:col-span-3 bg-[#F6EDDC] border border-[#C2A980] rounded p-4 flex flex-col justify-between min-h-[420px]">
-        <div>
-          <div class="flex items-center justify-between mb-3 pb-2 border-b border-[#C2A980]/60">
-            <span class="font-mason text-[1.05rem] font-bold text-[#8B5A2B] uppercase tracking-wide">Índice del Códice</span>
-            <span class="font-tarzana text-[0.65rem] text-[#8B7D6B]">{{ wiki.total }} artículos</span>
-          </div>
+      <aside class="card arbol">
+        <div class="total">
+          <h3 class="rotulo">Índice del Códice</h3>
+          <span class="label">{{ wiki.total }} artículos</span>
+        </div>
 
-          <div class="space-y-1.5">
-            <div v-for="carpeta in carpetasConCount" :key="carpeta.id">
-              <div
-                role="button"
-                tabindex="0"
-                class="w-full flex items-center justify-between px-2 py-1.5 rounded text-left hover:text-[#8B5A2B] transition group cursor-pointer"
-                :class="carpetaActiva === carpeta.id ? 'bg-[#FDF8EE]/80 text-[#8B5A2B]' : ''"
-                @click="seleccionarCarpeta(carpeta.id)"
-                @keydown.enter="seleccionarCarpeta(carpeta.id)"
+        <div class="ramas">
+          <div v-for="carpeta in carpetasConCount" :key="carpeta.id">
+            <div
+              role="button"
+              tabindex="0"
+              class="rama"
+              :class="carpetaActiva === carpeta.id ? 'rama--activa' : ''"
+              @click="seleccionarCarpeta(carpeta.id)"
+              @keydown.enter="seleccionarCarpeta(carpeta.id)"
+            >
+              <span class="rama-ident">
+                <span class="flecha" :class="carpetasAbiertas[carpeta.id] ? '' : 'flecha--abierta'">▼</span>
+                <svg class="glifo" viewBox="0 0 24 24" fill="currentColor">
+                  <path :d="ICONOS[carpeta.icono] || ICONOS.scroll"></path>
+                </svg>
+                <span>{{ carpeta.nombre }}</span>
+              </span>
+              <span class="label rama-count">({{ carpeta.count }})</span>
+            </div>
+
+            <div v-if="carpetasAbiertas[carpeta.id]" class="hojas">
+              <RouterLink
+                v-for="pagina in wiki.paginas.filter((p) => p.carpeta === carpeta.id)"
+                :key="pagina.id"
+                :to="`/mesas/${mesaId}/wiki/${pagina.id}`"
+                class="hoja"
+                :class="carpetaActiva === carpeta.id ? 'hoja--activa' : ''"
               >
-                <span class="flex items-center space-x-1.5 font-bold text-[#1A1A1A] group-hover:text-[#8B5A2B]">
-                  <span class="text-xs text-[#8B7D6B] transition-transform" :class="carpetasAbiertas[carpeta.id] ? '' : '-rotate-90'">▼</span>
-                  <svg class="w-4 h-4 text-[#8B5A2B]" viewBox="0 0 24 24" fill="currentColor">
-                    <path :d="ICONOS[carpeta.icono] || ICONOS.scroll"></path>
-                  </svg>
-                  <span class="text-[0.92rem]">{{ carpeta.nombre }}</span>
-                </span>
-                <span class="font-tarzana text-[0.65rem] text-[#8B7D6B]">({{ carpeta.count }})</span>
-              </div>
-
-              <div v-if="carpetasAbiertas[carpeta.id]" class="pl-6 space-y-0.5 border-l border-[#8B5A2B]/40 ml-3 mt-1">
-                <RouterLink
-                  v-for="pagina in wiki.paginas.filter((p) => p.carpeta === carpeta.id)"
-                  :key="pagina.id"
-                  :to="`/mesas/${mesaId}/wiki/${pagina.id}`"
-                  class="block px-2 py-1 text-[0.88rem] rounded text-[#1A1A1A] hover:text-[#8B5A2B] hover:bg-[#FDF8EE]/80 transition"
-                  :class="carpetaActiva === carpeta.id ? 'border-l-2 border-[#8B5A2B] bg-[#FDF8EE]/90 text-[#8B5A2B] font-semibold' : ''"
-                >
-                  {{ pagina.titulo.split(' (')[0] }}
-                </RouterLink>
-              </div>
+                {{ pagina.titulo.split(' (')[0] }}
+              </RouterLink>
             </div>
           </div>
         </div>
 
-        <div class="pt-4 mt-4 border-t border-[#C2A980]/70 text-[0.75rem] font-minion text-[#554737] flex items-center justify-between">
+        <div class="arbol-pie">
           <span>Total: <strong>{{ wiki.total }} artículos</strong></span>
-          <button class="font-tarzana text-[0.7rem] text-[#8B5A2B] hover:underline font-bold" @click="carpetaActiva = null">
+          <button class="text-link" type="button" @click="carpetaActiva = null">
             ✚ VER TODAS
           </button>
         </div>
       </aside>
 
       <!-- Columna principal -->
-      <section class="md:col-span-7 flex flex-col">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-[#C2A980] pb-4 mb-5">
+      <section class="principal">
+        <div class="principal-cabecera">
           <div>
-            <div class="flex items-center space-x-2">
-              <span class="font-mason text-[1.2rem] font-bold text-[#8B5A2B]">{{ tituloSeccion }}</span>
-              <span class="font-tarzana text-xs bg-[#E8DCC8] text-[#8B5A2B] px-2 py-0.5 rounded border border-[#C2A980] font-bold">
-                {{ paginasFiltradas.length }} artículos
-              </span>
+            <div class="titulo-fila">
+              <span class="titulo">{{ tituloSeccion }}</span>
+              <span class="tag tag--ink">{{ paginasFiltradas.length }} artículos</span>
             </div>
-            <p class="font-minion italic text-xs text-[#736351] mt-0.5">
-              Códice topográfico, asentamientos y registros de la crónica; mantenido por la mesa.
-            </p>
+            <p class="label">Códice topográfico, asentamientos y registros de la crónica; mantenido por la mesa.</p>
           </div>
 
-          <RouterLink
-            :to="`/mesas/${mesaId}/wiki/nueva`"
-            class="gold-emboss-btn px-4 py-2 rounded-sm font-tarzana text-xs font-bold flex items-center space-x-2 shadow self-start sm:self-auto"
-          >
-            <span class="text-sm font-bold leading-none">+</span>
-            <span>CREAR PÁGINA</span>
+          <RouterLink :to="`/mesas/${mesaId}/wiki/nueva`" class="btn btn--sm">
+            + Crear página
           </RouterLink>
         </div>
 
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-          <div class="flex items-center space-x-2 font-tarzana text-xs flex-wrap">
-            <span class="text-[#8B7D6B]">FILTRAR TIPO:</span>
+        <div class="filtros-fila">
+          <div class="filtros">
+            <span class="label filtros-etiqueta">FILTRAR TIPO:</span>
             <button
               v-for="filtro in FILTROS"
               :key="filtro"
               type="button"
-              class="px-2 py-0.5 rounded transition font-bold"
-              :class="tipoActivo === filtro ? 'bg-[#8B5A2B] text-[#FDF8EE]' : 'hover:bg-[#E8DCC8] text-[#554737]'"
+              class="btn btn--sm"
+              :class="tipoActivo === filtro ? '' : 'btn--secondary'"
               @click="seleccionarTipo(filtro)"
             >
               {{ filtro }}
             </button>
           </div>
-          <div class="text-xs font-minion text-[#8B7D6B] italic">
+          <div class="label conteo">
             Mostrando {{ paginasFiltradas.length }} de {{ wiki.total }} registros
           </div>
         </div>
 
-        <div class="relative mb-4">
-          <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#8B7D6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-          <input
-            v-model="busqueda"
-            type="text"
-            placeholder="Filtrar páginas del código…"
-            class="w-full bg-[#FDF8EE] border border-[#C2A980] text-xs font-minion px-3 py-2 pl-8 rounded text-[#1A1A1A] placeholder-[#8B7D6B] focus:outline-none focus:border-[#8B5A2B]"
-          />
+        <div class="buscador">
+          <input v-model="busqueda" type="text" placeholder="Filtrar páginas del código…" class="input" />
         </div>
 
-        <div class="border border-[#C2A980] rounded-sm overflow-hidden shadow-sm bg-white/40">
-          <table class="w-full text-left border-collapse">
+        <div class="datos">
+          <table class="tf-table">
             <thead>
-              <tr class="bg-[#E8DCC8] border-b border-[#C2A980] font-tarzana text-xs text-[#8B5A2B]">
-                <th class="py-2.5 px-4 font-bold border-r border-[#C2A980]/60">TÍTULO</th>
-                <th class="py-2.5 px-4 font-bold border-r border-[#C2A980]/60 w-[110px]">TIPO</th>
-                <th class="py-2.5 px-4 font-bold w-[170px]">FECHA MODIFICACIÓN</th>
-                <th class="py-2.5 px-3 font-bold w-[70px] text-center">ACCIÓN</th>
+              <tr>
+                <th>TÍTULO</th>
+                <th>TIPO</th>
+                <th>FECHA MODIFICACIÓN</th>
+                <th class="centrado">ACCIÓN</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-[#C2A980]/60 font-minion text-sm">
-              <tr v-for="pagina in paginasFiltradas" :key="pagina.id" class="transition-colors">
-                <td class="py-3 px-4 border-r border-[#C2A980]/40">
-                  <div class="flex items-center space-x-2.5">
-                    <svg class="w-4 h-4 text-[#8B5A2B] flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <tbody>
+              <tr v-for="pagina in paginasFiltradas" :key="pagina.id">
+                <td>
+                  <div class="titulo-pagina">
+                    <svg class="glifo" viewBox="0 0 24 24" fill="currentColor">
                       <path :d="ICONOS.map"></path>
                     </svg>
-                    <RouterLink :to="`/mesas/${mesaId}/wiki/${pagina.id}`" class="font-mason font-bold text-[#8B5A2B] hover:underline text-[0.95rem]">
+                    <RouterLink :to="`/mesas/${mesaId}/wiki/${pagina.id}`" class="text-link">
                       {{ pagina.titulo }}
                     </RouterLink>
                   </div>
-                  <div class="text-xs text-[#736351] italic pl-6 mt-0.5">
+                  <div class="label resumen">
                     {{ pagina.resumen }}
                   </div>
                 </td>
-                <td class="py-3 px-4 border-r border-[#C2A980]/40">
-                  <span
-                    class="font-tarzana text-[0.7rem] px-2 py-0.5 rounded"
-                    :class="TIPOS_BADGE[pagina.tipo] || 'badge-note'"
-                  >
+                <td>
+                  <span class="tag" :class="TIPO_TAG[pagina.tipo] || 'tag--acid'">
                     {{ pagina.tipo }}
                   </span>
                 </td>
-                <td class="py-3 px-4 font-tarzana text-xs text-[#8B7D6B]">
-                  {{ pagina.fecha }}
-                </td>
-                <td class="py-3 px-3 text-center">
+                <td class="label">{{ pagina.fecha }}</td>
+                <td class="centrado">
                   <RouterLink
                     :to="`/mesas/${mesaId}/wiki/${pagina.id}/editar`"
-                    class="text-[#8B5A2B] hover:text-[#1A1A1A] transition p-1 inline-flex"
+                    class="text-link"
                     title="Editar entrada"
                   >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
+                    ✎
                   </RouterLink>
                 </td>
               </tr>
             </tbody>
           </table>
 
-          <div v-if="paginasFiltradas.length === 0" class="p-10 text-center">
-            <p class="font-tarzana text-sm text-[#8B7D6B]">El código no registra páginas con estos criterios.</p>
-            <p class="font-minion italic text-xs text-[#8B7D6B] mt-1">Ajusta el filtro o crea una entrada nueva.</p>
+          <div v-if="paginasFiltradas.length === 0" class="vacio">
+            <p class="label">El código no registra páginas con estos criterios.</p>
+            <p class="label">Ajusta el filtro o crea una entrada nueva.</p>
           </div>
         </div>
       </section>
     </div>
-  </MesaGestionShell>
 </template>
+
+<style scoped>
+.codice { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 60rem) { .codice { grid-template-columns: minmax(0, 3fr) minmax(0, 7fr); gap: var(--space-lg); } }
+.arbol { padding: var(--space-md); display: flex; flex-direction: column; justify-content: space-between; min-height: 26rem; gap: var(--space-sm); }
+.total { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); margin-bottom: var(--space-sm); padding-bottom: var(--space-2xs); border-bottom: var(--rule-hair) solid var(--color-rule); }
+.rotulo { margin: 0; font-size: var(--text-md); font-weight: 700; color: var(--color-ink); text-transform: uppercase; letter-spacing: .04em; }
+.ramas { display: grid; gap: var(--space-3xs); }
+.rama { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); padding: var(--space-3xs) var(--space-2xs); cursor: pointer; color: var(--color-ink); font-weight: 700; text-align: left; }
+.rama:hover { color: var(--color-accent-2); }
+.rama--activa { background: var(--color-paper-3); color: var(--color-accent-2); }
+.rama-ident { display: inline-flex; align-items: center; gap: var(--space-2xs); min-width: 0; }
+.flecha { font-size: 10px; color: var(--color-muted); }
+.flecha--abierta { transform: rotate(-90deg); }
+.glifo { width: 16px; height: 16px; color: var(--color-accent-2); flex-shrink: 0; }
+.rama-count { font-size: var(--text-xs); color: var(--color-muted); }
+.hojas { padding-left: var(--space-md); margin-left: var(--space-2xs); border-left: var(--rule-hair) solid var(--color-rule); display: grid; gap: 2px; margin-top: 2px; }
+.hoja { display: block; padding: var(--space-3xs) var(--space-2xs); color: var(--color-ink-2); text-decoration: none; font-size: var(--text-sm); }
+.hoja:hover { color: var(--color-accent-2); background: var(--color-paper-3); }
+.hoja--activa { border-left: var(--rule-bar) solid var(--color-accent-2); background: var(--color-paper-3); color: var(--color-accent-2); font-weight: 700; }
+.arbol-pie { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); padding-top: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); color: var(--color-ink-2); font-size: var(--text-xs); }
+.principal { display: flex; flex-direction: column; gap: var(--space-md); min-width: 0; }
+.principal-cabecera { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; border-bottom: var(--rule-bar) solid var(--color-rule); padding-bottom: var(--space-sm); }
+.titulo-fila { display: flex; align-items: center; gap: var(--space-2xs); flex-wrap: wrap; }
+.titulo { font-size: var(--text-md); font-weight: 700; color: var(--color-ink); }
+.filtros-fila { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); flex-wrap: wrap; }
+.filtros { display: flex; align-items: center; gap: var(--space-3xs); flex-wrap: wrap; }
+.filtros .btn { padding-block: 2px; }
+.conteo { color: var(--color-ink-2); font-style: italic; }
+.buscador { display: block; }
+.datos { border: var(--rule-hair) solid var(--color-rule); overflow-x: auto; }
+.centrado { text-align: center; }
+.titulo-pagina { display: flex; align-items: center; gap: var(--space-2xs); }
+.resumen { font-style: italic; padding-left: var(--space-md); margin-top: 2px; }
+.vacio { padding: var(--space-lg); text-align: center; display: grid; gap: var(--space-3xs); }
+</style>

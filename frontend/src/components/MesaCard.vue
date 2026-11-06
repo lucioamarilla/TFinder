@@ -3,32 +3,45 @@ defineProps({ mesa: { type: Object, required: true } })
 </script>
 
 <template>
-  <article class="card-parchment p-4 rounded-[2px] book-spine-accent pl-5 flex flex-col justify-between">
+  <article class="card lomo">
     <div>
-      <div class="flex items-start justify-between gap-2 mb-1.5">
-        <h3 class="font-mason text-[1.1rem] text-[#8B5A2B] font-bold leading-tight">{{ mesa.nombre }}</h3>
-        <div class="flex items-center gap-1 shrink-0">
-          <span class="font-tarzana text-[0.7rem] bg-[#1A1A1A] text-[#FDF8EE] font-bold px-1.5 py-0.5 rounded-[2px]">{{ mesa.sistema }}</span>
-          <span class="font-tarzana text-[0.7rem] font-bold px-1.5 py-0.5 rounded-[2px]" :class="mesa.estado === 'Abierta' ? 'bg-[#6B8E23] text-[#FDF8EE]' : 'bg-[#8B1A1A] text-[#FDF8EE]'">{{ mesa.estado }}</span>
+      <div class="cabecera">
+        <h3 class="nombre">{{ mesa.nombre }}</h3>
+        <div class="chips">
+          <span class="tag tag--ink">{{ mesa.sistema }}</span>
+          <span class="tag" :class="mesa.estado === 'Abierta' ? 'tag--acid' : 'tag--ember'">{{ mesa.estado }}</span>
         </div>
       </div>
 
-      <p class="font-minion italic text-[0.8rem] text-[#1A1A1A] mb-2">
-        Dirigida por <span class="font-semibold text-[#8B5A2B]">{{ mesa.gm }}</span>
+      <p class="gm">
+        Dirigida por <strong>{{ mesa.gm }}</strong>
       </p>
 
-      <div class="h-[1px] bg-[#8B1A1A]/40 w-full mb-2"></div>
+      <div class="regla"></div>
 
-      <p class="font-minion text-xs text-[#1A1A1A]/85 leading-relaxed line-clamp-3 mb-3">{{ mesa.lore }}</p>
+      <p class="lore">{{ mesa.lore }}</p>
     </div>
 
-    <div class="pt-2 border-t border-[#C2A980]/50 flex items-center justify-between mt-2">
-      <span class="font-tarzana text-[0.8rem] text-[#8B7D6B] font-semibold flex items-center gap-1">
-        <span class="text-xs" aria-hidden="true">⚔</span> {{ mesa.jugadores }}/{{ mesa.plazas }} Jugadores
+    <div class="pie">
+      <span class="label plazas">
+        <span aria-hidden="true">⚔</span> {{ mesa.jugadores }}/{{ mesa.plazas }} Jugadores
       </span>
-      <RouterLink class="font-tarzana text-[0.8rem] font-bold btn-link-details uppercase tracking-wider" :to="`/mesas/${mesa.id}`">
+      <RouterLink class="text-link" :to="`/mesas/${mesa.id}`">
         Ver detalles →
       </RouterLink>
     </div>
   </article>
 </template>
+
+<style scoped>
+.lomo { padding: var(--space-md); display: flex; flex-direction: column; justify-content: space-between; border-left: var(--rule-bar) solid var(--color-accent-2); gap: var(--space-sm); }
+.cabecera { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2xs); margin-bottom: var(--space-2xs); }
+.nombre { margin: 0; font-size: var(--text-title); color: var(--color-ink); line-height: 1.1; }
+.chips { display: flex; align-items: center; gap: var(--space-3xs); flex-shrink: 0; }
+.gm { margin: 0 0 var(--space-2xs); font-size: var(--text-sm); color: var(--color-ink); font-style: italic; }
+.gm strong { color: var(--color-accent-2); font-style: normal; }
+.regla { height: 1px; background: var(--color-rule); width: 100%; margin-bottom: var(--space-2xs); }
+.lore { margin: 0 0 var(--space-sm); font-size: var(--text-sm); color: var(--color-ink-2); line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.pie { padding-top: var(--space-2xs); border-top: var(--rule-hair) solid var(--color-rule); display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); }
+.plazas { display: inline-flex; align-items: center; gap: var(--space-3xs); color: var(--color-ink-2); }
+</style>

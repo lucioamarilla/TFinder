@@ -2,10 +2,9 @@
 // D-05: el GM elige dia y hora con inputs reales y se envia ISO (el backend
 // lo valida con _parsear). Las marcas del cuadrante se calculan por la fecha
 // de cada sesion/propuesta (no existe selloNum en el contrato). La capacidad
-// proviene del contexto del shell (mesa.plazas), nunca queda 'null'.
+// proviene de la mesa (jugadores_max), nunca queda 'null'.
 import { ref, computed, onMounted, watch } from 'vue'
 import { useToast } from '@/composables/useToast.js'
-import MesaGestionShell from '@/components/mesa/MesaGestionShell.vue'
 import { getMesa } from '@/services/mesas.js'
 import { getSesiones } from '@/services/sesiones.js'
 import { getVotaciones, votar, proponerFecha, confirmarFecha } from '@/services/votaciones.js'
@@ -50,24 +49,23 @@ function esHoy(dia) {
 function diaDe(iso) {
   const m = String(iso ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/)
   if (!m) return null
-  const y = Number(m[1]); const mm = Number(m[2]); const d = Number(m[3])
-  if (y !== anio.value || mm !== mes.value + 1) return null
-  return d
+  if (Number(m[1]) !== anio.value || Number(m[2]) !== mes.value + 1) return null
+  return Number(m[3])
 }
 
 function marcaDe(dia) {
   if (!dia) return null
   const sesionesDelDia = sesiones.value.filter((s) => diaDe(s.fecha) === dia)
   if (sesionesDelDia.length > 0) {
-    return { color: '#6B8E23', texto: 'SESIÓN', titulo: sesionesDelDia.map((s) => `${s.fecha}`).join(' | ') }
+    return { marcador: 'sesion', texto: 'SESIÓN', titulo: sesionesDelDia.map((s) => `${s.fecha}`).join(' | ') }
   }
   const propuestasDelDia = votaciones.value.filter((v) => diaDe(v.fecha) === dia)
   if (propuestasDelDia.length === 0) return null
   const principal = propuestasDelDia[0]
   if (principal.confirmada) {
-    return { color: '#6B8E23', texto: 'CONFIRMADA', titulo: principal.fecha }
+    return { marcador: 'sesion', texto: 'CONFIRMADA', titulo: principal.fecha }
   }
-  return { color: '#D4AF37', texto: 'PROPUESTA', titulo: principal.fecha }
+  return { marcador: 'propuesta', texto: 'PROPUESTA', titulo: principal.fecha }
 }
 
 function mesAnterior() {
@@ -108,7 +106,7 @@ async function cargar() {
     const mesa = await getMesa(props.mesaId)
     capacidadRef.value = mesa?.plazas ?? capacidadRef.value
   } catch {
-    /* capacidad queda en el valor previo; el quorum lo Informa amable */
+    /* capacidad queda en el valor previo; el quorum lo informa amable */
   }
 }
 
@@ -142,95 +140,76 @@ async function proponer() {
 async function confirmar(votacion) {
   await confirmarFecha(props.mesaId, votacion.id)
   votaciones.value = await getVotaciones(props.mesaId)
-  toast.ok(`Fecha oficial fijada · la sesión queda en el calendario.`)
+  toast.ok('Fecha oficial fijada · la sesión queda en el calendario.')
 }
 </script>
 
 <template>
-  <MesaGestionShell :mesa-id="mesaId">
-    <div class="space-y-8">
+      <div class="cald">
       <!-- Cabecera del calendario -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="space-y-1">
-          <h2 class="font-mason text-xl font-bold text-[#8B5A2B] uppercase tracking-wide">✦ Calendario &amp; Votación</h2>
-          <p class="font-minion italic text-sm text-[#554a3e]">El día y la hora se eligen en el selector: los domingos no se descuentan de nadie.</p>
+      <div class="cald-cabecera">
+        <div>
+          <h2 class="titulo-seccion">Calendario &amp; Votación</h2>
+          <p class="label">El día y la hora se eligen en el selector; el resto queda a votos de la mesa.</p>
         </div>
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-3 font-tarzana text-xs text-[#554737]">
-            <div class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-[#6B8E23] shadow-sm"></span>
-              <span>SESIÓN / CONFIRMADA</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-[#D4AF37] shadow-sm"></span>
-              <span>PROPUESTA ACTIVA</span>
-            </div>
+        <div class="cald-leyenda-flechas">
+          <div class="leyenda">
+            <span class="leyenda-aviso leyenda-aviso--sesion"></span>
+            <span class="label">SESIÓN / CONFIRMADA</span>
+            <span class="leyenda-aviso leyenda-aviso--propuesta"></span>
+            <span class="label">PROPUESTA ACTIVA</span>
           </div>
-          <div class="flex items-center gap-1 bg-[#E8DCC8] p-0.5 rounded border border-[#C2A980]">
-            <button class="px-2.5 py-1 text-[#8B5A2B] hover:bg-[#FDF8EE] rounded font-mason text-xs font-bold transition-colors" title="Mes anterior" @click="mesAnterior">
-              «
-            </button>
-            <span class="px-2 font-tarzana text-xs font-bold text-[#1A1A1A]">{{ nombreMes }}</span>
-            <button class="px-2.5 py-1 text-[#8B5A2B] hover:bg-[#FDF8EE] rounded font-mason text-xs font-bold transition-colors" title="Mes siguiente" @click="mesSiguiente">
-              »
-            </button>
+          <div class="flechas">
+            <button type="button" class="btn btn--secondary btn--sm" aria-label="Mes anterior" @click="mesAnterior">«</button>
+            <span class="num nombre-mes">{{ nombreMes }}</span>
+            <button type="button" class="btn btn--secondary btn--sm" aria-label="Mes siguiente" @click="mesSiguiente">»</button>
           </div>
         </div>
       </div>
 
       <!-- Cuadrícula del mes -->
-      <div class="border border-[#C2A980] rounded bg-[#FDF8EE]/90 overflow-hidden shadow-sm">
-        <div class="grid grid-cols-7 bg-[#E8DCC8] border-b border-[#C2A980] text-center font-tarzana text-xs font-bold text-[#8B5A2B] py-2.5">
-          <div v-for="d in DIAS" :key="d" :class="d === 'SÁBADO' ? 'bg-[#ded0ba]/60' : ''">{{ d }}</div>
+      <div class="cuadricula">
+        <div class="dias">
+          <div v-for="d in DIAS" :key="d" class="label">{{ d }}</div>
         </div>
-        <div class="grid grid-cols-7 divide-x divide-y divide-[#C2A980]/50 text-center">
+        <div class="celdas">
           <div
             v-for="(celda, i) in celdas"
             :key="i"
             :data-celda="celda.dia ?? undefined"
-            class="h-20 sm:h-24 p-2 flex flex-col justify-between items-center hover:bg-[#FAF2DF] transition-colors"
-            :class="celda.hoy ? 'bg-[#F4ECD8]/70' : celda.enMes ? '' : 'bg-[#E8DCC8]/40 text-[#8B7D6B]'"
+            class="celda"
+            :class="celda.hoy ? 'celda--hoy' : celda.enMes ? '' : 'celda--fuera'"
           >
-            <span
-              v-if="celda.dia !== null"
-              class="font-mason text-sm sm:text-base font-bold"
-              :class="celda.hoy ? 'text-[#8B5A2B]' : celda.enMes ? 'text-[#1A1A1A]' : 'text-[#8B7D6B]/60'"
-            >{{ celda.dia }}</span>
-            <div v-else class="h-4"></div>
-            <div v-if="celda.hoy && !marcaDe(celda.dia)" class="w-8 h-8 rounded border-2 border-[#8B5A2B] flex items-center justify-center bg-[#FDF8EE] shadow-sm pointer-events-none" />
-            <div v-if="marcaDe(celda.dia)" class="flex flex-col items-center pointer-events-auto" :title="marcaDe(celda.dia).titulo">
-              <span class="rounded-full ring-2 ring-[#FDF8EE] shadow-sm" :class="marcaDe(celda.dia).color === '#6B8E23' ? 'w-3 h-3 bg-[#6B8E23]' : 'w-2.5 h-2.5 bg-[#D4AF37]'" v-if="marcaDe(celda.dia).color === '#6B8E23' || marcaDe(celda.dia).color === '#D4AF37'"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#8B7D6B] shadow-sm" v-else></span>
-              <span class="font-tarzana text-[10px] font-bold mt-0.5 hidden sm:inline" :style="{ color: marcaDe(celda.dia).color }">{{ marcaDe(celda.dia).texto }}</span>
+            <span v-if="celda.dia !== null" class="num dia" :class="celda.hoy ? 'dia--hoy' : ''">{{ celda.dia }}</span>
+            <div v-else class="dia-vacio"></div>
+            <div v-if="celda.hoy && !marcaDe(celda.dia)" class="anillo-hoy" aria-label="Hoy"></div>
+            <div v-if="marcaDe(celda.dia)" class="marca" :title="marcaDe(celda.dia).titulo">
+              <span class="punto" :class="`punto--${marcaDe(celda.dia).marcador}`"></span>
+              <span class="label señal" :class="`señal--${marcaDe(celda.dia).marcador}`">{{ marcaDe(celda.dia).texto }}</span>
             </div>
             <template v-else-if="celda.hoy">
-              <span class="font-tarzana text-[10px] text-[#8B5A2B] font-extrabold uppercase">HOY</span>
+              <span class="label señal señal--hoy">HOY</span>
             </template>
-            <div v-else class="h-4"></div>
+            <div v-else class="dia-vacio"></div>
           </div>
         </div>
       </div>
 
       <!-- Propuestas activas -->
-      <section class="space-y-4 pt-1">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#C2A980] gap-4">
+      <section class="propuestas">
+        <div class="propuestas-cabecera">
           <div>
-            <h3 class="font-mason text-xl font-bold text-[#8B5A2B] flex items-center gap-2">
-              <span>✦</span> PROPUESTAS ACTIVAS DE SESIÓN
-            </h3>
-            <p class="font-minion italic text-sm text-[#554a3e]">{{ quorumTexto }}</p>
+            <h2 class="titulo-seccion">Propuestas activas de sesión</h2>
+            <p class="label">{{ quorumTexto }}</p>
           </div>
 
           <button
             type="button"
             data-test="btn-abrir-proponer"
-            class="btn-gold px-5 py-2.5 rounded font-tarzana text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 self-start sm:self-auto shrink-0"
+            class="btn"
             @click="abrirFormulario = !abrirFormulario"
           >
-            <svg class="w-4 h-4 text-[#1A1A1A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-            </svg>
-            PROPONER FECHA (GM)
+            Proponer fecha (GM)
           </button>
         </div>
 
@@ -238,117 +217,138 @@ async function confirmar(votacion) {
         <form
           v-if="abrirFormulario"
           data-test="form-proponer"
-          class="bg-[#FDF8EE] border border-[#C2A980] rounded p-4 sm:p-5 grid gap-3 sm:grid-cols-2"
+          class="card form-proponer"
           novalidate
           @submit.prevent="proponer"
         >
-          <div class="flex flex-col gap-1">
-            <label class="font-tarzana text-xs font-bold uppercase tracking-wider text-[#8B5A2B]" for="pro-fecha">Día</label>
-            <input
-              id="pro-fecha"
-              data-test="input-fecha"
-              v-model="nueva.fecha"
-              type="date"
-              class="input bg-[#FDF8EE] border border-[#C2A980] rounded p-2 font-minion text-sm"
-            />
+          <div class="field">
+            <label class="label" for="pro-fecha">Día</label>
+            <input id="pro-fecha" data-test="input-fecha" v-model="nueva.fecha" type="date" class="input" />
           </div>
-          <div class="flex flex-col gap-1">
-            <label class="font-tarzana text-xs font-bold uppercase tracking-wider text-[#8B5A2B]" for="pro-hora">Hora</label>
-            <input
-              id="pro-hora"
-              data-test="input-hora"
-              v-model="nueva.hora"
-              type="time"
-              value="20:00"
-              class="input bg-[#FDF8EE] border border-[#C2A980] rounded p-2 font-minion text-sm"
-            />
+          <div class="field">
+            <label class="label" for="pro-hora">Hora</label>
+            <input id="pro-hora" data-test="input-hora" v-model="nueva.hora" type="time" value="20:00" class="input" />
           </div>
-          <p v-if="errorPropuesta" class="hint-error sm:col-span-2" role="alert" data-test="error-proponer">{{ errorPropuesta }}</p>
-          <div class="sm:col-span-2 flex justify-end">
-            <button type="submit" data-test="btn-proponer" class="btn-gold px-4 py-2 rounded font-tarzana text-sm font-bold uppercase tracking-wider">
-              Convocar propuesta
-            </button>
+          <p v-if="errorPropuesta" class="hint-error" role="alert" data-test="error-proponer">{{ errorPropuesta }}</p>
+          <div class="form-proponer-envio">
+            <button type="submit" data-test="btn-proponer" class="btn">Convocar propuesta</button>
           </div>
         </form>
 
-        <div class="space-y-3.5">
+        <div class="lista-propuestas">
           <div
             v-for="votacion in votaciones"
             :key="votacion.id"
             data-test="propuesta-votacion"
-            class="bg-[#FDF8EE] border border-[#C2A980] hover:border-[#8B5A2B] p-4 sm:p-5 rounded transition-all duration-150 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+            class="card propuesta"
           >
-            <div class="space-y-1">
-              <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-                <span class="font-mason text-base sm:text-lg font-bold text-[#8B5A2B]">
-                  {{ votacion.fecha }}
-                </span>
-                <span class="px-2 py-0.5 bg-[#D4AF37]/20 border border-[#D4AF37] font-tarzana text-xs font-bold text-[#8B5A2B] rounded">
-                  {{ votacion.tipo }}
-                </span>
-              </div>
-              <p class="font-minion text-sm text-[#554a3e]">
-                <strong class="text-[#1A1A1A]">Sesión {{ votacion.sesionNumero }}:</strong>
-                <em>{{ votacion.titulo }}</em> — {{ votacion.resumen }}
-              </p>
-              <div class="font-tarzana text-xs text-[#8B7D6B] flex items-center gap-3 pt-1">
-                <span>Votaron a favor: <strong class="text-[#6B8E23]">{{ textoVotos(votacion.favor) }}</strong></span>
-                <span>•</span>
-                <span>Votos en contra: <strong class="text-[#8B1A1A]">{{ textoVotos(votacion.contra) }}</strong></span>
-              </div>
+            <div class="propuesta-identidad">
+              <span class="num propuesta-fecha">{{ votacion.fecha }}</span>
+              <span class="tag" :class="votacion.confirmada ? 'tag--acid' : 'tag--ink'">{{ votacion.tipo }}</span>
+            </div>
+            <p class="propuesta-resumen">
+              <strong>Sesión {{ votacion.sesionNumero }}:</strong>
+              <em>{{ votacion.titulo }}</em> — {{ votacion.resumen }}
+            </p>
+            <div class="propuesta-votos-info">
+              <span class="label">Votaron a favor: <span class="ok num">{{ textoVotos(votacion.favor) }}</span></span>
+              <span class="label">Votos en contra: <span class="contra num">{{ textoVotos(votacion.contra) }}</span></span>
             </div>
 
-            <div class="flex items-center gap-4 shrink-0 self-end md:self-center">
-              <div class="flex items-center gap-2 bg-[#E8DCC8]/70 px-3 py-1.5 rounded-full border border-[#C2A980]">
+            <div class="propuesta-acciones">
+              <div class="votecell vote">
                 <button
                   type="button"
-                  class="p-1.5 flex items-center gap-1.5 transition-transform active:scale-95 rounded-full"
-                  :class="circulo('favor', votacion) ? 'ring-2 ring-[#D4AF37] bg-[#FDF8EE]' : 'text-[#8B7D6B] hover:text-[#6B8E23]'"
+                  class="voto-btn"
+                  :class="circulo('favor', votacion) ? 'voto-btn--activa' : ''"
                   :aria-pressed="circulo('favor', votacion)"
                   :title="votacion.miVoto === 'favor' ? 'Tu voto actual: A favor de esta fecha' : 'Votar a favor de esta fecha'"
                   @click="emitirVoto(votacion, 'favor')"
                 >
-                  <svg class="w-5 h-5 text-[#6B8E23]" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span class="font-mason text-base font-bold text-[#1A1A1A] pr-1">{{ votacion.favor.length }}</span>
+                  <span class="ok">▲</span>
+                  <span class="num">{{ votacion.favor.length }}</span>
                 </button>
-
-                <div class="h-4 w-px bg-[#C2A980]"></div>
 
                 <button
                   type="button"
-                  class="p-1.5 flex items-center gap-1.5 text-[#8B7D6B] hover:text-[#8B1A1A] transition-colors rounded-full"
-                  :class="circulo('contra', votacion) ? 'ring-2 ring-[#D4AF37] bg-[#FDF8EE]' : ''"
+                  class="voto-btn"
+                  :class="circulo('contra', votacion) ? 'voto-btn--activa' : ''"
                   :aria-pressed="circulo('contra', votacion)"
                   :title="votacion.miVoto === 'contra' ? 'Tu voto actual: En contra' : 'Votar en contra / No disponible'"
                   @click="emitirVoto(votacion, 'contra')"
                 >
-                  <svg class="w-5 h-5 text-[#8B1A1A]" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 011.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  <span class="font-mason text-base font-bold text-[#1A1A1A] pr-1">{{ votacion.contra.length }}</span>
+                  <span class="contra">▼</span>
+                  <span class="num">{{ votacion.contra.length }}</span>
                 </button>
               </div>
 
               <button
                 type="button"
-                class="px-3.5 py-1.5 rounded font-tarzana text-xs font-bold uppercase tracking-wider border-[#6B8E23] text-[#6B8E23] hover:bg-[#6B8E23] hover:text-white transition-colors border-0"
-                :style="{ border: '1.5px solid #6B8E23' }"
+                class="btn btn--secondary btn--sm"
                 :disabled="votacion.confirmada"
                 title="Fijar como fecha oficial definitiva"
                 @click="confirmar(votacion)"
               >
-                {{ votacion.confirmada ? 'FECHA CONFIRMADA' : 'CONFIRMAR FECHA' }}
+                {{ votacion.confirmada ? 'Fecha confirmada' : 'Confirmar fecha' }}
               </button>
             </div>
           </div>
 
-          <div v-if="votaciones.length === 0" class="bg-[#FBF4E6] border border-dashed border-[#C2A980] rounded p-8 text-center font-minion italic text-[#736351]">
+          <div v-if="votaciones.length === 0" class="card vacio" data-test="sin-propuestas">
             No hay propuestas abiertas. El Director de Juego puede convocar una nueva fecha para la mesa.
           </div>
         </div>
       </section>
     </div>
-  </MesaGestionShell>
 </template>
+
+<style scoped>
+.cald { display: grid; gap: var(--space-lg); }
+.titulo-seccion { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
+.cald-cabecera { display: flex; flex-direction: column; gap: var(--space-sm); flex-wrap: wrap; }
+.cald-leyenda-flechas { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; }
+.leyenda { display: flex; gap: var(--space-sm); align-items: center; flex-wrap: wrap; }
+.leyenda-aviso { width: 10px; height: 10px; border-radius: 999px; display: inline-block; border: var(--rule-hair) solid var(--color-rule); }
+.leyenda-aviso--sesion { background: var(--color-accent-2); }
+.leyenda-aviso--propuesta { background: var(--color-accent); }
+.flechas { display: inline-flex; align-items: center; gap: var(--space-2xs); }
+.nombre-mes { font-size: var(--text-sm); color: var(--color-ink); }
+.cuadricula { border: var(--rule-hair) solid var(--color-rule); background: var(--color-paper-2); overflow: hidden; }
+.dias, .celdas { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.dias { border-bottom: var(--rule-hair) solid var(--color-rule); background: var(--color-paper-3); text-align: center; }
+.dias .label { padding-block: var(--space-2xs); }
+.celdas { border-top: var(--rule-hair) solid var(--color-rule); }
+.celda { min-height: 5.5rem; padding: var(--space-2xs); border-right: var(--rule-hair) solid var(--color-rule); border-bottom: var(--rule-hair) solid var(--color-rule); display: flex; flex-direction: column; justify-content: space-between; align-items: center; gap: var(--space-3xs); }
+.celda--fuera { color: var(--color-muted); background: var(--color-paper-3); }
+.celda--hoy { background: var(--color-paper-3); }
+.dia { font-size: var(--text-sm); color: var(--color-ink); }
+.dia--hoy { color: var(--color-accent-2); }
+.dia-vacio { height: var(--space-md); }
+.anillo-hoy { width: 28px; height: 28px; border: 2px solid var(--color-accent-2); border-radius: 999px; }
+.marca { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.punto { width: 10px; height: 10px; border-radius: 999px; display: inline-block; border: var(--rule-hair) solid var(--color-paper); }
+.punto--sesion { background: var(--color-accent-2); }
+.punto--propuesta { background: var(--color-accent); }
+.señal { font-size: 10px; font-weight: 700; letter-spacing: .06em; }
+.señal--sesion { color: var(--color-accent-2); }
+.señal--propuesta { color: var(--color-accent); }
+.señal--hoy { color: var(--color-accent-2); }
+.propuestas { display: grid; gap: var(--space-md); }
+.propuestas-cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; border-bottom: var(--rule-hair) solid var(--color-rule); padding-bottom: var(--space-sm); }
+.form-proponer { display: grid; gap: var(--space-sm); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form-proponer-envio { display: flex; justify-content: flex-end; grid-column: 1 / -1; }
+.lista-propuestas { display: grid; gap: var(--space-sm); }
+.propuesta { display: flex; flex-direction: column; gap: var(--space-2xs); }
+.propuesta-identidad { display: flex; align-items: center; gap: var(--space-2xs); flex-wrap: wrap; }
+.propuesta-fecha { font-size: var(--text-md); color: var(--color-ink); }
+.propuesta-resumen { margin: 0; font-size: var(--text-sm); color: var(--color-ink-2); }
+.propuesta-votos-info { display: flex; gap: var(--space-md); flex-wrap: wrap; }
+.ok { color: var(--color-accent-2); }
+.contra { color: var(--color-error); }
+.propuesta-acciones { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; }
+.votecell { display: flex; align-items: center; gap: var(--space-sm); }
+.voto-btn { background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); border-radius: 999px; padding: var(--space-2xs) var(--space-sm); display: inline-flex; align-items: center; gap: var(--space-2xs); cursor: pointer; font-weight: 700; color: var(--color-ink-2); }
+.voto-btn--activa { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent); background: var(--color-paper); }
+.vacio { text-align: center; color: var(--color-ink-2); padding: var(--space-lg); }
+@media (max-width: 60rem) { .form-proponer { grid-template-columns: minmax(0, 1fr); } }
+</style>

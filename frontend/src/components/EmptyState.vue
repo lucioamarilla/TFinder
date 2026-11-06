@@ -13,13 +13,22 @@ defineProps({
 </script>
 
 <template>
-  <section class="card-parchment p-10 text-center max-w-xl mx-auto rounded-[2px]" role="status">
-    <div class="text-4xl mb-3 select-none" aria-hidden="true">🗝️</div>
-    <p class="font-stat uppercase tracking-widest text-xs text-[#8B5A2B] font-bold mb-1">Sin resultados</p>
-    <h2 class="font-mason font-bold text-xl text-[#8B5A2B]">{{ title }}</h2>
-    <p class="font-narrative text-[#5A4A3A] mt-2">{{ message }}</p>
-    <div class="mt-5 flex items-center justify-center gap-3">
+  <section class="card vacio" role="status">
+    <div class="icono" aria-hidden="true">🗝️</div>
+    <p class="label linea">Sin resultados</p>
+    <h2 class="titulo">{{ title }}</h2>
+    <p class="mensaje">{{ message }}</p>
+    <div class="acciones">
       <slot />
     </div>
   </section>
 </template>
+
+<style scoped>
+.vacio { max-width: 36rem; margin-inline: auto; padding: var(--space-lg); text-align: center; display: grid; gap: var(--space-2xs); justify-items: center; }
+.icono { font-size: 2rem; user-select: none; }
+.linea { text-transform: uppercase; letter-spacing: .1em; color: var(--color-accent-2); }
+.titulo { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
+.mensaje { margin: 0; color: var(--color-ink-2); font-size: var(--text-md); }
+.acciones { display: flex; align-items: center; gap: var(--space-sm); justify-content: center; margin-top: var(--space-sm); flex-wrap: wrap; }
+</style>
