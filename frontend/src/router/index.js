@@ -20,12 +20,10 @@ const ModoSesionBitacoraView = () => import('@/views/ModoSesionBitacoraView.vue'
 const WikiIndiceView = () => import('@/views/WikiIndiceView.vue')
 const WikiLecturaView = () => import('@/views/WikiLecturaView.vue')
 const WikiEditorView = () => import('@/views/WikiEditorView.vue')
-const CalculadoraAplView = () => import('@/views/CalculadoraAplView.vue')
 // Retirados: CompendioView, BestiarioView (sin backend)
 const PerfilView = () => import('@/views/PerfilView.vue')
 const NotificacionesView = () => import('@/views/NotificacionesView.vue')
 const NotFoundView = () => import('@/views/NotFoundView.vue')
-const IndiceView = () => import('@/views/IndiceView.vue')
 const ComingSoonView = () => import('@/views/ComingSoonView.vue')
 
 // Fase 11 · pantallas estructurales v5
@@ -37,8 +35,6 @@ const ModoSesionJugadorView = () => import('@/views/ModoSesionJugadorView.vue')
 const MesaFormularioView = () => import('@/views/MesaFormularioView.vue')
 // const DashboardView = () => import('@/views/DashboardView.vue')  // simplificado: redirect a /mesas
 // Retirado: MatchmakingView (candidatos mock)
-const EncuentrosView = () => import('@/views/EncuentrosView.vue')
-const TagsView = () => import('@/views/TagsView.vue')
 const BuildsListView = () => import('@/views/BuildsListView.vue')
 const BuildDetailView = () => import('@/views/BuildDetailView.vue')
 const BuildWizardView = () => import('@/views/BuildWizardView.vue')
@@ -56,12 +52,6 @@ const GestionSesionBitacoraView = () => import('@/views/gestion/BitacoraView.vue
 const GestionDiarioEditorView = () => import('@/views/gestion/DiarioEditorView.vue')
 const GestionJugadoresView = () => import('@/views/gestion/JugadoresView.vue')
 const GestionBuildsView = () => import('@/views/gestion/BuildsView.vue')
-const AdminLayout = () => import('@/layouts/AdminLayout.vue')
-const AdminPanelView = () => import('@/views/admin/AdminPanelView.vue')
-const AdminEventosView = () => import('@/views/admin/AdminEventosView.vue')
-const AdminDlqView = () => import('@/views/admin/AdminDlqView.vue')
-const AdminEmailsView = () => import('@/views/admin/AdminEmailsView.vue')
-// F09/D-15: consola admin RE-implementada sobre notif-api (event-log, DLQ, emails)
 
 export const routes = [
   { path: '/', name: 'landing', component: LandingView },
@@ -114,11 +104,9 @@ export const routes = [
   { path: '/wiki/nueva', name: 'wiki-nueva', component: WikiEditorView, meta: { roles: ['auth'] } },
   { path: '/wiki/:id', name: 'wiki-lectura', component: WikiLecturaView, props: true },
   { path: '/wiki/:id/editar', name: 'wiki-editar', component: WikiEditorView, props: true, meta: { roles: ['auth'] } },
-  { path: '/calculadora-apl', name: 'calculadora-apl', component: CalculadoraAplView },
   // retirados: compendio, bestiario
   { path: '/perfil', name: 'perfil', component: PerfilView, meta: { roles: ['auth'] } },
   { path: '/notificaciones', name: 'notificaciones', component: NotificacionesView, meta: { roles: ['auth'] } },
-  { path: '/indice', name: 'indice', component: IndiceView },
 
   // Builds PF1e
   { path: '/builds', name: 'builds', component: BuildsListView },
@@ -129,21 +117,7 @@ export const routes = [
 
   // Social y herramientas (matchmaking público, anotarse requiere sesión)
   // retirado: matchmaking
-  { path: '/encuentros', name: 'encuentros', component: EncuentrosView },
-  { path: '/tags', name: 'tags', component: TagsView },
 
-  // Consola admin (F09/D-15): roles ['admin'] en cada nivel del merge.
-  {
-    path: '/admin',
-    component: AdminLayout,
-    meta: { roles: ['admin'] },
-    children: [
-      { path: '', name: 'admin-panel', component: AdminPanelView, meta: { roles: ['admin'] } },
-      { path: 'eventos', name: 'admin-eventos', component: AdminEventosView, meta: { roles: ['admin'] } },
-      { path: 'dlq', name: 'admin-dlq', component: AdminDlqView, meta: { roles: ['admin'] } },
-      { path: 'emails', name: 'admin-emails', component: AdminEmailsView, meta: { roles: ['admin'] } }
-    ]
-  },
   { path: '/proximamente/:feature', name: 'proximamente', component: ComingSoonView, props: true },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView }
 ]

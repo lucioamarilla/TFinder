@@ -209,17 +209,6 @@ onMounted(() => load())
               </div>
             </div>
 
-            <div class="lateral-bloque">
-              <span class="label">Encuentros</span>
-              <div class="lateral-caja">
-                <p class="label">Anuncios y buscadores de partida de la comunidad.</p>
-                <RouterLink to="/encuentros" class="btn btn--secondary btn--sm">
-                  Buscar Aventureros Afines
-                </RouterLink>
-              </div>
-            </div>
-          </div>
-
           <div class="lateral-pie">
             <p class="label">Sistema D20 • Pathfinder RPG 1e</p>
           </div>
