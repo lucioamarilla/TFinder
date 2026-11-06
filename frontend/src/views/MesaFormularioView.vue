@@ -59,7 +59,9 @@ async function load() {
     nombre.value = mesa.nombre
     descripcion.value = mesa.descripcion
     tono.value = mesa.tono
-    frecuencia.value = mesa.frecuencia
+    // D-08: usar el horario real del contrato; el normalizador deriva
+    // 'frecuencia' con el literal "A coordinar" y no debe contaminarlo.
+    frecuencia.value = mesa.horario ?? ''
     const match = /(\d+)/.exec(mesa.rangoNivel ?? mesa.nivel ?? '')
     nivelInicial.value = match ? Number(match[1]) : 1
     jugadoresMax.value = Number(mesa.plazas ?? 6)

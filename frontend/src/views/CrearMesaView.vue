@@ -25,9 +25,8 @@
         </div>
         <div class="field">
           <label class="label" for="f-lugar">Ambientación</label>
-          <select class="input" id="f-lugar" v-model="lugar">
-            <option>Ustalav</option><option>Sandpoint</option><option>Korvosa</option><option>Absalom</option><option>Cheliax</option>
-          </select>
+          <textarea class="input" id="f-lugar" data-test="input-ambientacion" v-model="lugar" rows="2" placeholder="Ej: Ustalav, un condado de fantasmas al este de Golarion…"></textarea>
+          <p class="label">Textira libre: región, ciudad o ambiente de tu campaña.</p>
         </div>
         <div class="field">
           <label class="label" for="f-horario">Horario</label>
@@ -124,7 +123,9 @@ async function submit() {
       nivel: nivelClamped.value,
       cupo: cuposClamped.value,
       horario: horario.value.trim(),
-      lugar: lugar.value,
+      // D-06: la ambientación libre del GM se persiste en el campo tono del
+      // contrato (MesaCreate no tiene 'lugar' y es extra="forbid").
+      tono: lugar.value.trim(),
       descripcion: desc.value.trim()
     })
     // ok

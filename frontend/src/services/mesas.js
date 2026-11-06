@@ -102,7 +102,9 @@ export async function crearMesa(entrada, opciones = {}) {
     estado: (entrada.estado ?? 'abierta').toLowerCase(),
     descripcion: entrada.descripcion ?? '',
     tono: entrada.tono ?? '',
-    horario: entrada.horario ?? '',
+    // D-08: frecuencia y horario son dos nombres de vista para el mismo
+    // dato del contrato; mapear ambos evita perder el horario al crear.
+    horario: entrada.horario ?? entrada.frecuencia ?? '',
     nivel_inicial: entrada.nivel_inicial ?? entrada.nivel ?? null,
     jugadores_max: entrada.jugadores_max ?? entrada.cupo ?? null
   })
