@@ -109,6 +109,20 @@ async function apiInterna(
         body: cuerpo != null ? JSON.stringify(cuerpo) : undefined,
         signal: controlador.signal
       })
+      if (respuesta.status === 429) {
+        // RNF-22: el backend firma Retry-After. Reintentar una vez tras esperar
+        // (tope 5s) para no bloquear la UI; si persiste, propagar el error con
+        // un mensaje claro en vez de "Mesa no encontrada"/"vacío".
+        const espera = Math.min(5000, (Number(respuesta.headers?.get?.('Retry-After') || respuesta.headers?.['retry-after'] || 1) || 1) * 1000)
+        ultimoError = new ApiError(429, 'Demasiadas peticiones: esperá un momento y reintentá.')
+        if (intento < MAX_INTENTOS - 1) {
+          await new Promise((r) => setTimeout(r, espera))
+          continue
+        }
+        registrarFallo(cb)
+        clearTimeout(timer)
+        break
+      }
       if (respuesta.status >= 500) {
         registrarFallo(cb)
         ultimoError = new ApiError(respuesta.status, `HTTP ${respuesta.status}`)
