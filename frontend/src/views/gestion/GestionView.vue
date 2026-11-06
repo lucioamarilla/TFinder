@@ -22,14 +22,29 @@ const eliminando = ref(false)
 
 const proximasSesiones = computed(() =>
   sesiones.value
-    .filter((s) => ['confirmada', 'borrador', 'tentativa'].includes(s.estado))
+    // D-12: el contrato define abierta|cerrada; proponemos las primeras 3
+    // abiertas por fecha, de la mas cercana a la mas lejana.
+    .filter((s) => s.estado === 'abierta')
+    .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))
     .slice(0, 3)
 )
 
 const ESTADOS = {
-  confirmada: { texto: 'CONFIRMADA', cls: 'bg-[#D4AF37]/20 border-[#D4AF37] text-[#8B5A2B]' },
-  borrador: { texto: 'BORRADOR', cls: 'bg-[#8B7D6B]/20 text-[#5C4A32]' },
-  tentativa: { texto: 'TENTATIVA', cls: 'bg-[#8B7D6B]/20 text-[#5C4A32]' }
+  abierta: { texto: 'ABIERTA', cls: 'bg-[#6B8E23]/20 text-[#4A6B17]' },
+  cerrada: { texto: 'REALIZADA', cls: 'bg-[#8B7D6B]/20 text-[#5C4A32]' }
+}
+
+function ordinalSesion(s) {
+  const ordenadas = [...sesiones.value].sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))
+  return `#${ordenadas.findIndex((x) => x.id === s.id) + 1}`
+}
+
+function fmt(f) {
+  if (!f) return 'Fecha por definir'
+  const m = String(f).match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/)
+  if (!m) return String(f)
+  const [, y, mes, d, hh, mm] = m
+  return `${d}/${mes}/${y}${hh ? ` · ${hh}:${mm}` : ''}`
 }
 
 async function cargarSesiones() {
@@ -55,23 +70,29 @@ async function confirmarBaja() {
 
 const parametros = computed(() => {
   if (!mesa.value) return { izquierda: [], derecha: [] }
+  // D-12: datos reales de MesaOut; nada hardcodeado ni campos inexistentes.
+  const ocupacionTexto = `${mesa.value.jugadores ?? 0}/${mesa.value.plazas ?? '∞'}`
   return {
     izquierda: [
       { k: 'Sistema y Reglas:', v: 'Pathfinder 1ª Edición (OGL v1.0a)' },
-      { k: 'Aventura Oficial / AP:', v: mesa.value.tono },
-      { k: 'Nivel de Personajes:', v: mesa.value.rangoNivel },
-      { k: 'Modalidad:', v: mesa.value.modalidad },
-      { k: 'Frecuencia / Horario:', v: mesa.value.frecuencia }
+      { k: 'Ambientación:', v: mesa.value.tono || '—' },
+      { k: 'Nivel de Personajes:', v: mesa.value.rangoNivel || '—' },
+      { k: 'Modalidad:', v: 'Mesa de la comunidad' },
+      { k: 'Frecuencia / Horario:', v: mesa.value.horario || mensajePorDefecto() }
     ],
     derecha: [
-      { k: 'Director de Juego (GM):', v: 'Aldren Valeros', tu: true },
-      { k: 'Ocupación de Mesa:', v: mesa.value.ocurrenciasPlazas },
-      { k: 'Plataforma VTT & Voz:', v: mesa.value.ubicacion },
-      { k: 'Tono de la Crónica:', v: mesa.value.tono },
+      { k: 'Director de Juego (GM):', v: mesa.value.gm || 'Por asignar', tu: true },
+      { k: 'Ocupación de Mesa:', v: ocupacionTexto },
+      { k: 'Sistema de Plataforma:', v: 'Mesa presencial o VTT acordada' },
+      { k: 'Tono de la Crónica:', v: mesa.value.descripcion || '—' },
       { k: 'Visibilidad Pública:', v: 'Listada en el Buscador de Mesas TFinder', verde: true }
     ]
   }
 })
+
+function mensajePorDefecto() {
+  return 'A coordinar con los participantes'
+}
 </script>
 
 <template>
@@ -153,31 +174,27 @@ const parametros = computed(() => {
                 class="w-12 h-12 rounded flex flex-col items-center justify-center text-[#FDF8EE] border shrink-0"
                 :class="idx === 0 ? 'bg-[#1A1A1A] border-[#D4AF37]' : 'bg-[#3A3228] border-[#8B7D6B]'"
               >
-                <span :class="`font-tarzana text-[0.7rem] uppercase leading-none ${idx === 0 ? 'text-[#D4AF37]' : 'text-[#C2A980]'}`">{{ sesion.selloDia }}</span>
-                <span class="font-mason font-bold text-base leading-none mt-1">{{ sesion.selloNum }}</span>
+                <span :class="`font-tarzana text-[0.7rem] uppercase leading-none ${idx === 0 ? 'text-[#D4AF37]' : 'text-[#C2A980]'}`">Sesión</span>
+                <span class="font-mason font-bold text-base leading-none mt-1">{{ ordinalSesion(sesion) }}</span>
               </div>
               <div>
                 <div class="flex items-center space-x-2">
-                  <span class="font-mason text-base font-bold text-[#8B5A2B]">Sesión {{ sesion.numero.replace('#', '') }}: {{ sesion.titulo }}</span>
+                  <span class="font-mason text-base font-bold text-[#8B5A2B]">Sesión {{ ordinalSesion(sesion) }}</span>
                   <span
                     :class="`px-2 py-0.2 font-tarzana text-[0.75rem] font-bold rounded ${ESTADOS[sesion.estado]?.cls || 'bg-[#8B7D6B]/20 text-[#5C4A32]'}`"
                   >{{ ESTADOS[sesion.estado]?.texto || sesion.estado }}</span>
                 </div>
                 <p class="font-minion text-sm text-[#5C4A32]">
-                  Fecha Golarion: {{ sesion.fechaGolarion }} • Horario: {{ sesion.horario }}
+                  Convocada para {{ fmt(sesion.fecha) }}
                 </p>
               </div>
             </div>
             <div class="flex items-center space-x-3 text-right font-tarzana text-xs text-[#8B7D6B]">
-              <div v-if="sesion.estado === 'confirmada'" class="hidden md:block">
-                <div class="text-[#1A1A1A] font-semibold">{{ sesion.asistencias }} Asistencias</div>
-                <div class="text-[#6B8E23]">{{ sesion.quorum }}</div>
-              </div>
               <RouterLink
-                :to="`/mesas/${mesaId}/sesiones`"
+                :to="`/mesas/${mesaId}/gestion/sesiones`"
                 class="px-3 py-1.5 bg-[#FDF8EE] border border-[#8B7D6B] hover:border-[#8B5A2B] text-[#8B5A2B] rounded font-tarzana text-xs font-semibold"
               >
-                {{ sesion.estado === 'confirmada' ? 'Gestionar Hoja de Ruta' : 'Editar Convocatoria' }}
+                Gestionar Hoja de Ruta
               </RouterLink>
             </div>
           </div>
