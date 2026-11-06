@@ -29,8 +29,8 @@
               <input class="input" id="c-fecha" data-test="input-fecha" v-model="nueva.fecha" type="date" :min="hoyISO" />
             </div>
             <div class="field">
-              <label class="label" for="c-numero">Sesión</label>
-              <input class="input" id="c-numero" v-model="nueva.sesionNumero" placeholder="#45" />
+              <label class="label" for="c-hora">Hora</label>
+              <input class="input" id="c-hora" data-test="input-hora" v-model="nueva.hora" type="time" value="20:00" />
             </div>
           </div>
           <div class="field">
@@ -86,6 +86,8 @@ import { getMesa } from '@/services/mesas'
 import { getVotaciones, votar as votarApi, proponerFecha as proponerApi, confirmarFecha as confirmarApi } from '@/services/votaciones'
 import { getMiembros } from '@/services/jugadores'
 
+const props = defineProps({ mesaId: { type: [String, Number], default: null } })
+
 const route = useRoute()
 const { user } = useAuth()
 
@@ -93,7 +95,7 @@ const mesa = ref(null)
 const cargando = ref(true)
 const propuestas = ref([])
 const esMiembro = ref(false)
-const nueva = ref({ fecha: '', sesionNumero: '', titulo: '' })
+const nueva = ref({ fecha: '', hora: '', titulo: '' })
 const errorPropuesta = ref(null)
 const errorVoto = ref(null)
 
@@ -105,7 +107,7 @@ const puedoVotar = computed(() => esMiembro.value && !esGM.value)
 onMounted(async () => {
   // D-01: mesa primero; membresía y votaciones fallan de forma aislada.
   try {
-    mesa.value = await getMesa(route.params.id)
+    mesa.value = await getMesa(props.mesaId ?? route.params.id)
   } catch (e) {
     mesa.value = null
     cargando.value = false
@@ -145,7 +147,7 @@ async function proponer() {
   try {
     await proponerApi(mesa.value.id, { ...nueva.value })
     propuestas.value = await getVotaciones(mesa.value.id)
-    nueva.value = { fecha: '', sesionNumero: '', titulo: '' }
+    nueva.value = { fecha: '', hora: '', titulo: '' }
   } catch (e) {
     errorPropuesta.value = e?.message || 'No se pudo proponer la fecha.'
   }

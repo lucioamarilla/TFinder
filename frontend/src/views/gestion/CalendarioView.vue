@@ -1,10 +1,13 @@
 <script setup>
+// D-05: el GM elige dia y hora con inputs reales y se envia ISO (el backend
+// lo valida con _parsear). Las marcas del cuadrante se calculan por la fecha
+// de cada sesion/propuesta (no existe selloNum en el contrato). La capacidad
+// proviene del contexto del shell (mesa.plazas), nunca queda 'null'.
 import { ref, computed, onMounted, watch } from 'vue'
 import { useToast } from '@/composables/useToast.js'
 import MesaGestionShell from '@/components/mesa/MesaGestionShell.vue'
-import ModalDatePicker from '@/components/modals/ModalDatePicker.vue'
+import { getMesa } from '@/services/mesas.js'
 import { getSesiones } from '@/services/sesiones.js'
-import { getMiembros } from '@/services/jugadores.js'
 import { getVotaciones, votar, proponerFecha, confirmarFecha } from '@/services/votaciones.js'
 
 const props = defineProps({ mesaId: { type: String, required: true } })
@@ -19,10 +22,14 @@ const anio = ref(HOY.getFullYear())
 const mes = ref(HOY.getMonth())
 const sesiones = ref([])
 const votaciones = ref([])
-const capacidad = ref(4)
-const abrirPicker = ref(false)
+const capacidadRef = ref(null)
+const abrirFormulario = ref(false)
+const nueva = ref({ fecha: '', hora: '' })
+const errorPropuesta = ref(null)
 
 const nombreMes = computed(() => `${MESES[mes.value].toUpperCase()} ${anio.value}`)
+
+const capacidad = computed(() => capacidadRef.value)
 
 const celdas = computed(() => {
   const primerDia = new Date(anio.value, mes.value, 1)
@@ -39,18 +46,28 @@ function esHoy(dia) {
   return anio.value === HOY.getFullYear() && mes.value === HOY.getMonth() && dia === HOY.getDate()
 }
 
+// dia real de la fecha ISO 'YYYY-MM-DD[THH:mm]' sin aritmetica de zonas.
+function diaDe(iso) {
+  const m = String(iso ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return null
+  const y = Number(m[1]); const mm = Number(m[2]); const d = Number(m[3])
+  if (y !== anio.value || mm !== mes.value + 1) return null
+  return d
+}
+
 function marcaDe(dia) {
   if (!dia) return null
-  const coincidencias = sesiones.value.filter((s) => String(dia) === String(parseInt(s.selloNum, 10)))
-  if (coincidencias.length === 0) return null
-  const iconos = { confirmada: 'CONFIRMADA', ejecutada: 'ACTA LISTA', borrador: 'PROPUESTA', tentativa: 'PROPUESTA', suspendida: 'SIN QUÓRUM' }
-  const colores = { confirmada: '#6B8E23', ejecutada: '#6B8E23', borrador: '#D4AF37', tentativa: '#D4AF37', suspendida: '#8B7D6B' }
-  const principal = coincidencias[0]
-  return {
-    color: colores[principal.estado] || '#8B7D6B',
-    texto: iconos[principal.estado] || 'SESIÓN',
-    titulo: coincidencias.map((s) => `${s.numero}: ${s.titulo}`).join(' | ')
+  const sesionesDelDia = sesiones.value.filter((s) => diaDe(s.fecha) === dia)
+  if (sesionesDelDia.length > 0) {
+    return { color: '#6B8E23', texto: 'SESIÓN', titulo: sesionesDelDia.map((s) => `${s.fecha}`).join(' | ') }
   }
+  const propuestasDelDia = votaciones.value.filter((v) => diaDe(v.fecha) === dia)
+  if (propuestasDelDia.length === 0) return null
+  const principal = propuestasDelDia[0]
+  if (principal.confirmada) {
+    return { color: '#6B8E23', texto: 'CONFIRMADA', titulo: principal.fecha }
+  }
+  return { color: '#D4AF37', texto: 'PROPUESTA', titulo: principal.fecha }
 }
 
 function mesAnterior() {
@@ -65,22 +82,9 @@ function mesSiguiente() {
 
 const quorumTexto = computed(() => {
   const total = capacidad.value
+  if (!total) return 'Aún no hay cupo definido para esta mesa.'
   const quorum = Math.max(3, Math.ceil(total * 0.6))
   return `Los miembros de la mesa votan su disponibilidad. El quórum actual es de ${quorum} de ${total} aventureros.`
-})
-
-const candidatosFechas = computed(() => {
-  const lista = []
-  const hoy = new Date()
-  const sabado = hoy.getDay() === 6 ? hoy.getDate() : hoy.getDate() + ((6 - hoy.getDay() + 7) % 7)
-  for (let semana = 0; semana < 4 && lista.length < 4; semana++) {
-    const fecha = new Date(hoy.getFullYear(), hoy.getMonth(), sabado + semana * 7)
-    const dia = fecha.getDate()
-    const etiqueta = `${MESES[fecha.getMonth()].slice(0, 3)}`
-    const label = `Sábado ${dia} de ${etiqueta} de ${fecha.getFullYear()}`
-    lista.push({ value: label, label, detalle: '18:00 a 22:00 (GMT+1)' })
-  }
-  return lista
 })
 
 function textoVotos(arrays) {
@@ -93,14 +97,19 @@ function circulo(direccion, votacion) {
 }
 
 async function cargar() {
-  const [lista, jugadores, votos] = await Promise.all([
+  const [lista, votos] = await Promise.all([
     getSesiones(props.mesaId),
-    getMiembros(props.mesaId),
     getVotaciones(props.mesaId)
   ])
   sesiones.value = lista
-  capacidad.value = jugadores.capacidad
   votaciones.value = votos
+  // D-05: capacidad real de la mesa (jugadores_max), nunca null.
+  try {
+    const mesa = await getMesa(props.mesaId)
+    capacidadRef.value = mesa?.plazas ?? capacidadRef.value
+  } catch {
+    /* capacidad queda en el valor previo; el quorum lo Informa amable */
+  }
 }
 
 onMounted(cargar)
@@ -113,18 +122,27 @@ async function emitirVoto(votacion, direccion) {
   toast.ok(actualizada.miVoto ? (actualizada.miVoto === 'favor' ? 'Tu voto quedó A FAVOR de la propuesta.' : 'Tu voto quedó EN CONTRA de la propuesta.') : 'Eliminaste tu voto.')
 }
 
-async function proponer(seleccion) {
-  abrirPicker.value = false
-  if (!seleccion) return
-  const nueva = await proponerFecha(props.mesaId, { fecha: seleccion, sesionNumero: '#30', titulo: 'Sesión Extraordinaria' })
-  votaciones.value.unshift(nueva)
-  toast.ok('Propuesta convocada al tribunal de fechas · avisamos a los aventureros.')
+async function proponer() {
+  errorPropuesta.value = null
+  if (!nueva.value.fecha) {
+    errorPropuesta.value = 'Elegí una fecha con el selector.'
+    return
+  }
+  try {
+    await proponerFecha(props.mesaId, { ...nueva.value })
+    votaciones.value = await getVotaciones(props.mesaId)
+    nueva.value = { fecha: '', hora: '' }
+    abrirFormulario.value = false
+    toast.ok('Propuesta convocada al tribunal de fechas · avisamos a los aventureros.')
+  } catch (e) {
+    errorPropuesta.value = e?.message || 'No se pudo proponer la fecha.'
+  }
 }
 
 async function confirmar(votacion) {
   await confirmarFecha(props.mesaId, votacion.id)
-  votaciones.value = votaciones.value.filter((v) => v.id !== votacion.id)
-  toast.ok(`Fecha oficial fijada · «${votacion.titulo}» queda en el calendario.`)
+  votaciones.value = await getVotaciones(props.mesaId)
+  toast.ok(`Fecha oficial fijada · la sesión queda en el calendario.`)
 }
 </script>
 
@@ -135,13 +153,13 @@ async function confirmar(votacion) {
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="space-y-1">
           <h2 class="font-mason text-xl font-bold text-[#8B5A2B] uppercase tracking-wide">✦ Calendario &amp; Votación</h2>
-          <p class="font-minion italic text-sm text-[#554a3e]">Cronología golariana de la mesa; los sábados son el día canónico.</p>
+          <p class="font-minion italic text-sm text-[#554a3e]">El día y la hora se eligen en el selector: los domingos no se descuentan de nadie.</p>
         </div>
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-3 font-tarzana text-xs text-[#554737]">
             <div class="flex items-center gap-1.5">
               <span class="w-2.5 h-2.5 rounded-full bg-[#6B8E23] shadow-sm"></span>
-              <span>SESIÓN CONFIRMADA</span>
+              <span>SESIÓN / CONFIRMADA</span>
             </div>
             <div class="flex items-center gap-1.5">
               <span class="w-2.5 h-2.5 rounded-full bg-[#D4AF37] shadow-sm"></span>
@@ -169,6 +187,7 @@ async function confirmar(votacion) {
           <div
             v-for="(celda, i) in celdas"
             :key="i"
+            :data-celda="celda.dia ?? undefined"
             class="h-20 sm:h-24 p-2 flex flex-col justify-between items-center hover:bg-[#FAF2DF] transition-colors"
             :class="celda.hoy ? 'bg-[#F4ECD8]/70' : celda.enMes ? '' : 'bg-[#E8DCC8]/40 text-[#8B7D6B]'"
           >
@@ -178,7 +197,7 @@ async function confirmar(votacion) {
               :class="celda.hoy ? 'text-[#8B5A2B]' : celda.enMes ? 'text-[#1A1A1A]' : 'text-[#8B7D6B]/60'"
             >{{ celda.dia }}</span>
             <div v-else class="h-4"></div>
-            <div v-if="celda.hoy" class="w-8 h-8 rounded border-2 border-[#8B5A2B] flex items-center justify-center bg-[#FDF8EE] shadow-sm pointer-events-none" />
+            <div v-if="celda.hoy && !marcaDe(celda.dia)" class="w-8 h-8 rounded border-2 border-[#8B5A2B] flex items-center justify-center bg-[#FDF8EE] shadow-sm pointer-events-none" />
             <div v-if="marcaDe(celda.dia)" class="flex flex-col items-center pointer-events-auto" :title="marcaDe(celda.dia).titulo">
               <span class="rounded-full ring-2 ring-[#FDF8EE] shadow-sm" :class="marcaDe(celda.dia).color === '#6B8E23' ? 'w-3 h-3 bg-[#6B8E23]' : 'w-2.5 h-2.5 bg-[#D4AF37]'" v-if="marcaDe(celda.dia).color === '#6B8E23' || marcaDe(celda.dia).color === '#D4AF37'"></span>
               <span class="w-2.5 h-2.5 rounded-full bg-[#8B7D6B] shadow-sm" v-else></span>
@@ -204,8 +223,9 @@ async function confirmar(votacion) {
 
           <button
             type="button"
+            data-test="btn-abrir-proponer"
             class="btn-gold px-5 py-2.5 rounded font-tarzana text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 self-start sm:self-auto shrink-0"
-            @click="abrirPicker = true"
+            @click="abrirFormulario = !abrirFormulario"
           >
             <svg class="w-4 h-4 text-[#1A1A1A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
@@ -214,10 +234,48 @@ async function confirmar(votacion) {
           </button>
         </div>
 
+        <!-- Formulario de propuesta: dia + hora reales (D-05) -->
+        <form
+          v-if="abrirFormulario"
+          data-test="form-proponer"
+          class="bg-[#FDF8EE] border border-[#C2A980] rounded p-4 sm:p-5 grid gap-3 sm:grid-cols-2"
+          novalidate
+          @submit.prevent="proponer"
+        >
+          <div class="flex flex-col gap-1">
+            <label class="font-tarzana text-xs font-bold uppercase tracking-wider text-[#8B5A2B]" for="pro-fecha">Día</label>
+            <input
+              id="pro-fecha"
+              data-test="input-fecha"
+              v-model="nueva.fecha"
+              type="date"
+              class="input bg-[#FDF8EE] border border-[#C2A980] rounded p-2 font-minion text-sm"
+            />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="font-tarzana text-xs font-bold uppercase tracking-wider text-[#8B5A2B]" for="pro-hora">Hora</label>
+            <input
+              id="pro-hora"
+              data-test="input-hora"
+              v-model="nueva.hora"
+              type="time"
+              value="20:00"
+              class="input bg-[#FDF8EE] border border-[#C2A980] rounded p-2 font-minion text-sm"
+            />
+          </div>
+          <p v-if="errorPropuesta" class="hint-error sm:col-span-2" role="alert" data-test="error-proponer">{{ errorPropuesta }}</p>
+          <div class="sm:col-span-2 flex justify-end">
+            <button type="submit" data-test="btn-proponer" class="btn-gold px-4 py-2 rounded font-tarzana text-sm font-bold uppercase tracking-wider">
+              Convocar propuesta
+            </button>
+          </div>
+        </form>
+
         <div class="space-y-3.5">
           <div
             v-for="votacion in votaciones"
             :key="votacion.id"
+            data-test="propuesta-votacion"
             class="bg-[#FDF8EE] border border-[#C2A980] hover:border-[#8B5A2B] p-4 sm:p-5 rounded transition-all duration-150 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
           >
             <div class="space-y-1">
@@ -246,6 +304,7 @@ async function confirmar(votacion) {
                   type="button"
                   class="p-1.5 flex items-center gap-1.5 transition-transform active:scale-95 rounded-full"
                   :class="circulo('favor', votacion) ? 'ring-2 ring-[#D4AF37] bg-[#FDF8EE]' : 'text-[#8B7D6B] hover:text-[#6B8E23]'"
+                  :aria-pressed="circulo('favor', votacion)"
                   :title="votacion.miVoto === 'favor' ? 'Tu voto actual: A favor de esta fecha' : 'Votar a favor de esta fecha'"
                   @click="emitirVoto(votacion, 'favor')"
                 >
@@ -261,11 +320,12 @@ async function confirmar(votacion) {
                   type="button"
                   class="p-1.5 flex items-center gap-1.5 text-[#8B7D6B] hover:text-[#8B1A1A] transition-colors rounded-full"
                   :class="circulo('contra', votacion) ? 'ring-2 ring-[#D4AF37] bg-[#FDF8EE]' : ''"
+                  :aria-pressed="circulo('contra', votacion)"
                   :title="votacion.miVoto === 'contra' ? 'Tu voto actual: En contra' : 'Votar en contra / No disponible'"
                   @click="emitirVoto(votacion, 'contra')"
                 >
                   <svg class="w-5 h-5 text-[#8B1A1A]" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 011.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                   </svg>
                   <span class="font-mason text-base font-bold text-[#1A1A1A] pr-1">{{ votacion.contra.length }}</span>
                 </button>
@@ -275,10 +335,11 @@ async function confirmar(votacion) {
                 type="button"
                 class="px-3.5 py-1.5 rounded font-tarzana text-xs font-bold uppercase tracking-wider border-[#6B8E23] text-[#6B8E23] hover:bg-[#6B8E23] hover:text-white transition-colors border-0"
                 :style="{ border: '1.5px solid #6B8E23' }"
+                :disabled="votacion.confirmada"
                 title="Fijar como fecha oficial definitiva"
                 @click="confirmar(votacion)"
               >
-                CONFIRMAR FECHA
+                {{ votacion.confirmada ? 'FECHA CONFIRMADA' : 'CONFIRMAR FECHA' }}
               </button>
             </div>
           </div>
@@ -289,13 +350,5 @@ async function confirmar(votacion) {
         </div>
       </section>
     </div>
-
-    <ModalDatePicker
-      :open="abrirPicker"
-      chip="Proponer fecha GM"
-      :candidatos="candidatosFechas"
-      @close="abrirPicker = false"
-      @accepted="proponer"
-    />
   </MesaGestionShell>
 </template>

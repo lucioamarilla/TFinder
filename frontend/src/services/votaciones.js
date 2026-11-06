@@ -7,6 +7,22 @@ function dividirLista(valor) {
   return []
 }
 
+// D-14: el voto propio. Primero el campo real del backend (mi_voto: 'a_favor'
+// | 'en_contra'); si el despliegue aún no lo manda, se infiere comparando el
+// nombre del usuario con la lista de firmas (el backend devuelve nombres, no
+// ids) y queda null si no hay pista.
+function miVotoDe(p, favor, contra) {
+  if (p.mi_voto === 'a_favor') return 'favor'
+  if (p.mi_voto === 'en_contra') return 'contra'
+  const { user } = useAuth()
+  const yo = String(user.value?.nombre ?? user.value?.email ?? '').trim().toLowerCase()
+  if (yo) {
+    if (favor.some((n) => n.trim().toLowerCase() === yo)) return 'favor'
+    if (contra.some((n) => n.trim().toLowerCase() === yo)) return 'contra'
+  }
+  return null
+}
+
 function normalizarApi(p) {
   const favor = dividirLista(p.a_favor_nombres)
   const contra = dividirLista(p.en_contra_nombres)
@@ -24,7 +40,7 @@ function normalizarApi(p) {
     tipo: p.estado === 'confirmada' ? 'FECHA CONFIRMADA' : 'PROPUESTA OFICIAL GM',
     favor,
     contra,
-    miVoto: null,
+    miVoto: miVotoDe(p, favor, contra),
     confirmada: p.estado === 'confirmada'
   }
 }
@@ -42,9 +58,18 @@ export async function votar(mesaId, votacionId, direccion) {
   return (await getVotaciones(mesaId)).find((v) => v.id === votacionId) ?? { id: votacionId }
 }
 
-export async function proponerFecha(mesaId, { fecha, sesionNumero, titulo, hora }) {
+// D-05: la fecha es real (YYYY-MM-DD de un input date) y la hora un input
+// time ('HH:mm'); nunca un label humano. El backend acepta ISO con hora.
+export async function proponerFecha(mesaId, { fecha, sesionNumero, titulo, hora } = {}) {
   const { fechasApi } = await import('@/api/endpoints')
-  const iso = hora ? `${fecha}T${hora}` : `${fecha}T20:00:00`
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha))) {
+    const err = new Error('Elegí una fecha con el selector de día.')
+    err.codigo = '400'
+    throw err
+  }
+  const hhmm = String(hora ?? '').trim()
+  const horaISO = /^\d{2}:\d{2}$/.test(hhmm) ? `${hhmm}:00` : '20:00:00'
+  const iso = `${fecha}T${horaISO}`
   const { datos } = await fechasApi.proponer(mesaId, iso)
   return normalizarApi(datos)
 }
