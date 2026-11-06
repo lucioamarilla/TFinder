@@ -186,7 +186,8 @@ async function toggleEstado() {
 
 async function guardar() {
   errorEdicion.value = null
-  const errores = validarMesa({ nombre: edicion.nombre, sistema: 'pf1e', estado: mesa.value.estado, cupo: edicion.cupo })
+  // D-09: la regla exige el literal del contrato; comparar con helper.
+  const errores = validarMesa({ nombre: edicion.nombre, sistema: 'pf1e', estado: esMesaCerrada(mesa.value) ? 'cerrada' : 'abierta', cupo: edicion.cupo })
   if (errores.length) {
     errorEdicion.value = errores[0].mensaje
     // ok

@@ -63,7 +63,6 @@ async function crearPropia(id) {
     const nuevo = await forkBuild(id)
     router.push(`/builds/${nuevo.id}/editar`)
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e)
   }
 }
