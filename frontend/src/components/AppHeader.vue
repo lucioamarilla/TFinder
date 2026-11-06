@@ -11,7 +11,6 @@ const { user, isAuthenticated, isAdmin, logout } = useAuth()
 const { toggleMenu } = useShell()
 
 const menuAbierto = ref(false)
-const consulta = ref('')
 
 // F1: header único — las fuentes de datos ya no son el simulador directo,
 // pasan por la capa de servicios (dual-mode demo/api).
@@ -36,10 +35,7 @@ onMounted(refrescarHeader)
 // El header puede montarse sin router (vistas aisladas en specs).
 router?.afterEach?.(() => refrescarHeader())
 
-function buscar() {
-  if (!consulta.value.trim()) return
-  router.push({ path: '/busqueda', query: { q: consulta.value.trim() } })
-}
+// D-13: la ruta /busqueda fue retirada; el buscador global quedo sin backend.
 
 async function salir() {
   menuAbierto.value = false

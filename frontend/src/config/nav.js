@@ -7,7 +7,6 @@ const item = (label, to, feature) => (feature && !isFeatureEnabled(feature) ? { 
 export const NAV = {
   guest: [
     { label: '✦ Explorar', to: '/mesas' },
-    { label: 'Matchmaking', to: '/matchmaking' },
     { label: 'Registrarse', to: '/registro', cta: true },
     { label: 'Iniciar sesión', to: '/login' }
   ],
@@ -22,9 +21,7 @@ export const NAV = {
     { label: 'Notificaciones', to: '/notificaciones' }
   ],
   admin: [
-    item('Moderación', '/admin/moderacion', 'admin'),
-    item('Usuarios', '/admin/usuarios', 'admin'),
-    { label: 'Panel admin', to: '/admin' }
+    // Ciclo 14 (F09): se re-agregan junto con las rutas /admin reales.
   ]
 }
 
@@ -41,8 +38,6 @@ export const FOOTER_NAV = {
     item('Encuentros', '/encuentros', 'encuentros')
   ],
   admin: [
-    item('Moderación', '/admin/moderacion', 'admin'),
-    item('Usuarios', '/admin/usuarios', 'admin'),
-    { label: 'Panel admin', to: '/admin' }
+    // Ciclo 14 (F09): se re-agregan junto con las rutas /admin reales.
   ]
 }

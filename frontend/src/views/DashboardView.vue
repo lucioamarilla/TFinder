@@ -251,13 +251,13 @@ onMounted(() => load())
             </div>
 
             <div class="mt-6 pt-5 border-t border-[#B8A68B] space-y-3">
-              <span class="font-tarzana text-[0.75rem] text-[#8B7D6B] uppercase tracking-widest block font-semibold">Matchmaking</span>
+              <span class="font-tarzana text-[0.75rem] text-[#8B7D6B] uppercase tracking-widest block font-semibold">Encuentros</span>
               <div class="p-3 bg-[#FDF8EE]/80 border border-[#C2A980] rounded text-center">
                 <p class="font-minion text-xs text-stone-700 mb-2">
-                  Encontrá compañeros de aventura según estilo de juego, disponibilidad y tono de crónica.
+                  Anuncios y buscadores de partida de la comunidad.
                 </p>
                 <RouterLink
-                  to="/matchmaking"
+                  to="/encuentros"
                   class="block w-full py-1.5 px-3 bg-gradient-to-b from-[#D4AF37] to-[#B8860B] hover:from-[#e0bd48] hover:to-[#c99208] text-[#1A1A1A] font-minion text-xs font-bold rounded border border-[#8a6a10] shadow-sm transition-colors"
                 >
                   Buscar Aventureros Afines
