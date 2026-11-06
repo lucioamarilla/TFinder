@@ -65,24 +65,47 @@ const estadoBadge = computed(() => {
 async function cargar() {
   cargando.value = true
   noEncontrada.value = false
+  // D-02: la mesa existe si getMesa responde; cada dato secundario degrada
+  // su sección sin anular el panel completo.
   try {
-    const [detalle, wiki, sesiones, membresias, jugadores] = await Promise.all([
-      getMesa(props.mesaId),
-      getWiki(props.mesaId),
-      getSesiones(props.mesaId),
-      getMembresias(),
-      getMiembros(props.mesaId)
-    ])
+    const detalle = await getMesa(props.mesaId)
     mesa.value = detalle
-    wikiCount.value = wiki.total
-    sesionesCount.value = sesiones.length
-    ocupacion.value = { miembros: jugadores.miembros.length, capacidad: jugadores.capacidad }
-    esGM.value = membresias.some((m) => m.id === props.mesaId && m.rol === 'gm')
-  } catch {
+  } catch (e) {
     noEncontrada.value = true
-  } finally {
     cargando.value = false
+    return
   }
+  let falloSecundario = false
+  try {
+    const wiki = await getWiki(props.mesaId)
+    wikiCount.value = wiki.total
+  } catch {
+    falloSecundario = true
+  }
+  try {
+    const sesiones = await getSesiones(props.mesaId)
+    sesionesCount.value = sesiones.length
+  } catch {
+    falloSecundario = true
+  }
+  try {
+    const jugadores = await getMiembros(props.mesaId)
+    ocupacion.value = {
+      miembros: jugadores?.miembros?.length ?? mesa.value.jugadores ?? 0,
+      capacidad: jugadores?.capacidad ?? mesa.value.plazas ?? null
+    }
+  } catch {
+    falloSecundario = true
+    ocupacion.value = { miembros: mesa.value.jugadores ?? 0, capacidad: mesa.value.plazas ?? null }
+  }
+  try {
+    const membresias = await getMembresias()
+    esGM.value = membresias.some((m) => String(m.mesaId ?? m.id) === String(props.mesaId) && m.rol === 'master')
+  } catch {
+    falloSecundario = true
+  }
+  if (falloSecundario) toast.info('Algunas secciones de la mesa no se pudieron cargar.')
+  cargando.value = false
 }
 
 function invitarJugador() {

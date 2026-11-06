@@ -43,7 +43,7 @@ function cuerpoDefectuoso() {
 }
 
 function cuerpoCompleto() {
-  return { mesa: 200, wiki: 200, sesiones: 200, miembros: 200, mias: 200, wikiBody: { carpetas: [], paginas: [], total: 3 }, sesionesBody: SESIONES, miembrosBody: MIEMBROS }
+  return { mesa: 200, wiki: 200, sesiones: 200, miembros: 200, mias: 200, wikiBody: { carpetas: [], paginas: [], total: 3 }, sesionesBody: SESIONES, miembrosBody: MIEMBROS, miasBody: [{ ...MESA_77, mi_rol: 'master' }] }
 }
 
 describe('MesaGestionShell con cargas parciales (D-02)', () => {
@@ -121,7 +121,7 @@ describe('MesaGestionShell con cargas parciales (D-02)', () => {
     const w = await montar(cuerpoCompleto(), sesionGM())
     expect(w.text()).toContain('EDITAR MESA') // esGM reconoce mi_rol 'master'
     const nav = w.text()
-    expect(nav).toContain('1/...') // jamas debe haber numerador falso
+    expect(nav).toContain('2/5') // ocupacion real: 2 miembros de 5 plazas
     expect(nav).not.toMatch(/undefined/)
     expect(nav).not.toMatch(/3 de null/)
     expect(nav).toMatch(/3/) // wiki total
