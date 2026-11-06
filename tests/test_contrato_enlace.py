@@ -31,6 +31,15 @@ MENSAJE_SESION = {
     "usuario_id": 3,
 }
 
+MENSAJE_SOLICITUD_GM = {
+    "event_id": "ev-enlace-3",
+    "tipo": "mesa.solicitada",
+    "correlation_id": "cid-enlace-3",
+    "mesa_id": 9,
+    "usuario_id": 3,
+    "gm_id": 8,
+}
+
 
 def _correr(monkeypatch, modulo, mensaje):
     """Ejecuta el consumidor aislado de DB, RabbitMQ, SSE y HTTP.
@@ -91,3 +100,16 @@ def test_payload_sse_usa_el_mismo_contrato(modulo, mensaje, monkeypatch):
     enlace = por_sse[0]["enlace"]
     assert set(enlace) == {"label", "to"}
     assert enlace["to"] == "/mesas/9"
+
+
+def test_enlace_de_solicitud_apunta_a_la_pestana_real(monkeypatch):
+    """Auditoría de navegación: el enlace del GM debe existir en el router.
+
+    ANTES: /mesas/{id}/gestion/solicitudes NO es una ruta del frontend
+    (la bandeja de solicitudes vive en /gestion/jugadores): el campanita del
+    header llevaba a NotFound ("Esta cripta está vacía").
+    """
+    guardados, _ = _correr(monkeypatch, consumer_mesa, MENSAJE_SOLICITUD_GM)
+    enlace = guardados[0]["enlace"]
+    assert enlace["to"] == "/mesas/9/gestion/jugadores", enlace
+    assert enlace["label"] == "revisar solicitudes"

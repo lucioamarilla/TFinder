@@ -36,7 +36,10 @@ def _procesar(mensaje: dict) -> bool:
     if tipo == "mesa.solicitada" and gm_id:
         usuario_id = gm_id
         titulo, plantilla = REGLA["mesa.solicitud_gm"]
-        enlace_to = f"/mesas/{mesa_id}/gestion/solicitudes"
+        # Auditoría de navegación: la bandeja del GM vive en la pestaña
+        # jugadores del frontend (/mesas/{id}/gestion/jugadores); la ruta
+        # /gestion/solicitudes no existe y caía en NotFound.
+        enlace_to = f"/mesas/{mesa_id}/gestion/jugadores"
     else:
         usuario_id = mensaje.get("usuario_id") or gm_id
         enlace_to = f"/mesas/{mesa_id}"
