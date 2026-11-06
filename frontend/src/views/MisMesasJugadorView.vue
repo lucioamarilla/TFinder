@@ -7,8 +7,8 @@
           <p class="label">Donde jugás hoy</p>
         </div>
         <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
-          <RouterLink class="btn btn--secondary" to="/mis-mesas-gm">Como Director</RouterLink>
-          <RouterLink class="btn" to="/mesas">Explorar más</RouterLink>
+          <RouterLink class="btn" to="/mesas/nueva">Nueva mesa</RouterLink>
+          <RouterLink class="btn btn--secondary" to="/mesas">Explorar más</RouterLink>
         </div>
       </div>
       <div v-if="cargando" class="label">Cargando…</div>
@@ -37,18 +37,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { getMisMesas } from '@/services/mesas'
 import { mesasApi } from '@/api/endpoints'
 import { useAuth } from '@/composables/useAuth'
-// sin demo
 
 const { user } = useAuth()
 const mias = ref([])
 const cargando = ref(true)
 
-// Simplificado: una sola lista con rol (jugador/master) para no "perder"
-// la mesa que el usuario creó (antes vivía solo en /mis-mesas-gm).
 onMounted(async () => {
   try {
     const todas = await getMisMesas()
@@ -64,9 +61,7 @@ async function salir(mesa) {
   try {
     await mesasApi.salir(mesa.id)
     mias.value = mias.value.filter((m) => m.id !== mesa.id)
-    // ok
   } catch (e) {
-    // ok
   }
 }
 </script>
