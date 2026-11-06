@@ -2,11 +2,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useShell } from '@/composables/useShell'
 import { getMisMesas } from '@/services/mesas'
 import { getNoLeidas, getNotificaciones } from '@/services/notificaciones'
 
 const router = useRouter()
 const { user, isAuthenticated, isAdmin, logout } = useAuth()
+const { toggleMenu } = useShell()
 
 const menuAbierto = ref(false)
 const consulta = ref('')
@@ -52,6 +54,9 @@ async function salir() {
       <img src="/assets/logo-tfinder.png" alt="Logo de TFinder" width="38" height="38" />
       Tfinder
     </RouterLink>
+
+    <!-- D-03: trigger del panel móvil; en desktop queda oculto por CSS -->
+    <button type="button" class="menu-movil" data-test="menu-movil" aria-label="Abrir menú" @click="toggleMenu">☰</button>
 
     <!-- buscador global retirado (sin backend) -->
     <nav>
@@ -111,6 +116,8 @@ async function salir() {
 
 <style scoped>
 nav a[aria-current="page"] { color: var(--color-accent-2); border-bottom-color: var(--color-accent); }
+.menu-movil { background: transparent; border: var(--rule-hair) solid var(--color-rule); cursor: pointer; padding: var(--space-2xs) var(--space-sm); font-weight: 700; }
+@media (min-width: 60.0625rem) { .menu-movil { display: none; } }
 .nav-menu button { width: 100%; text-align: left; padding: var(--space-2xs) var(--space-sm); font-weight: 700; font-size: var(--text-sm); color: var(--color-error); background: transparent; border: 0; cursor: pointer; }
 .nav-menu button:hover { color: var(--color-error); text-decoration: underline; }
 .nav-busqueda { flex: none; }

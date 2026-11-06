@@ -28,7 +28,7 @@ function onLogout() {
 </script>
 
 <template>
-  <div v-if="mobileOpen" class="sim-panel" data-sim-panel @click.self="closeMenu">
+  <div v-if="mobileOpen" class="sim-panel" data-sim-panel data-test="panel-movil" @click.self="closeMenu">
     <nav class="sim-panel-nav" aria-label="Menú móvil">
       <RouterLink
         v-for="l in nav"

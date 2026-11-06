@@ -18,11 +18,20 @@
     <nav>
       <a href="#mesas">Explorar mesas</a>
       <a href="#comunidad">Comunidades</a>
-      <RouterLink to="/bestiario">Bestiario</RouterLink>
-      <RouterLink to="/compendio">Compendio</RouterLink>
+      <RouterLink to="/mesas">Mesas abiertas</RouterLink>
     </nav>
-    <RouterLink class="btn btn--secondary nav-login" to="/login">Iniciar sesión</RouterLink>
-    <RouterLink class="btn" to="/registro">Crear cuenta</RouterLink>
+    <!-- D-03: la landing respeta la sesión; la nav fija de invitado solo cuando corresponde -->
+    <template v-if="!isAuthenticated">
+      <RouterLink class="btn btn--secondary nav-login" to="/login">Iniciar sesión</RouterLink>
+      <RouterLink class="btn" to="/registro">Crear cuenta</RouterLink>
+    </template>
+    <template v-else>
+      <RouterLink class="nav-perfil" data-test="perfil-acceso" to="/perfil" :title="user?.titulo || 'Tu perfil'">
+        <span class="num">{{ user?.iniciales }}</span>
+        <span class="label nav-nombre">{{ user?.nombre }}</span>
+      </RouterLink>
+      <button type="button" class="btn btn--secondary nav-login" data-test="cerrar-sesion-landing" @click="salir">Cerrar sesión</button>
+    </template>
   </nav>
 
   <section class="section wrap" id="mesa-viva">
@@ -170,9 +179,20 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { registerAsciiD20, initLandingWiring } from '@/utils/asciiD20'
 import { getMesas } from '@/services/mesas'
 import { getFeedPosts, getComunidades } from '@/services/feed'
+import { useAuth } from '@/composables/useAuth'
+
+const router = useRouter()
+const { user, isAuthenticated, logout } = useAuth()
+
+// D-03: cerrar sesión visible también en la landing.
+async function salir() {
+  await logout()
+  router?.push('/')
+}
 
 // F1: 2.5 — nada de cifras inventadas; datos reales con estados vacíos.
 const mesasAbiertas = ref([])
@@ -245,6 +265,9 @@ h3 { font-family: var(--font-body); font-weight: 900; letter-spacing: -0.02em; l
 .js .nav-pill.show { opacity: 1; visibility: visible; transition: opacity var(--dur-long) var(--ease-out); }
 @media (max-width: 60rem) { .hero-overlay { align-items: flex-start; padding-top: 120px; } .hero-overlay .wrap { padding-bottom: 0; } }
 .ember-band { background: var(--color-accent); color: var(--color-accent-ink); padding-block: var(--space-xl); }
+.nav-perfil { display: inline-flex; align-items: center; gap: var(--space-2xs); text-decoration: none; }
+.nav-nombre { display: none; }
+@media (min-width: 60.0625rem) { .nav-nombre { display: inline; } }
 .ember-band :focus-visible { outline-color: var(--color-accent-ink); }
 .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); align-items: start; }
 .grid-hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--gap-columns); align-items: center; }
