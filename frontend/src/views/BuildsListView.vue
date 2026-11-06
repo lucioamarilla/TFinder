@@ -7,7 +7,7 @@ import { getMisBuilds, getBuildsPublicos, forkBuild } from '@/services/builds.js
 const router = useRouter()
 const { isAuthenticated } = useAuth()
 
-const pestaña = ref('publicos')
+const pestaña = ref('mis')
 const buscador = ref('')
 const orden = ref('recientes')
 const tipoFiltro = ref('todos')

@@ -11,7 +11,7 @@ const toast = useToast()
 const generando = ref(false)
 
 const tipo = ref('personaje')
-const nombre = ref('')
+const nombre = ref('Héroe del Nexus')
 const clase = ref('Clérigo')
 const nivel = ref(1)
 const detalle = ref('')

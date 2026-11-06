@@ -24,9 +24,11 @@
             <p style="font-size: var(--text-xs); color: var(--color-muted); margin: 0;">{{ m.gm }}, {{ m.horario }}, nivel {{ m.nivel }}</p>
           </div>
           <div class="mesa-row-actions" style="display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap;">
+            <span class="tag tag--ink">{{ m.miRol === 'master' ? 'Director' : 'Jugador' }}</span>
             <span class="num" style="font-size: var(--text-sm);">{{ m.jugadores }}/{{ m.plazas }}</span>
-            <RouterLink class="btn btn--secondary btn--sm" :to="'/mesas/' + m.id">Ver mesa</RouterLink>
-            <button class="btn btn--danger btn--sm" @click="salir(m)">Salir</button>
+            <RouterLink v-if="m.miRol === 'master'" class="btn btn--secondary btn--sm" :to="'/mesas/' + m.id + '/gestion'">Gestionar</RouterLink>
+            <RouterLink v-else class="btn btn--secondary btn--sm" :to="'/mesas/' + m.id">Ver mesa</RouterLink>
+            <button v-if="m.miRol !== 'master'" class="btn btn--danger btn--sm" @click="salir(m)">Salir</button>
           </div>
         </div>
       </div>
@@ -45,10 +47,12 @@ const { user } = useAuth()
 const mias = ref([])
 const cargando = ref(true)
 
+// Simplificado: una sola lista con rol (jugador/master) para no "perder"
+// la mesa que el usuario creó (antes vivía solo en /mis-mesas-gm).
 onMounted(async () => {
   try {
     const todas = await getMisMesas()
-    mias.value = todas.filter((m) => m.miRol === 'jugador')
+    mias.value = todas
   } catch (e) {
     mias.value = []
   } finally {
