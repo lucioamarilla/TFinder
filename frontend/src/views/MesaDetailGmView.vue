@@ -130,7 +130,7 @@ onMounted(async () => {
     return
   }
   try {
-    const miembros = await getMiembros(mesa.value.id)
+    const miembros = await getMiembros(mesa.value.id, mesa.value)
     ocupacion.value = miembros?.miembros?.length ?? mesa.value.jugadores ?? 0
   } catch {
     ocupacion.value = mesa.value.jugadores ?? 0 // contingencia sin membresía

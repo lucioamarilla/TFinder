@@ -21,7 +21,7 @@ function solicitudApiNormalizada(s) {
   }
 }
 
-export async function getMiembros(mesaId) {
+export async function getMiembros(mesaId, mesa = null) {
   const { mesasApi } = await import('@/api/endpoints')
   const { datos } = await mesasApi.miembros(mesaId)
   return {
@@ -34,12 +34,15 @@ export async function getMiembros(mesaId) {
       clase: '—',
       nivel: '—',
       estado: 'Activo',
-      rol: 'Jugador',
+      // D-11: rol real del backend ('master' | 'jugador'), sin hardcodeo.
+      rol: m.rol === 'master' ? 'Master' : 'Jugador',
       buildVinculado: false,
       fecha: 'Activa en la mesa'
     })),
     solicitudes: [],
-    capacidad: null
+    // D-11: capacidad derivada de la mesa (jugadores_max) cuando el caller
+    // la provee; null no corrompe la UI (los shells recurren a mesa.plazas).
+    capacidad: mesa?.plazas ?? null
   }
 }
 

@@ -89,7 +89,7 @@ async function cargar() {
     falloSecundario = true
   }
   try {
-    const jugadores = await getMiembros(props.mesaId)
+    const jugadores = await getMiembros(props.mesaId, mesa.value)
     ocupacion.value = {
       miembros: jugadores?.miembros?.length ?? mesa.value.jugadores ?? 0,
       capacidad: jugadores?.capacidad ?? mesa.value.plazas ?? null
