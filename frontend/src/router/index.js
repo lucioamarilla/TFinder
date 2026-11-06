@@ -35,7 +35,7 @@ const ModoSesionJugadorView = () => import('@/views/ModoSesionJugadorView.vue')
 
 // Módulos revividos (iteración anterior, ahora con el estado demo de reglas)
 const MesaFormularioView = () => import('@/views/MesaFormularioView.vue')
-const DashboardView = () => import('@/views/DashboardView.vue')
+// const DashboardView = () => import('@/views/DashboardView.vue')  // simplificado: redirect a /mesas
 // Retirado: MatchmakingView (candidatos mock)
 const EncuentrosView = () => import('@/views/EncuentrosView.vue')
 const TagsView = () => import('@/views/TagsView.vue')
@@ -69,7 +69,8 @@ export const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { roles: ['guest'], layout: 'guest' } },
   { path: '/registro', name: 'registro', component: RegistroView, meta: { roles: ['guest'], layout: 'guest' } },
   { path: '/recuperar', name: 'recuperar', component: RecuperarView, meta: { roles: ['guest'], layout: 'guest' } },
-  { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { roles: ['auth'] } },
+  { path: '/dashboard', redirect: '/mesas' },
+  { path: '/builds/nuevo', redirect: '/builds/asistente' },
   // retirado: busqueda
   { path: '/feed', name: 'feed', component: FeedView },
   { path: '/mesas', name: 'mesas', component: MesasListView },

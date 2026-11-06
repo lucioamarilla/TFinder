@@ -11,21 +11,13 @@ export const NAV = {
     { label: 'Iniciar sesión', to: '/login' }
   ],
   auth: [
-    item('Dashboard', '/dashboard', 'dashboard'),
     { label: 'Explorar', to: '/mesas' },
     item('Mis Mesas', '/mis-mesas', 'misMesas'),
     item('Builds', '/builds', 'builds'),
     item('Feed Social', '/feed', 'feed'),
-    item('Encuentros', '/encuentros', 'encuentros'),
-    item('Tags', '/tags', 'tags'),
     { label: 'Notificaciones', to: '/notificaciones' }
   ],
-  admin: [
-    { label: 'Panel admin', to: '/admin' },
-    { label: 'Eventos', to: '/admin/eventos' },
-    { label: 'DLQ', to: '/admin/dlq' },
-    { label: 'Emails', to: '/admin/emails' }
-  ]
+  admin: []
 }
 
 export const FOOTER_NAV = {
@@ -35,15 +27,8 @@ export const FOOTER_NAV = {
     { label: 'Registro', to: '/registro' }
   ],
   auth: [
-    item('Dashboard', '/dashboard', 'dashboard'),
     item('Mis Mesas', '/mis-mesas', 'misMesas'),
-    item('Builds', '/builds', 'builds'),
-    item('Encuentros', '/encuentros', 'encuentros')
+    item('Builds', '/builds', 'builds')
   ],
-  admin: [
-    { label: 'Panel admin', to: '/admin' },
-    { label: 'Eventos', to: '/admin/eventos' },
-    { label: 'DLQ', to: '/admin/dlq' },
-    { label: 'Emails', to: '/admin/emails' }
-  ]
+  admin: []
 }
