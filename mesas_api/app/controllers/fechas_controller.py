@@ -51,8 +51,10 @@ def proponer_controller(mesa_id, usuario, payload_propuesta):
     return {**fila, "propuesta": _iso(fila["propuesta"]), "votos": {"a_favor": 0, "en_contra": 0}}
 
 
-def listar_controller(mesa_id, _usuario):
+def listar_controller(mesa_id, usuario):
     _mesa_o_404(mesa_id)
+    # D-14: el voto propio viaja en mi_voto (None si aun no voto).
+    usuario_id = int(usuario["sub"]) if usuario else None
     return [
         {
             "id": f["id"],
@@ -62,8 +64,9 @@ def listar_controller(mesa_id, _usuario):
             "votos": {"a_favor": int(f["a_favor"]), "en_contra": int(f["en_contra"])},
             "a_favor_nombres": (f.get("a_favor_nombres") or "").split(", ") if f.get("a_favor_nombres") else [],
             "en_contra_nombres": (f.get("en_contra_nombres") or "").split(", ") if f.get("en_contra_nombres") else [],
+            "mi_voto": f.get("mi_voto"),
         }
-        for f in listar_fechas(mesa_id)
+        for f in listar_fechas(mesa_id, usuario_id)
     ]
 
 

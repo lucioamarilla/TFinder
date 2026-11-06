@@ -25,9 +25,10 @@ def proponer_fecha(mesa_id: int, payload: PropuestaFecha, usuario: dict = Depend
 
 
 @router.get("")
-def listar_fechas(mesa_id: int, _=Depends(requerir_miembro)):
-    """F2 (2.4): fechas y votos solo para integrantes de la mesa."""
-    return fechas_controller.listar_controller(mesa_id, None)
+def listar_fechas(mesa_id: int, usuario: dict = Depends(requerir_miembro)):
+    """F2 (2.4): fechas y votos solo para integrantes de la mesa. D-14: el
+    listado incluye mi_voto del solicitante."""
+    return fechas_controller.listar_controller(mesa_id, usuario)
 
 
 @router.post("/{fecha_id}/voto")

@@ -49,7 +49,7 @@ def proponer_fecha(mesa_id: int, propuesta: str, propuesto_por: int):
         return dict(fila)
 
 
-def listar_fechas(mesa_id: int):
+def listar_fechas(mesa_id: int, usuario_id: int | None = None):
     with get_connection() as conn:
         filas = conn.execute(
             """
@@ -63,14 +63,15 @@ def listar_fechas(mesa_id: int):
                    COALESCE(
                        (SELECT string_agg(u.nombre, ', ' ORDER BY u.nombre)
                         FROM votos_fechas vv JOIN usuarios u ON u.id = vv.usuario_id
-                        WHERE vv.propuesta_id = f.id AND vv.valor = 'en_contra'), '') AS en_contra_nombres
+                        WHERE vv.propuesta_id = f.id AND vv.valor = 'en_contra'), '') AS en_contra_nombres,
+                   MAX(CASE WHEN v.usuario_id = COALESCE(%s, -1) THEN v.valor END) AS mi_voto
             FROM fechas_propuestas f
             LEFT JOIN votos_fechas v ON v.propuesta_id = f.id
             WHERE f.mesa_id = %s
             GROUP BY f.id
             ORDER BY f.propuesta
             """,
-            (mesa_id,),
+            (usuario_id, mesa_id),
         ).fetchall()
         return [dict(f) for f in filas]
 
