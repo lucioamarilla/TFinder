@@ -102,11 +102,9 @@ export const buildsApi = {
 }
 
 export const uploadsApi = {
-  subir: (archivo) => {
-    const fd = new FormData()
-    fd.append('upload', archivo)
-    return api('feed', '/api/v1/uploads', { metodo: 'POST', cuerpo: null, idempotenciaKey: null }).then(() => fd)
-  },
+  // D-16: subir() retirado — enviaba la petición sin FormData y devolvió el
+  // FormData sin subir nada. El camino válido es subirManual(formData),
+  // usado por PerfilView (services/uploads).
   subirManual: (formData) => api('feed', '/api/v1/uploads', { metodo: 'POST', cuerpo: formData })
 }
 

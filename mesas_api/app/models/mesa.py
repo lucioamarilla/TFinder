@@ -67,7 +67,14 @@ def crear_mesa(data, gm_id: int):
             "INSERT INTO miembros_mesa (mesa_id, usuario_id, rol) VALUES (%s, %s, 'master')",
             (mesa_id, gm_id),
         )
-        fila = conn.execute("SELECT * FROM mesas WHERE id = %s", (mesa_id,)).fetchone()
+        # D-17: devolver la fila con el nombre visible del GM (mismo contrato
+        # que listar/obtener: JOIN usuarios) para que el frontend no muestre
+        # el GM vacio hasta recargar.
+        fila = conn.execute(
+            "SELECT m.*, u.nombre AS gm_nombre FROM mesas m"
+            " LEFT JOIN usuarios u ON u.id = m.gm_id WHERE m.id = %s",
+            (mesa_id,),
+        ).fetchone()
         return dict(fila)
 
 
