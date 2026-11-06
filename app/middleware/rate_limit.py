@@ -57,22 +57,43 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     Una sobrecarga con aborto con HTTP 429 y el envelope estándar:
         {"error": {"codigo": 429, "mensaje": "Demasiadas peticiones..."}}
+    La 429 firma Retry-After (RFC 6585) para que los consumidores no reintente
+    a ciegas.
     """
 
     def __init__(self, app, limite: int = 100):
         super().__init__(app)
         self.contador = LimitadorIP(limite)
 
+    @staticmethod
+    def _cliente_real(request) -> str:
+        """Auditoría de navegación: el cubo es del CLIENTE REAL.
+
+        Detrás del proxy nginx del despliegue, request.client.host es siempre
+        la IP del contenedor frontend: si se usa esa, todos los usuarios
+        comparten un único cupo y la navegación normal salta 429 ajenos.
+        nginx firma X-Forwarded-For con la IP real del cliente; se toma el
+        primer salto (el cliente) y se usa client.host solo como respaldo.
+        """
+        xff = request.headers.get("x-forwarded-for")
+        if xff:
+            primer = xff.split(",")[0].strip()
+            if primer:
+                return primer
+        return request.client.host if request.client else "?"
+
     async def dispatch(self, request, call_next):
         ruta = request.url.path
         if any(ruta.startswith(p) for p in _SKIP_PREFIXES):
             return await call_next(request)
 
-        ip = request.client.host if request.client else request.headers.get("x-forwarded-for", "?")
+        ip = self._cliente_real(request)
         limite = getattr(request.app.state, "rate_limit_min", self.contador.limite)
         if not self.contador.puede(ip, limite=limite):
+            ventana = int(self.contador.ventana)
             return JSONResponse(
                 status_code=429,
+                headers={"Retry-After": str(ventana)},
                 content={
                     "error": {
                         "codigo": 429,
