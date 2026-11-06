@@ -27,6 +27,6 @@ onMounted(async () => {
 
 <template>
   <MesaGestionShell :mesa-id="route.params.id">
-    <RouterView />
+    <RouterView :mesa-id="route.params.id" />
   </MesaGestionShell>
 </template>

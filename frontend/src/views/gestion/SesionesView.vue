@@ -1,4 +1,9 @@
 <script setup>
+// D-04: la vista vive sobre SesionOut del backend:
+//   { id, mesa_id, estado: 'abierta' | 'cerrada', fecha, confirmada_at }
+// No existen numero/titulo/asistencias/quorum/diario en el contrato: el
+// ordinal se deriva del orden cronologico y el diario se administra en
+// /gestion/sesiones/:id/diario (feed-api) tras cerrar la sesion.
 import { ref, computed, onMounted, watch } from 'vue'
 import MesaGestionShell from '@/components/mesa/MesaGestionShell.vue'
 import { getSesiones } from '@/services/sesiones.js'
@@ -6,34 +11,58 @@ import { getSesiones } from '@/services/sesiones.js'
 const props = defineProps({ mesaId: { type: String, required: true } })
 
 const sesiones = ref([])
-
-const pendientes = computed(() => sesiones.value.filter((s) => s.pendienteDiario))
-const orden = computed(() => {
-  const num = (s) => parseInt(s.numero.replace('#', ''), 10)
-  return [...sesiones.value].sort((a, b) => {
-    const futA = ['confirmada', 'borrador', 'tentativa'].includes(a.estado)
-    const futB = ['confirmada', 'borrador', 'tentativa'].includes(b.estado)
-    if (futA !== futB) return futA ? -1 : 1
-    return num(b) - num(a)
-  })
-})
+const cargando = ref(true)
+const error = ref(null)
 
 const ETIQUETAS_ESTADO = {
-  confirmada: { texto: 'CONFIRMADA', cls: 'text-[#6B8E23]', tachado: false },
-  borrador: { texto: 'BORRADOR', cls: 'text-[#8B7D6B]', tachado: false },
-  tentativa: { texto: 'TENTATIVA', cls: 'text-[#8B7D6B]', tachado: false },
-  ejecutada: { texto: 'Realizada', cls: 'text-[#6B8E23]', tachado: false },
-  suspendida: { texto: 'Desconvocada', cls: 'text-[#8B1A1A]', tachado: true }
+  abierta: { texto: 'ABIERTA', cls: 'text-[#6B8E23]' },
+  cerrada: { texto: 'CERRADA', cls: 'text-[#8B7D6B]' }
 }
 
-function accionDe(sesion) {
-  if (sesion.estado !== 'ejecutada') return { tipo: 'convocatoria', texto: 'Editar Convocatoria' }
-  if (sesion.pendienteDiario) return { tipo: 'registrar', texto: 'Registrar Diario' }
-  return { tipo: 'ver', texto: 'Ver Diario →' }
+// La mas reciente siempre arriba; la fecha real ordena (no hay numero en el
+// contrato) y el ordinal derivado representa el orden cronologico.
+const orden = computed(() =>
+  [...sesiones.value].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))
+)
+
+function ordinal(indice) {
+  return `#${orden.value.length - indice}`
 }
+
+function etiqueta(estado) {
+  return ETIQUETAS_ESTADO[estado] ?? { texto: String(estado ?? '').toUpperCase(), cls: 'text-[#8B7D6B]' }
+}
+
+function fmt(fecha) {
+  if (!fecha) return 'Fecha por definir'
+  const m = String(fecha).match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/)
+  if (!m) return String(fecha)
+  const [, y, mes, d, hh, mm] = m
+  return fmtDmy(d, mes, y, hh, mm)
+}
+
+function fmtDmy(d, mes, y, hh, mm) {
+  const base = `${d}/${mes}/${y}`
+  return hh ? `${base} · ${hh}:${mm}` : base
+}
+
+const resumen = computed(() => {
+  const n = sesiones.value.length
+  const cerradas = sesiones.value.filter((s) => s.estado === 'cerrada').length
+  return `Sesiones registradas: ${n}. Aun por jugar: ${n - cerradas}.`
+})
 
 async function cargar() {
-  sesiones.value = await getSesiones(props.mesaId)
+  cargando.value = true
+  error.value = null
+  try {
+    sesiones.value = await getSesiones(props.mesaId)
+  } catch (e) {
+    sesiones.value = []
+    error.value = e?.message || 'No se pudieron cargar las sesiones.'
+  } finally {
+    cargando.value = false
+  }
 }
 
 onMounted(cargar)
@@ -46,66 +75,70 @@ watch(() => props.mesaId, cargar)
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[#C2A980] pb-4">
         <div>
           <h2 class="font-mason text-xl font-bold text-[#8B5A2B] uppercase tracking-wide flex items-center gap-2">
-            <span>✦</span> Historial de Sesiones y Diarios
+            <span>✦</span> Historial de Sesiones
           </h2>
           <p class="font-minion italic text-sm text-[#736351] mt-0.5">
-            Crónicas de campaña, actas de combate y diarios de expedición de los aventureros.
+            Convocatorias oficiales de la mesa; el diario de cada sesión vive en su propia página.
           </p>
         </div>
         <span
-          v-if="pendientes.length"
-          class="self-start sm:self-auto px-3 py-1 rounded border text-xs font-tarzana font-bold uppercase tracking-wider"
-          :class="pendientes.length > 0 ? 'bg-[#D4AF37]/15 border-[#D4AF37] text-[#8B5A2B]' : ''"
-        >
-          Pendientes de Diario ({{ pendientes.length }})
-        </span>
+          class="self-start sm:self-auto px-3 py-1 rounded border text-xs font-tarzana font-bold uppercase tracking-wider border-[#C2A980] text-[#5C4A32]"
+        >{{ resumen }}</span>
+      </div>
+
+      <p v-if="error" class="hint-error" role="alert" data-test="error-sesiones">{{ error }}</p>
+
+      <div v-if="!cargando && !error && orden.length === 0" class="bg-[#FBF4E6] border border-dashed border-[#C2A980] rounded p-8 text-center font-minion italic text-[#736351]" data-test="sin-sesiones">
+        Aún no hay sesiones convocadas. Proponé una fecha en el Calendario y confirmala para abrirla aquí.
       </div>
 
       <div class="space-y-3">
         <article
-          v-for="sesion in orden"
+          v-for="(sesion, i) in orden"
           :key="sesion.id"
+          data-test="sesion-fila"
+          :data-sesion-id="String(sesion.id)"
+          :data-estado="sesion.estado"
           class="p-3.5 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 border rounded-xs"
-          :class="sesion.estado === 'suspendida' ? 'bg-[#F7F2E7]/80 opacity-90 border-[#C2A980]' : 'border-[#C2A980] hover:border-[#8B5A2B]'"
+          :class="sesion.estado === 'cerrada' ? 'bg-[#F7F2E7]/80 opacity-90 border-[#C2A980]' : 'border-[#C2A980] hover:border-[#8B5A2B]'"
         >
           <div class="flex items-start sm:items-center space-x-4">
             <div class="shrink-0 w-16 text-center border-r border-[#C2A980]/70 pr-3">
               <span class="block text-xs font-tarzana uppercase font-bold text-[#8B7D6B]">Ordinal</span>
               <span
                 class="block text-base font-mason font-bold"
-                :class="sesion.estado === 'suspendida' ? 'text-[#8B1A1A]' : 'text-[#8B5A2B]'"
-              >{{ sesion.numero }}</span>
+                :class="sesion.estado === 'cerrada' ? 'text-[#8B7D6B]' : 'text-[#8B5A2B]'"
+              >{{ ordinal(i) }}</span>
             </div>
             <div class="space-y-1">
               <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <h3 class="text-base font-mason font-bold" :class="ETIQUETAS_ESTADO[sesion.estado]?.tachado ? 'text-[#8B7D6B] line-through' : 'text-[#8B5A2B]'">
-                  {{ sesion.fechaGolarion }}
+                <h3 class="text-base font-mason font-bold text-[#8B5A2B]">
+                  {{ fmt(sesion.fecha) }}
                 </h3>
-                <span class="text-xs font-minion text-[#8B7D6B]">({{ sesion.selloDia }} {{ sesion.selloNum }})</span>
-                <span class="inline-flex items-center space-x-1 text-xs font-tarzana font-bold uppercase" :class="ETIQUETAS_ESTADO[sesion.estado]?.cls || ''">
-                  <svg v-if="sesion.estado === 'ejecutada'" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <span
+                  class="inline-flex items-center space-x-1 text-xs font-tarzana font-bold uppercase"
+                  :class="etiqueta(sesion.estado).cls"
+                >
+                  <svg v-if="sesion.estado === 'cerrada'" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                     <path clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fill-rule="evenodd"></path>
                   </svg>
-                  <svg v-else-if="sesion.estado === 'suspendida'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                   </svg>
-                  <span>{{ ETIQUETAS_ESTADO[sesion.estado]?.texto }}</span>
+                  <span>{{ etiqueta(sesion.estado).texto }}</span>
                 </span>
-              </div>
-              <p class="text-sm font-minion text-[#1A1A1A] italic">
-                {{ sesion.titulo }} — {{ sesion.resumen }}
-              </p>
-              <div class="text-xs font-minion text-[#5A4A36] flex flex-wrap items-center gap-x-4">
-                <span><strong>Asistencia:</strong> {{ sesion.asistencias }} · {{ sesion.quorum }}</span>
-                <span class="text-[#8B5A2B]">✦ {{ sesion.horario }}</span>
+                <span v-if="sesion.confirmadaAt" class="text-xs font-minion text-[#8B7D6B]">
+                  Confirmada {{ fmt(sesion.confirmadaAt) }}
+                </span>
               </div>
             </div>
           </div>
 
           <div class="shrink-0 flex items-center justify-end gap-2 pl-2">
             <RouterLink
-              v-if="['confirmada', 'ejecutada', 'abierta', 'en_curso'].includes(sesion.estado)"
-              :to="`/mesas/${mesaId}/sesiones/${sesion.id}/qr`"
+              v-if="sesion.estado === 'abierta'"
+              data-test="qr-link"
+              :to="`/mesas/${mesaId}/gestion/sesiones/${sesion.id}/qr`"
               class="inline-flex items-center space-x-1.5 text-xs font-tarzana font-bold uppercase tracking-wider text-[#6B8E23] hover:text-[#4A6B17] border-[1.5px] border-[#6B8E23]/50 hover:border-[#6B8E23] rounded-xs px-3 py-1.5 transition-colors"
             >
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,9 +146,10 @@ watch(() => props.mesaId, cargar)
               </svg>
               <span>Asistencia (QR)</span>
             </RouterLink>
+
             <RouterLink
-              :to="`/mesas/${mesaId}/gestion/sesiones/${sesion.id}/bitacora`"
               data-test="bitacora-link"
+              :to="`/mesas/${mesaId}/gestion/sesiones/${sesion.id}/bitacora`"
               class="inline-flex items-center space-x-1.5 text-xs font-tarzana font-bold uppercase tracking-wider text-[#3C6E71] hover:text-[#2C5658] border-[1.5px] border-[#3C6E71]/50 hover:border-[#3C6E71] rounded-xs px-3 py-1.5 transition-colors"
             >
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,33 +157,17 @@ watch(() => props.mesaId, cargar)
               </svg>
               <span>Bitácora</span>
             </RouterLink>
+
             <RouterLink
-              v-if="accionDe(sesion).tipo === 'ver'"
-              :to="`/mesas/${mesaId}/sesiones/${sesion.id}/diario`"
+              data-test="diario-link"
+              :to="`/mesas/${mesaId}/gestion/sesiones/${sesion.id}/diario`"
               class="inline-flex items-center space-x-1.5 text-sm font-minion font-semibold text-[#8B5A2B] hover:text-[#5A4A36] underline decoration-[#D4AF37] underline-offset-4 transition-colors"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
               </svg>
-              <span>{{ accionDe(sesion).texto }}</span>
+              <span>Diario de sesión</span>
             </RouterLink>
-
-            <button
-              v-else-if="accionDe(sesion).tipo === 'registrar'"
-              type="button"
-              class="px-3.5 py-1.5 border-[1.5px] border-[#D4AF37] bg-[#D4AF37]/10 hover:bg-[#D4AF37]/25 text-[#8B5A2B] text-xs font-tarzana uppercase font-bold tracking-wider rounded-xs transition-colors flex items-center space-x-1.5"
-              @click="$router.push(`/mesas/${mesaId}/sesiones/${sesion.id}/diario`)"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-              </svg>
-              <span>Registrar Diario</span>
-            </button>
-
-            <span
-              v-else-if="accionDe(sesion).tipo === 'convocatoria'"
-              class="text-xs font-tarzana uppercase text-[#8B7D6B] italic"
-            >{{ sesion.estado === 'suspendida' ? 'Sin Diario Registrado' : 'Convocatoria en el calendario' }}</span>
           </div>
         </article>
       </div>
