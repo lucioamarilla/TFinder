@@ -114,20 +114,31 @@ const edicion = reactive({ nombre: '', horario: '', cupo: null })
 const esGM = computed(() => !!mesa.value && !!user.value && mesa.value.gmId === Number(user.value?.id ?? user.value?.sub))
 
 onMounted(async () => {
+  // D-01: mesa define existencia; ocupación y bandeja fallan de forma aislada.
   try {
     mesa.value = await getMesa(route.params.id)
-    const miembros = await getMiembros(mesa.value.id)
-    ocupacion.value = miembros?.miembros?.length ?? 0
-    const sols = await getSolicitudes(mesa.value.id)
-    pendientes.value = (sols ?? []).filter((s) => s.estado === 'pendiente')
-    edicion.nombre = mesa.value.nombre
-    edicion.horario = mesa.value.horario
-    edicion.cupo = mesa.value.plazas
   } catch (e) {
     mesa.value = null
-  } finally {
     cargando.value = false
+    return
   }
+  try {
+    const miembros = await getMiembros(mesa.value.id)
+    ocupacion.value = miembros?.miembros?.length ?? mesa.value.jugadores ?? 0
+  } catch {
+    ocupacion.value = mesa.value.jugadores ?? 0 // contingencia sin membresía
+  }
+  try {
+    const sols = await getSolicitudes(mesa.value.id)
+    pendientes.value = (sols ?? []).filter((s) => s.estado === 'pendiente')
+  } catch (e) {
+    pendientes.value = []
+    errorBandeja.value = e?.message || 'No se pudo cargar la bandeja de solicitudes.'
+  }
+  edicion.nombre = mesa.value.nombre
+  edicion.horario = mesa.value.horario
+  edicion.cupo = mesa.value.plazas
+  cargando.value = false
 })
 
 function iniciales(n) { return (n || '').trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || 'AV' }

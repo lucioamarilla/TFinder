@@ -103,13 +103,25 @@ const esGM = computed(() => !!mesa.value && !!user.value && mesa.value.gmId === 
 const puedoVotar = computed(() => esMiembro.value && !esGM.value)
 
 onMounted(async () => {
+  // D-01: mesa primero; membresía y votaciones fallan de forma aislada.
   try {
     mesa.value = await getMesa(route.params.id)
-    const miembros = await getMiembros(mesa.value.id)
-    esMiembro.value = (miembros?.miembros ?? []).some((m) => m.email === user.value?.email)
-    propuestas.value = await getVotaciones(mesa.value.id)
   } catch (e) {
     mesa.value = null
+    cargando.value = false
+    return
+  }
+  try {
+    const miembros = await getMiembros(mesa.value.id)
+    esMiembro.value = (miembros?.miembros ?? []).some((m) => m.email === user.value?.email)
+  } catch {
+    esMiembro.value = false // invitado o no-miembro: solo lectura de propuestas
+  }
+  try {
+    propuestas.value = await getVotaciones(mesa.value.id)
+  } catch (e) {
+    propuestas.value = []
+    errorVoto.value = e?.message || 'No se pudieron cargar las propuestas.'
   } finally {
     cargando.value = false
   }

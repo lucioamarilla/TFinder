@@ -89,16 +89,25 @@ const yaMiembro = ref(false)
 const puedoPedir = computed(() => isAuthenticated.value && mesa.value && estadoCrudo(mesa.value) === 'abierta' && !mesaCompleta(mesa.value))
 
 onMounted(async () => {
+  // D-01: la mesa define la existencia; los datos protegidos (miembros) no
+  // pueden anularla. Un invitado o no-miembro ve la ficha con la pestaña vacía.
   try {
     mesa.value = await getMesa(id)
+  } catch (e) {
+    mesa.value = null
+    cargando.value = false
+    return
+  }
+  try {
     const data = await getMiembros(mesa.value.id)
     miembros.value = data?.miembros ?? []
     // detectar membresía actual
     if (isAuthenticated.value) {
       yaMiembro.value = miembros.value.some((m) => m.email === user.value?.email)
     }
-  } catch (e) {
-    mesa.value = null
+  } catch {
+    // 403 (no-miembro) o 401 (invitado): pestaña Personajes vacía, sin error.
+    miembros.value = []
   } finally {
     cargando.value = false
   }
