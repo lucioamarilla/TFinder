@@ -136,3 +136,47 @@ dialog.sim-dlg::backdrop{ background:rgba(26,26,26,.72); backdrop-filter:blur(4p
   letter-spacing:.04em; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 button.sim-votado{ background:rgba(107,142,35,.18) !important; color:#6B8E23 !important; }
+/* ---------- Panel de navegación móvil (portado del prototipo) ---------- */
+/* El prototipo estilizaba el panel inline; aquí se recupera con las mismas
+   variables del sistema. Se abre SOLO desde el trigger hamburguesa del
+   header (visible en pantallas pequeñas). */
+.sim-panel{
+  position:fixed; inset:0; z-index:900;
+  display:flex; flex-direction:column;
+  background:var(--sim-carbon);
+  border-top:2px solid var(--sim-oro);
+  padding:1.5rem 1.75rem;
+}
+.sim-panel-nav{ display:flex; flex-direction:column; gap:.35rem; }
+.sim-panel-nav a, .sim-panel-nav button{
+  color:var(--sim-pergamino); text-decoration:none;
+  padding:.6rem .8rem; border-radius:.4rem;
+  font-family:'Barlow Condensed','Trebuchet MS',sans-serif;
+  font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-size:.95rem;
+  text-align:left; background:transparent; border:0; cursor:pointer;
+}
+.sim-panel-nav a:hover, .sim-panel-nav button:hover,
+.sim-panel-nav a:active{
+  background:rgba(139,90,43,.25); color:var(--sim-oro);
+}
+.sim-panel-nav .sim-cta{
+  background:var(--sim-oro); color:var(--sim-carbon);
+}
+.sim-panel-nav .sim-cta:hover{ background:#efce5d; color:var(--sim-carbon); }
+.sim-panel-perfil{ opacity:.85; }
+.sim-panel-btn{
+  background:transparent; border:1px solid rgba(253,248,238,.25);
+}
+.sim-panel-btn.sim-logout{
+  color:var(--sim-granate); border-color:rgba(139,26,26,.65);
+  font-weight:900;
+}
+.sim-panel-btn.sim-logout:hover{
+  background:rgba(139,26,26,.18); color:var(--sim-granate);
+}
+.sim-badge{
+  color:rgba(253,248,238,.55);
+  font-family:'Barlow Condensed','Trebuchet MS',sans-serif;
+  font-size:.7rem; letter-spacing:.14em; text-transform:uppercase;
+  padding-top:.75rem;
+}

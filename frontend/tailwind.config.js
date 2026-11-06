@@ -25,7 +25,11 @@ export default {
         lore: ['Newsreader', 'serif'],
         barlow: ['"Barlow Condensed"', 'sans-serif'],
         data: ['"DM Mono"', 'monospace'],
-        logo: ['"Press Start 2P"', 'monospace']
+        logo: ['"Press Start 2P"', 'monospace'],
+        // D-07: familias pergamino usadas por las vistas de gestión.
+        mason: ['"Cinzel Decorative"', '"Algerian"', 'Georgia', 'serif'],
+        tarzana: ['"Barlow Condensed"', '"Trebuchet MS"', 'sans-serif'],
+        minion: ['"EB Garamond"', '"IM Fell English"', 'Georgia', 'serif']
       },
       borderRadius: {
         sm: '6px',

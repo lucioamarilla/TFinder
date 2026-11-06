@@ -1,0 +1,6 @@
+/* Ciclo 7 (D-07): hoja de entrada de Tailwind.
+   Las vistas de gestion/calendario/sesiones y el harness usan utilidades
+   Tailwind (clases arbitrarias bg-[#...], barras) que antes no compilaban. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
