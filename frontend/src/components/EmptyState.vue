@@ -14,7 +14,9 @@ defineProps({
 
 <template>
   <section class="card vacio" role="status">
-    <div class="icono" aria-hidden="true">🗝️</div>
+    <div class="icono" aria-hidden="true">
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+</div>
     <p class="label linea">Sin resultados</p>
     <h2 class="titulo">{{ title }}</h2>
     <p class="mensaje">{{ message }}</p>

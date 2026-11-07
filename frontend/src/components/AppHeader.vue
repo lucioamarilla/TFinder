@@ -43,7 +43,7 @@ async function confirmarSalida() {
   <nav class="nav-pill show" aria-label="Principal">
     <RouterLink class="wordmark" to="/">
       <img src="/assets/logo-tfinder.png" alt="Logo de TFinder" width="38" height="38" />
-      Tfinder
+      TFinder
     </RouterLink>
 
     <!-- D-03: trigger del panel móvil; en desktop queda oculto por CSS -->

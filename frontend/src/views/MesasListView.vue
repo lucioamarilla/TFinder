@@ -111,7 +111,11 @@ const estados = [
 ]
 
 function etiquetaEstado(m) { return completa(m) ? 'Completa' : (estadoCrudo(m) === 'abierta' ? 'Abierta' : 'Cerrada') }
-function etiquetaTono(m) { return completa(m) ? 'tag--ember' : 'tag--acid' }
+function etiquetaTono(m) {
+  if (completa(m)) return 'tag--ember'
+  if (estadoCrudo(m) === 'abierta') return 'tag--acid'
+  return 'tag--ink'
+}
 function mesaCompleta(m) { return completa(m) }
 
 function esMasterDe(m) {

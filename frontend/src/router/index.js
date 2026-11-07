@@ -35,7 +35,7 @@ export const routes = [
   { path: '/mesas', name: 'mesas', component: MesasListView },
   { path: '/mesas/nueva', name: 'mesa-nueva', component: CrearMesaView, meta: { roles: ['auth'] } },
   { path: '/mesas/:id', name: 'mesa-detalle', component: MesaDetailJugadorView, props: true },
-  { path: '/mesas/:id/gm', name: 'mesa-detalle-gm', component: MesaDetailGmView, props: true, meta: { roles: ['auth'] } },
+  { path: '/mesas/:id/gm', name: 'mesa-detalle-gm', redirect: (to) => `/mesas/${to.params.id}/gestion`, meta: { roles: ['auth'] } },
   { path: '/mesas/:id/sesion', name: 'mesa-sesion', component: ModoSesionBitacoraView, props: true, meta: { roles: ['auth'] } },
   { path: '/mesas/:id/editar', name: 'mesa-editar', component: MesaFormularioView, props: true, meta: { roles: ['auth'] } },
   { path: '/mesas/:id/sesion/jugador', name: 'mesa-sesion-jugador', component: ModoSesionJugadorView, props: true, meta: { roles: ['auth'] } },

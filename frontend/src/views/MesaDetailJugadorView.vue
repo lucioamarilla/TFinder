@@ -19,7 +19,7 @@
           <div style="padding: var(--space-md);">
             <div style="display: flex; gap: var(--space-2xs); flex-wrap: wrap; margin-bottom: var(--space-2xs);">
               <span class="tag tag--ink">PF1e, nivel {{ mesa.nivel }}</span>
-              <span class="tag" :class="esMesaCerrada(mesa) ? 'tag--ember' : 'tag--acid'">{{ esMesaCerrada(mesa) ? 'Cerrada' : (mesaCompleta(mesa) ? 'Completa' : 'Abierta') }}</span>
+              <span class="tag" :class="esMesaCerrada(mesa) ? 'tag--ember' : (mesaCompleta(mesa) ? 'tag--ink' : 'tag--acid')">{{ esMesaCerrada(mesa) ? 'Cerrada' : (mesaCompleta(mesa) ? 'Completa' : 'Abierta') }}</span>
               <span v-if="pendiente" class="tag tag--ink">Solicitud enviada</span>
               <span v-if="yaMiembro" class="tag tag--acid">Ya eres miembro</span>
               <span class="tag tag--ink">{{ mesa.horario }}</span>
@@ -76,14 +76,15 @@ const mesa = ref(null)
 const cargando = ref(true)
 const mensaje = ref('')
 const miembros = ref([])
-const tab = ref('resumen')
-const tabs = [{ key: 'resumen', label: 'Resumen' }, { key: 'personajes', label: 'Personajes' }]
+
 
 function iniciales(n) { return (n || '').trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || 'AV' }
 // D-09/D-10: helpers únicos de estado y cupo (/services/mesas).
 function mesaCompleta(m) { return cupoDe(m) != null && ocupacionDe(m) >= cupoDe(m) }
 
 const pendiente = ref(false)
+const tab = ref('resumen')
+const tabs = [{ key: 'resumen', label: 'Resumen' }, { key: 'personajes', label: 'Personajes' }]
 const yaMiembro = ref(false)
 
 const esMaster = computed(() => !!mesa.value && !!user.value && Number(mesa.value.gmId) === Number(user.value?.id ?? user.value?.sub))

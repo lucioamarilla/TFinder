@@ -1,29 +1,22 @@
 <script setup>
 import { ref, watch } from 'vue'
 import BaseModal from '@/components/modals/BaseModal.vue'
-
 const props = defineProps({
   open: Boolean,
   candidatos: { type: Array, default: () => [] },
   chip: { type: String, default: '' }
 })
-
 const emit = defineEmits(['close', 'accepted'])
-
 const selected = ref(null)
-
-watch(
-  () => props.open,
-  () => {
-    if (props.open) selected.value = props.candidatos[0]?.value ?? null
-  }
-)
+watch(() => props.open, () => {
+  if (props.open) selected.value = props.candidatos[0]?.value ?? null
+})
 </script>
 
 <template>
   <BaseModal :open="open" @close="emit('close')">
-    <div class="sim-dlg-card">
-      <div class="sim-dlg-ico sim-cobre">
+    <div class="tf-dlg-card">
+      <div class="tf-dlg-ico tf-dlg-ico--warn">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="3" y="4" width="18" height="18" rx="2" />
           <line x1="16" y1="2" x2="16" y2="6" />
@@ -32,60 +25,40 @@ watch(
           <circle cx="12" cy="15" r="2" />
         </svg>
       </div>
-      <h2>Proponer Fecha de Sesión</h2>
-      <span v-if="chip" class="sim-dlg-chip">{{ chip }}</span>
-      <div class="sim-pick-fechas" role="listbox" aria-label="Fechas candidatas">
+      <h2 class="tf-dlg-title">Proponer Fecha de Sesión</h2>
+      <span v-if="chip" class="tf-dlg-chip">{{ chip }}</span>
+      <div class="tf-pick-fechas" role="listbox" aria-label="Fechas candidatas">
         <button
           v-for="c in candidatos"
           :key="c.value"
           type="button"
-          class="sim-pick-op"
-          :class="{ 'sim-votado': selected === c.value }"
+          class="tf-pick-op"
+          :class="{ 'tf-pick-op--sel': selected === c.value }"
           :aria-pressed="selected === c.value"
           @click="selected = c.value"
         >
           <span>{{ c.label }}</span><i>{{ c.detalle }}</i>
         </button>
       </div>
-      <p>Se convocará a los aventureros cuando al menos 3 miembros confirmen la fecha.</p>
-      <div class="sim-dlg-fila">
-        <button class="sdcb" @click="emit('close')">Cancelar</button>
-        <button class="sdok" @click="emit('accepted', selected)">Proponer Fecha</button>
+      <p class="tf-dlg-msg">Se convocará a los aventureros cuando al menos 3 miembros confirmen la fecha.</p>
+      <div class="tf-dlg-fila">
+        <button type="button" class="btn btn--secondary" @click="emit('close')">Cancelar</button>
+        <button type="button" class="btn" @click="emit('accepted', selected)">Proponer Fecha</button>
       </div>
     </div>
   </BaseModal>
 </template>
 
 <style scoped>
-.sim-pick-fechas {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.sim-pick-op {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 4px;
-  background: transparent;
-  border: 1px solid rgba(139, 90, 43, .4);
-  color: #1A1A1A;
-  font-family: var(--tf-labels);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all .15s;
-  text-align: left;
-}
-.sim-pick-op i {
-  font-style: normal;
-  color: var(--tf-copper);
-  font-size: 12px;
-}
-.sim-pick-op.sim-votado {
-  border-color: var(--tf-olive-bright);
-  background: rgba(107, 142, 35, .12);
-  color: var(--tf-olive);
-}
+.tf-dlg-card { background: var(--color-paper-2); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: var(--space-lg); max-width: 440px; width: 100%; display: grid; gap: var(--space-sm); }
+.tf-dlg-ico { width: 44px; height: 44px; display: grid; place-items: center; border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); color: var(--color-accent-2); }
+.tf-dlg-ico--warn { color: var(--color-accent-2); border-color: var(--color-accent-2); }
+.tf-dlg-title { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
+.tf-dlg-chip { font-size: var(--text-xs); color: var(--color-muted); }
+.tf-dlg-msg { margin: 0; font-size: var(--text-sm); color: var(--color-ink-2); }
+.tf-dlg-fila { display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-sm); flex-wrap: wrap; }
+.tf-pick-fechas { display: grid; gap: var(--space-2xs); }
+.tf-pick-op { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); padding: var(--space-2xs) var(--space-sm); border-radius: var(--radius-card); background: transparent; border: var(--rule-hair) solid var(--color-rule); color: var(--color-ink); font-family: var(--font-body); font-size: var(--text-sm); cursor: pointer; text-align: left; transition: border-color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out); }
+.tf-pick-op i { font-style: normal; color: var(--color-muted); font-size: var(--text-xs); }
+.tf-pick-op--sel { border-color: var(--color-accent); background: color-mix(in oklab, var(--color-accent) 12%, transparent); color: var(--color-ink); }
 </style>

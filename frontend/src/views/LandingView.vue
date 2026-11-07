@@ -14,7 +14,7 @@
   </div>
 
   <nav class="nav-pill" aria-label="Principal">
-    <RouterLink class="wordmark" to="/"><img src="/assets/logo-tfinder.png" alt="Logo de TFinder" width="38" height="38" style="width:38px;height:38px;object-fit:contain;">Tfinder</RouterLink>
+    <RouterLink class="wordmark" to="/"><img src="/assets/logo-tfinder.png" alt="Logo de TFinder" width="38" height="38" style="width:38px;height:38px;object-fit:contain;">TFinder</RouterLink>
     <nav>
       <a href="#mesas">Explorar mesas</a>
       <a href="#comunidad">Comunidades</a>
@@ -172,7 +172,7 @@
   <footer class="colophon">
     <div class="wrap cols">
       <div>
-        <p style="display: flex; align-items: center; gap: var(--space-2xs); margin: 0 0 var(--space-2xs);"><img src="/assets/logo-tfinder.png" alt="Logo de TFinder" width="46" height="46" style="width:46px;height:46px;object-fit:contain;"><span class="display" style="font-size: var(--text-md); color: var(--color-accent-2);">Tfinder</span></p>
+        <p style="display: flex; align-items: center; gap: var(--space-2xs); margin: 0 0 var(--space-2xs);"><img src="/assets/logo-tfinder.png" alt="Logo de TFinder" width="46" height="46" style="width:46px;height:46px;object-fit:contain;"><span class="display" style="font-size: var(--text-md); color: var(--color-accent-2);">TFinder</span></p>
         <p class="label">Encontrá tu mesa y tirá iniciativa</p>
       </div>
       <div>
@@ -219,7 +219,7 @@ onMounted(async () => {
 
   try {
     const todas = await getMesas()
-    mesasAbiertas.value = todas.filter((m) => m.estado === 'Abierta').slice(0, 5)
+    mesasAbiertas.value = todas.filter((m) => String(m.estado ?? '').toLowerCase() === 'abierta').slice(0, 5)
   } catch { mesasAbiertas.value = [] }
 
 })

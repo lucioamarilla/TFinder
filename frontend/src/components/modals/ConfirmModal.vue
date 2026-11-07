@@ -1,6 +1,5 @@
 <script setup>
 import BaseModal from '@/components/modals/BaseModal.vue'
-
 defineProps({
   open: Boolean,
   titulo: { type: String, default: '¿Confirmás esta acción?' },
@@ -9,38 +8,42 @@ defineProps({
   etiquetaOk: { type: String, default: 'Confirmar' },
   chip: { type: String, default: '' }
 })
-
 const emit = defineEmits(['close', 'accept'])
 </script>
 
 <template>
   <BaseModal :open="open" @close="emit('close')">
-    <div class="sim-dlg-card">
-      <div class="sim-dlg-ico" :class="{ 'sim-cobre': variante === 'confirm' }">
-        <svg
-          v-if="variante === 'danger'"
-          width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-        >
+    <div class="tf-dlg-card">
+      <div class="tf-dlg-ico" :class="{ 'tf-dlg-ico--warn': variante === 'confirm', 'tf-dlg-ico--danger': variante === 'danger' }">
+        <svg v-if="variante === 'danger'" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
           <line x1="12" y1="9" x2="12" y2="13" />
           <line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
-        <svg
-          v-else
-          width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
-        >
+        <svg v-else width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="10" />
           <path d="M12 16v-4" />
           <path d="M12 8h.01" />
         </svg>
       </div>
-      <h2>{{ titulo }}</h2>
-      <span v-if="chip" class="sim-dlg-chip">{{ chip }}</span>
-      <p>{{ mensaje }}</p>
-      <div class="sim-dlg-fila">
-        <button class="sdcb" @click="emit('close')">Cancelar</button>
-        <button :class="variante === 'danger' ? 'sd-danger' : 'sdok'" @click="emit('accept')">{{ etiquetaOk }}</button>
+      <h2 class="tf-dlg-title">{{ titulo }}</h2>
+      <span v-if="chip" class="tf-dlg-chip">{{ chip }}</span>
+      <p class="tf-dlg-msg">{{ mensaje }}</p>
+      <div class="tf-dlg-fila">
+        <button type="button" class="btn btn--secondary" @click="emit('close')">Cancelar</button>
+        <button type="button" class="btn" :class="variante === 'danger' ? 'btn--danger' : ''" @click="emit('accept')">{{ etiquetaOk }}</button>
       </div>
     </div>
   </BaseModal>
 </template>
+
+<style scoped>
+.tf-dlg-card { background: var(--color-paper-2); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: var(--space-lg); max-width: 440px; width: 100%; display: grid; gap: var(--space-sm); }
+.tf-dlg-ico { width: 44px; height: 44px; display: grid; place-items: center; border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); color: var(--color-ink); }
+.tf-dlg-ico--warn { color: var(--color-accent-2); border-color: var(--color-accent-2); }
+.tf-dlg-ico--danger { color: var(--color-error); border-color: var(--color-error); }
+.tf-dlg-title { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
+.tf-dlg-chip { font-size: var(--text-xs); color: var(--color-muted); text-transform: none; letter-spacing: 0; }
+.tf-dlg-msg { margin: 0; font-size: var(--text-sm); color: var(--color-ink-2); }
+.tf-dlg-fila { display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-sm); flex-wrap: wrap; }
+</style>
