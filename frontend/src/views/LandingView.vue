@@ -1,16 +1,19 @@
 <template>
-  <div class="hero-overlay hero show">
-    <div class="wrap">
-      <h1 style="font-size: var(--text-display); max-width: 12ch; margin: 0 0 var(--space-md);">Encontrá tu mesa y tirá iniciativa</h1>
-      <p class="lead" style="margin: 0 0 var(--space-lg);">Campañas de PF1e en español, fichas sincronizadas, un GM esperándote.</p>
-      <div style="display: flex; gap: var(--space-md); flex-wrap: wrap;">
-        <RouterLink class="btn" to="/mesas">Encontrar mesa</RouterLink>
-        <RouterLink class="btn btn--secondary" to="/mesas/nueva">Publicá tu campaña</RouterLink>
+  <div class="d20-runway">
+    <ascii-d20 id="dado" result="random" scroll-height="400vh" cy="0.6"></ascii-d20>
+    <div class="hero-overlay hero">
+      <div class="wrap">
+        <h1 style="font-size: var(--text-display); max-width: 12ch; margin: 0 0 var(--space-md);">Encontrá tu mesa y tirá iniciativa</h1>
+        <p class="lead" style="margin: 0 0 var(--space-lg);">Campañas de PF1e en español, fichas sincronizadas, un GM esperándote.</p>
+        <div style="display: flex; gap: var(--space-md); flex-wrap: wrap;">
+          <RouterLink class="btn" to="/mesas">Encontrar mesa</RouterLink>
+          <RouterLink class="btn btn--secondary" to="/mesas/nueva">Publicá tu campaña</RouterLink>
+        </div>
       </div>
     </div>
   </div>
 
-  <nav class="nav-pill show" aria-label="Principal">
+  <nav class="nav-pill" aria-label="Principal">
     <RouterLink class="wordmark" to="/"><img src="/assets/logo-tfinder.png" alt="Logo de TFinder" width="38" height="38" style="width:38px;height:38px;object-fit:contain;">TFinder</RouterLink>
     <nav>
       <a href="#mesas">Explorar mesas</a>
@@ -187,7 +190,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-// asciiD20 removido temporalmente
+import { registerAsciiD20, initLandingWiring } from '@/utils/asciiD20'
 import { getMesas } from '@/services/mesas'
 import { useAuth } from '@/composables/useAuth'
 import ModalConfirmar from '@/components/modals/ModalConfirmar.vue'
@@ -211,7 +214,9 @@ const postDestacado = ref(null)
 const comunidades = ref([])
 
 onMounted(async () => {
-  // dado removido temporalmente; sin cableado de scroll
+  document.documentElement.classList.add('js')
+  registerAsciiD20()
+  setTimeout(initLandingWiring, 0)
 
   try {
     const todas = await getMesas()
@@ -258,10 +263,11 @@ h3 { font-family: var(--font-body); font-weight: 900; letter-spacing: -0.02em; l
 .crt { position: relative; isolation: isolate; }
 .crt::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: var(--z-base); background-image: repeating-linear-gradient(to right, color-mix(in oklab, var(--color-crt-r) 5%, transparent) 0 1px, color-mix(in oklab, var(--color-crt-g) 5%, transparent) 1px 2px, color-mix(in oklab, var(--color-crt-b) 5%, transparent) 2px 3px), repeating-linear-gradient(to bottom, transparent 0 2px, color-mix(in oklab, var(--color-shade) 16%, transparent) 2px 3px); }
 
-.hero-overlay { position: relative; min-height: 100dvh; display: flex; align-items: flex-end; pointer-events: none; padding-block: var(--space-3xl); }
+.d20-runway { position: relative; display: grid; height: 400vh; }
+.hero-overlay { grid-area: 1 / 1; position: sticky; top: 0; height: 100dvh; display: flex; align-items: flex-end; pointer-events: none; }
 .hero-overlay .wrap { width: 100%; pointer-events: none; padding-bottom: var(--space-3xl); }
 .js .hero-overlay { opacity: 0; visibility: hidden; transition: opacity var(--dur-long) var(--ease-out), visibility 0s linear var(--dur-long); }
-.js .hero-overlay.show { opacity: 1; visibility: visible; transition: opacity var(--dur-long) var(--ease-out); }
+.js .hero-overlay.show { opacity: 1; visibility: visible; transition: opacity var(--dur-long) var(--ease-out); position: fixed; right: var(--gutter); top: 50%; transform: translateY(-50%); width: min(420px, 40vw); pointer-events: auto; z-index: var(--z-raised); background: var(--color-paper-2); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: var(--space-lg); align-items: stretch; }
 .js .hero-overlay.show .btn, .js .hero-overlay.show a { pointer-events: auto; }
 .js .nav-pill { opacity: 0; visibility: hidden; transition: opacity var(--dur-long) var(--ease-out), visibility 0s linear var(--dur-long); }
 .js .nav-pill.show { opacity: 1; visibility: visible; transition: opacity var(--dur-long) var(--ease-out); }
