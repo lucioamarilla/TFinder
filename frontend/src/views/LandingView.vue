@@ -1,6 +1,6 @@
 <template>
   <div class="d20-runway" style="--d20-fg: var(--color-accent-2); --d20-bg: var(--color-paper); --d20-accent: var(--color-ink);">
-    <ascii-d20 id="dado" result="20" scroll-height="100%" cy="0.6"></ascii-d20>
+    <ascii-d20 id="dado" result="random" scroll-height="100%" cy="0.6"></ascii-d20>
     <div class="hero-overlay hero">
       <div class="wrap">
         <h1 style="font-size: var(--text-display); max-width: 12ch; margin: 0 0 var(--space-md);">Encontrá tu mesa y tirá iniciativa</h1>
@@ -214,6 +214,7 @@ const postDestacado = ref(null)
 const comunidades = ref([])
 
 onMounted(async () => {
+  document.documentElement.classList.add('js')
   registerAsciiD20()
   setTimeout(initLandingWiring, 0)
 

@@ -175,6 +175,8 @@ export function initLandingWiring() {
   const main = document.getElementById('dado')
   const overlay = document.querySelector('.hero-overlay')
   if (!main) return
+  // Activa las reglas de ocultamiento (.js .hero-overlay / .js .nav-pill)
+  // antes del primer paint para que el texto no aparezca antes del dado.
   document.documentElement.classList.add('js')
   const toRgb = (str) => { const c = document.createElement('canvas'); c.width = c.height = 1; const x = c.getContext('2d'); x.fillStyle = str; x.fillRect(0,0,1,1); const d = x.getImageData(0,0,1,1).data; return `rgb(${d[0]} ${d[1]} ${d[2]} / ${d[3]/255})` }
   const cs = getComputedStyle(document.documentElement)
@@ -184,9 +186,32 @@ export function initLandingWiring() {
   main.setAttribute('accent', tok('--color-ink', '#F2EEFA'))
   main.setAttribute('cx', matchMedia('(max-width: 60rem)').matches ? '0.5' : '0.66')
   const nav = document.querySelector('.nav-pill')
-  // F1: el hero y la nav están visibles desde el primer frame (ya no hay
-  // ~2 pantallas de vacío esperando el "aterrizaje" del dado); el dado
-  // sigue acompañando el scroll por su propio progreso interno.
-  overlay?.classList.add('show')
-  nav?.classList.add('show')
+
+  const mostrarChrome = () => {
+    overlay?.classList.add('show')
+    nav?.classList.add('show')
+  }
+
+  // Reduce motion: el dado ya está "caído" desde el primer frame.
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    mostrarChrome()
+    return
+  }
+
+  // El texto y el header aparecen recién cuando el dado termina de caer.
+  let mostrado = false
+  const onProgress = (e) => {
+    if (mostrado) return
+    if ((e.detail?.progress ?? 0) >= 0.985) {
+      mostrado = true
+      mostrarChrome()
+      main.removeEventListener('d20-progress', onProgress)
+    }
+  }
+  main.addEventListener('d20-progress', onProgress)
+  // Si ya está al final (p. ej. scroll restaurado), mostrar de inmediato.
+  if (main.progress && main.progress() >= 0.985) {
+    mostrado = true
+    mostrarChrome()
+  }
 }
