@@ -258,7 +258,7 @@ h3 { font-family: var(--font-body); font-weight: 900; letter-spacing: -0.02em; l
 .crt { position: relative; isolation: isolate; }
 .crt::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: var(--z-base); background-image: repeating-linear-gradient(to right, color-mix(in oklab, var(--color-crt-r) 5%, transparent) 0 1px, color-mix(in oklab, var(--color-crt-g) 5%, transparent) 1px 2px, color-mix(in oklab, var(--color-crt-b) 5%, transparent) 2px 3px), repeating-linear-gradient(to bottom, transparent 0 2px, color-mix(in oklab, var(--color-shade) 16%, transparent) 2px 3px); }
 
-.hero-overlay { grid-area: 1 / 1; position: sticky; top: -57px; height: 100dvh; display: flex; align-items: flex-end; pointer-events: none; }
+.hero-overlay { position: relative; min-height: 100dvh; display: flex; align-items: flex-end; pointer-events: none; padding-block: var(--space-3xl); }
 .hero-overlay .wrap { width: 100%; pointer-events: none; padding-bottom: var(--space-3xl); }
 .js .hero-overlay { opacity: 0; visibility: hidden; transition: opacity var(--dur-long) var(--ease-out), visibility 0s linear var(--dur-long); }
 .js .hero-overlay.show { opacity: 1; visibility: visible; transition: opacity var(--dur-long) var(--ease-out); }
