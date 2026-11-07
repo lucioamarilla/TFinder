@@ -1,6 +1,6 @@
 <template>
   <div class="d20-runway" style="--d20-fg: var(--color-accent-2); --d20-bg: var(--color-paper); --d20-accent: var(--color-ink);">
-    <ascii-d20 id="dado" result="random" scroll-height="100%" cy="0.6"></ascii-d20>
+    <ascii-d20 id="dado" result="random" scroll-height="360vh" cy="0.6"></ascii-d20>
     <div class="hero-overlay hero">
       <div class="wrap">
         <h1 style="font-size: var(--text-display); max-width: 12ch; margin: 0 0 var(--space-md);">Encontrá tu mesa y tirá iniciativa</h1>
@@ -262,7 +262,7 @@ h3 { font-family: var(--font-body); font-weight: 900; letter-spacing: -0.02em; l
 @media (max-width: 60rem) { .step-row { grid-template-columns: 64px minmax(0, 1fr); } .step-row .step-tag { grid-column: 2; justify-self: start; } }
 .crt { position: relative; isolation: isolate; }
 .crt::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: var(--z-base); background-image: repeating-linear-gradient(to right, color-mix(in oklab, var(--color-crt-r) 5%, transparent) 0 1px, color-mix(in oklab, var(--color-crt-g) 5%, transparent) 1px 2px, color-mix(in oklab, var(--color-crt-b) 5%, transparent) 2px 3px), repeating-linear-gradient(to bottom, transparent 0 2px, color-mix(in oklab, var(--color-shade) 16%, transparent) 2px 3px); }
-.d20-runway { position: relative; display: grid; height: 220vh; }
+.d20-runway { position: relative; display: grid; height: 360vh; }
 .hero-overlay { grid-area: 1 / 1; position: sticky; top: -57px; height: 100dvh; display: flex; align-items: flex-end; pointer-events: none; }
 .hero-overlay .wrap { width: 100%; pointer-events: none; padding-bottom: var(--space-3xl); }
 .js .hero-overlay { opacity: 0; visibility: hidden; transition: opacity var(--dur-long) var(--ease-out), visibility 0s linear var(--dur-long); }

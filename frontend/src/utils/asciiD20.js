@@ -104,14 +104,14 @@ export function registerAsciiD20() {
     draw(p) {
       const { cols, rows, V, F, N, B, ctx, cw } = this, ramp = ' .:-=+*#%@'
       const ch = new Array(cols*rows).fill(' '), kind = new Uint8Array(cols*rows), zb = new Float32Array(cols*rows).fill(-1e9)
-      const e = 1 - Math.pow(1-p, 3), k = 1 - e
+      const e = 1 - Math.pow(1-p, 2), k = 1 - e
       const mul = (a,b) => { const o=[]; for (let i=0;i<3;i++) for (let j=0;j<3;j++) o.push(a[i*3]*b[j]+a[i*3+1]*b[3+j]+a[i*3+2]*b[6+j]); return o }
       const rx = a => [1,0,0,0,Math.cos(a),-Math.sin(a),0,Math.sin(a),Math.cos(a)]
       const ry = a => [Math.cos(a),0,Math.sin(a),0,1,0,-Math.sin(a),0,Math.cos(a)]
       const rz = a => [Math.cos(a),-Math.sin(a),0,Math.sin(a),Math.cos(a),0,0,0,1]
       const M = mul(rz(k*6.283), mul(rx(k*14.1), mul(ry(k*22), this.Rf)))
       const ap = (m,v) => [m[0]*v[0]+m[1]*v[1]+m[2]*v[2], m[3]*v[0]+m[4]*v[1]+m[5]*v[2], m[6]*v[0]+m[7]*v[1]+m[8]*v[2]]
-      const hgt = Math.abs(Math.sin(k*15))*k*k*1.1
+      const hgt = Math.abs(Math.sin(k*8))*k*k*0.6
       const dx = Math.sin(k*9)*k*0.55
       const Wu = cols, Hu = rows*2, S = Math.min(Wu,Hu)*0.27, cx = Wu*(parseFloat(this.getAttribute('cx'))||0.5), cy = Hu*(parseFloat(this.getAttribute('cy'))||0.46)
       const proj = v => { const f = 5/(5-v[2]); return [cx+(v[0]+dx)*f*S, cy-(v[1]+hgt)*f*S, v[2]] }
@@ -202,7 +202,7 @@ export function initLandingWiring() {
   let mostrado = false
   const onProgress = (e) => {
     if (mostrado) return
-    if ((e.detail?.progress ?? 0) >= 0.985) {
+    if ((e.detail?.progress ?? 0) >= 0.88) {
       mostrado = true
       mostrarChrome()
       main.removeEventListener('d20-progress', onProgress)
@@ -210,7 +210,7 @@ export function initLandingWiring() {
   }
   main.addEventListener('d20-progress', onProgress)
   // Si ya está al final (p. ej. scroll restaurado), mostrar de inmediato.
-  if (main.progress && main.progress() >= 0.985) {
+  if (main.progress && main.progress() >= 0.88) {
     mostrado = true
     mostrarChrome()
   }
