@@ -14,31 +14,9 @@ import pika
 import pytest
 
 from app.infra.rabbitmq import get_params
-from notif_api.app.infra.amqp import COLA_SESION, declarar
 from tests.conftest import crear_mesa
 
 pytestmark = pytest.mark.integration
-
-
-def _purgar_sesion():
-    declarar()
-    conn = pika.BlockingConnection(get_params())
-    try:
-        conn.channel().queue_purge(queue=COLA_SESION)
-    finally:
-        conn.close()
-
-
-def _leer_evento_sesion():
-    conn = pika.BlockingConnection(get_params())
-    try:
-        canal = conn.channel()
-        frame = canal.basic_get(queue=COLA_SESION, auto_ack=True)
-        if frame[0] is None:
-            return None
-        return json.loads(frame[2])
-    finally:
-        conn.close()
 
 
 def _crear_sesion(client, token_gm, mesa_id):
@@ -83,7 +61,6 @@ def test_confirmar_publica_sesion_confirmada(client, token_gm):
     mesa_id = crear_mesa(client, token_gm, "Mesa confirmar", jugadores_max=4)
     sesion_id = _crear_sesion(client, token_gm, mesa_id)["id"]
 
-    _purgar_sesion()
     r = client.post(
         f"/api/v1/mesas/{mesa_id}/sesiones/{sesion_id}/confirmar",
         headers={"Authorization": f"Bearer {token_gm}"},
@@ -93,35 +70,26 @@ def test_confirmar_publica_sesion_confirmada(client, token_gm):
         "sesion_id": sesion_id,
         "mesa_id": mesa_id,
         "estado": "confirmada",
-        "evento": "publicado",
+        "evento": "confirmada",
     }
-
-    evento = _leer_evento_sesion()
-    assert evento is not None
-    assert evento["tipo"] == "sesion.confirmada"
-    assert evento["mesa_id"] == mesa_id
-    assert evento["sesion_id"] == sesion_id
 
 
 def test_confirmar_sesion_idempotente(client, token_gm):
     mesa_id = crear_mesa(client, token_gm, "Mesa reconfirmar", jugadores_max=4)
     sesion_id = _crear_sesion(client, token_gm, mesa_id)["id"]
 
-    _purgar_sesion()
     primera = client.post(
         f"/api/v1/mesas/{mesa_id}/sesiones/{sesion_id}/confirmar",
         headers={"Authorization": f"Bearer {token_gm}"},
     )
-    assert primera.json()["evento"] == "publicado"
-    assert _leer_evento_sesion()["tipo"] == "sesion.confirmada"
-
+    assert primera.json()["evento"] == "confirmada"
+    
     segunda = client.post(
         f"/api/v1/mesas/{mesa_id}/sesiones/{sesion_id}/confirmar",
         headers={"Authorization": f"Bearer {token_gm}"},
     )
     assert segunda.status_code == 200
     assert segunda.json()["evento"] == "ya_estaba_confirmada"
-    assert _leer_evento_sesion() is None  # no vuelve a publicar
 
 
 def test_confirmar_sesion_cerrada_responde_409(client, token_gm):

@@ -15,7 +15,6 @@ from mesas_api.app.models.sesiones import (
     registrar_asistencia,
 )
 from mesas_api.app.schemas import SesionOut, QrValidate
-from mesas_api.app.services.eventos import publicar_sesion_confirmada
 from mesas_api.app.services.qr_asistencia import (
     _Conflict,
     _Invalid,
@@ -155,14 +154,11 @@ def confirmar_sesion_controller(
             "evento": "ya_estaba_confirmada",
         }
     confirmar_sesion_db(sesion_id)
-    publicar_sesion_confirmada(
-        mesa_id, sesion_id, usuario_id, correlation_id=correlation_id
-    )
     return {
         "sesion_id": sesion_id,
         "mesa_id": mesa_id,
         "estado": "confirmada",
-        "evento": "publicado",
+        "evento": "confirmada",
     }
 
 
@@ -178,3 +174,19 @@ def cerrar_sesion_controller(mesa_id: int, sesion_id: int) -> dict:
         # Carrera: entre la lectura y el UPDATE alguien la cerró.
         raise SesionCerradaError(f"La sesión {sesion_id} ya está cerrada")
     return {"sesion_id": sesion_id, "mesa_id": mesa_id, "estado": "cerrada"}
+
+
+def marcar_asistencia_controller(sesion_id: int, usuario: dict) -> dict:
+    fila = obtener_sesion(sesion_id)
+    if fila is None:
+        raise SesionNotFoundError(f"Sesión {sesion_id} no encontrada")
+    mesa_id = fila["mesa_id"]
+    from mesas_api.app.models.mesa import obtener_mesa_por_id, rol_de
+
+    mesa = obtener_mesa_por_id(mesa_id)
+    if mesa is None:
+        raise SesionNotFoundError(f"La mesa de la sesión no existe")
+    if int(usuario["sub"]) != mesa.get("gm_id") and rol_de(int(usuario["sub"]), mesa_id) is None:
+        raise HTTPException(status_code=403, detail="No eres miembro de esta mesa.")
+    registrar_asistencia(sesion_id, int(usuario["sub"]))
+    return {"asistencia": "registrada"}

@@ -81,7 +81,7 @@
         <div class="well" style="padding: var(--space-md); margin-bottom: var(--space-md); display: grid; gap: var(--space-2xs);">
           <p class="label" style="margin-bottom: var(--space-2xs);">Acciones rápidas</p>
           <RouterLink class="accion-rapida" :to="`/mesas/${mesa.id}/sesion`">Modo sesión</RouterLink>
-          <RouterLink class="accion-rapida" to="/wiki/nueva">Nueva página de wiki</RouterLink>
+          
         </div>
       </aside>
     </template>

@@ -18,21 +18,6 @@ export default defineConfig({
         target: 'http://localhost:8001',
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/mesas-api/, '')
-      },
-      '/builds-api': {
-        target: 'http://localhost:8002',
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/builds-api/, '')
-      },
-      '/feed-api': {
-        target: 'http://localhost:8003',
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/feed-api/, '')
-      },
-      '/notif-api': {
-        target: 'http://localhost:8004',
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/notif-api/, '')
       }
     }
   },

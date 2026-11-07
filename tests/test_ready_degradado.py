@@ -9,9 +9,6 @@ pytestmark = pytest.mark.integration
 # Los 4 servicios importan evaluar_ready desde el modulo compartido app.infra.ready.
 MODULOS = [
     "mesas_api.main",
-    "builds_api.main",
-    "feed_api.main",
-    "notif_api.main",
 ]
 
 

@@ -6,21 +6,7 @@ os.environ.setdefault(
 )
 os.environ.setdefault("REDIS_URL", "redis://localhost:6390/15")
 os.environ.setdefault("JWT_SECRET", "test-secret-no-prod")
-# Los cuatro servicios deben apuntar a sus bases de test. Sin esto, builds_api y
-# feed_api caen en su default (builds_db / feed_db) y la suite trunca y escribe
-# sobre los datos de desarrollo.
-os.environ.setdefault(
-    "NOTIF_DATABASE_URL",
-    "postgresql://tfinder:tfinder@localhost:5432/notif_db_test",
-)
-os.environ.setdefault(
-    "BUILDS_DATABASE_URL",
-    "postgresql://tfinder:tfinder@localhost:5432/builds_db_test",
-)
-os.environ.setdefault(
-    "FEED_DATABASE_URL",
-    "postgresql://tfinder:tfinder@localhost:5432/feed_db_test",
-)
+# mesas_api apunta a su base de test.
 
 # ---- Aislamiento de RabbitMQ -------------------------------------------------
 # Los tests de integración publican eventos de dominio. Si usan el vhost "/",
@@ -202,19 +188,7 @@ def sin_publicar_en_broker_real(request):
         yield
         return
 
-    import notif_api.app.consumers._base as base
-
-    original = base._dlq_final
-
-    def _interceptado(*args, **kwargs):
-        raise AssertionError(
-            "un test unitario no debe publicar en dlq.general; "
-            "mockea el consumidor o marcalo como integration"
-        )
-
-    base._dlq_final = _interceptado
     yield
-    base._dlq_final = original
 
 
 @pytest.fixture(autouse=True)
@@ -324,12 +298,9 @@ def tasa_atope_en_pruebas(request):
     """RNF-22 en producción (100/min); en pruebas el tope se levanta salvo que
     el test lo baje explícitamente (p. ej. test_infra_operativa fuerza 429)."""
     import mesas_api.main as mesas_main
-    import builds_api.main as builds_main
-    import feed_api.main as feed_main
-    import notif_api.main as notif_main
 
-    for _app in (mesas_main.app, builds_main.app, feed_main.app, notif_main.app):
+    for _app in (mesas_main.app,):
         _app.state.rate_limit_min = 1_000_000
     yield
-    for _app in (mesas_main.app, builds_main.app, feed_main.app, notif_main.app):
+    for _app in (mesas_main.app,):
         _app.state.rate_limit_min = 100

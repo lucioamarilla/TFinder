@@ -70,7 +70,7 @@ const props = defineProps({
   sesionId: { type: [String, Number], default: null },
 })
 const { user } = useAuth()
-const { toast } = useToast()
+const toast = useToast()
 
 const mesaId = String(props.mesaId ?? route.params.mesaId ?? route.params.id)
 const sesionId = String(props.sesionId ?? route.params.sesionId)
@@ -116,7 +116,7 @@ async function enviar() {
     })
     texto.value = ''
     await cargar()
-    toast('Anotación registrada en la bitácora.', 'success')
+    toast.ok('Anotación registrada en la bitácora.')
   } catch (e) {
     error.value = e.mensaje || e.message || 'No se pudo registrar la anotación.'
   } finally {

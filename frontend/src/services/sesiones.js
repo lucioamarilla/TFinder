@@ -27,15 +27,6 @@ export async function registrarDiario(mesaId, sesionId) {
   return getSesion(mesaId, sesionId)
 }
 
-export async function guardarDiario(mesaId, sesionId, diario) {
-  const { datos } = await api(
-    'feed',
-    `/api/v1/mesas/${mesaId}/sesiones/${sesionId}/diario`,
-    { metodo: 'POST', cuerpo: { titulo: diario.titulo || 'Diario de sesión', cuerpo: diario.cuerpo || diario.resumen || '' } }
-  )
-  return { ...datos, sesionId }
-}
-
 export async function getAnotaciones(mesaId, sesionId) {
   const { datos } = await api(
     'mesas',

@@ -78,7 +78,7 @@ async function submit() {
   ocupado.value = true
   try {
     await register({ nombre: usuario.value.trim(), email: email.value, password: pass.value, rol: rol.value })
-    router.push('/feed')
+    router.push('/mesas')
   } catch (e) {
     error.value = e.mensaje || 'No se pudo crear la cuenta.'
   } finally {

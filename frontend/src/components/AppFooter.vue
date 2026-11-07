@@ -15,7 +15,7 @@
         <p class="label" style="margin-bottom: var(--space-2xs);">Explorá</p>
         <p style="font-size: var(--text-sm);">
           <RouterLink class="text-link" to="/mesas">Mesas</RouterLink>,
-          <RouterLink class="text-link" to="/feed">comunidades</RouterLink>
+          
         </p>
       </div>
       <div>

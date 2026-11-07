@@ -4,12 +4,9 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-SERVICES = ("mesas_api", "builds_api", "feed_api", "notif_api")
+SERVICES = ("mesas_api",)
 EXPECTED_ROUTES = {
-    "mesas_api": 18,
-    "builds_api": 7,
-    "feed_api": 5,
-    "notif_api": 9,
+    "mesas_api": 4,
 }
 
 

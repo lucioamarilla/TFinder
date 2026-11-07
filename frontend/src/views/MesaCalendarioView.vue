@@ -115,7 +115,7 @@ onMounted(async () => {
   }
   try {
     const miembros = await getMiembros(mesa.value.id)
-    esMiembro.value = (miembros?.miembros ?? []).some((m) => m.email === user.value?.email)
+    esMiembro.value = (miembros?.miembros ?? []).some((m) => String(m.id) === String(user.value?.id ?? user.value?.sub))
   } catch {
     esMiembro.value = false // invitado o no-miembro: solo lectura de propuestas
   }

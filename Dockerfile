@@ -1,9 +1,5 @@
-# TFinder AE2 · imagen base por servicio (B02)
-# Un único Dockerfile sirve a los 4 servicios; el paquete se elige con ARG SERVICE:
+# TFinder · imagen para mesas_api
 #   docker compose build mesas-api   -> mesas_api   (8001)
-#   docker compose build builds-api  -> builds_api  (8002)
-#   docker compose build feed-api    -> feed_api    (8003)
-#   docker compose build notif-api   -> notif_api   (8004)
 ARG SERVICE=mesas_api
 
 FROM python:3.12-slim

@@ -33,8 +33,10 @@
                 <i v-for="i in Math.max(0, ((cupoDe(mesa)) ?? 0) - ocupacionDe(mesa))" :key="'off' + i" class="off"></i>
               </span>
               <span class="num" style="font-size: var(--text-sm);">{{ ocupacionDe(mesa) }}/{{ (cupoDe(mesa)) ?? '∞' }}</span>
-              <button class="btn" :disabled="!puedoPedir" @click="unirse">Solicitar unión</button>
-              <RouterLink class="btn btn--secondary" to="/wiki">Wiki de la campaña</RouterLink>
+              <button v-if="!esMaster && !yaMiembro" class="btn" :disabled="!puedoPedir" @click="unirse">Solicitar unión</button>
+              <RouterLink class="btn btn--secondary" :to="`/mesas/${id}/calendario`">Calendario y votación</RouterLink>
+              <RouterLink class="btn btn--secondary" :to="`/mesas/${id}/sesion/jugador`">Bitácora de sesiones</RouterLink>
+
             </div>
             <p v-if="mensaje" class="label" style="margin-top: var(--space-sm);">{{ mensaje }}</p>
           </div>
@@ -49,7 +51,7 @@
           <div v-if="miembros.length === 0" class="label">Sin miembros aún.</div>
           <div v-for="m in miembros" :key="m.id" class="miembro">
             <span class="av">{{ iniciales(m.nombre || m.email) }}</span>
-            <span><strong>{{ m.nombre || m.email }}</strong> · {{ m.rol === 'gm' ? 'Directora' : 'Jugador' }}</span>
+            <span><strong>{{ m.nombre || m.email }}</strong> · {{ m.rol === 'master' || m.rol === 'Master' ? 'Master' : 'Jugador' }}</span>
           </div>
         </div>
       </main>
@@ -84,7 +86,8 @@ function mesaCompleta(m) { return cupoDe(m) != null && ocupacionDe(m) >= cupoDe(
 const pendiente = ref(false)
 const yaMiembro = ref(false)
 
-const puedoPedir = computed(() => isAuthenticated.value && mesa.value && esMesaAbierta(mesa.value) && !mesaCompleta(mesa.value))
+const esMaster = computed(() => !!mesa.value && !!user.value && Number(mesa.value.gmId) === Number(user.value?.id ?? user.value?.sub))
+const puedoPedir = computed(() => isAuthenticated.value && mesa.value && !esMaster.value && !yaMiembro.value && esMesaAbierta(mesa.value) && !mesaCompleta(mesa.value))
 
 onMounted(async () => {
   // D-01: la mesa define la existencia; los datos protegidos (miembros) no
@@ -101,7 +104,7 @@ onMounted(async () => {
     miembros.value = data?.miembros ?? []
     // detectar membresía actual
     if (isAuthenticated.value) {
-      yaMiembro.value = miembros.value.some((m) => m.email === user.value?.email)
+      yaMiembro.value = miembros.value.some((m) => String(m.id) === String(user.value?.id ?? user.value?.sub) || m.email === user.value?.email)
     }
   } catch {
     // 403 (no-miembro) o 401 (invitado): pestaña Personajes vacía, sin error.

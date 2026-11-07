@@ -4,11 +4,9 @@ import { useRouter } from 'vue-router'
 import { getMembresias } from '@/services/membresias'
 import { getActividad } from '@/services/actividad'
 import { getEventosProximos } from '@/services/eventos'
-import { getFeedPosts } from '@/services/feed'
-import { useNotifications } from '@/composables/useNotifications'
 
 const router = useRouter()
-const { unreadCount, loadCount } = useNotifications()
+const unreadCount = 0
 
 const roleColor = (post) => (post.etiqueta === 'Guía de Build' ? 'tag--ember' : 'tag--ink')
 
@@ -23,17 +21,14 @@ async function load() {
   isLoading.value = true
   error.value = null
   try {
-    const [m, a, e, p] = await Promise.all([
+    const [m, a, e] = await Promise.all([
       getMembresias(),
       getActividad(),
-      getEventosProximos(),
-      getFeedPosts()
+      getEventosProximos()
     ])
     membresias.value = m
     actividad.value = a
     eventos.value = e
-    posts.value = p
-    loadCount()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Ocurrió un error inesperado.'
   } finally {

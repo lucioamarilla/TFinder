@@ -4,8 +4,6 @@
       <div class="well">
         <p class="label" style="margin-bottom: var(--space-2xs);">Tu cuenta</p>
         <RouterLink class="side-item" to="/mesas">Mis mesas</RouterLink>
-        <RouterLink class="side-item" to="/builds">Mis builds</RouterLink>
-        <RouterLink class="side-item" to="/notificaciones">Notificaciones</RouterLink>
       </div>
     </aside>
 
@@ -34,12 +32,7 @@
           <label class="label" for="pv-bio">Descripción</label>
           <textarea id="pv-bio" class="input" v-model="bio" rows="3" placeholder="Contá quién sos y qué jugás…"></textarea>
         </div>
-        <div class="field" style="margin-top: var(--space-sm);">
-          <label class="label" for="pv-avatar">Imagen de perfil</label>
-          <input id="pv-avatar" type="file" accept="image/png,image/jpeg,image/webp" @change="onArchivo" />
-          <p v-if="subiendo" class="label" style="margin-top: var(--space-3xs);">Subiendo…</p>
-          <p v-if="error" class="hint-error" role="alert">{{ error }}</p>
-        </div>
+        <p v-if="error" class="hint-error" role="alert">{{ error }}</p>
         <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-md);">
           <button class="btn" :disabled="guardando" @click="guardar">Guardar perfil</button>
           <button class="btn btn--secondary" @click="cargar">Revertir</button>
@@ -49,8 +42,7 @@
       <article class="card" style="padding: var(--space-lg); margin-top: var(--space-md);">
         <h3 style="margin: 0 0 var(--space-2xs);">Actividad</h3>
         <p style="font-size: var(--text-sm); color: var(--color-ink-2);">
-          Tus personajes se administran en <RouterLink class="text-link" to="/builds">Builds</RouterLink>.
-          La ficha de personaje global fue retirada: cada personaje vive con su build.
+          Tu actividad se concentra en tus mesas.
         </p>
         <div v-if="misMesas.length > 0" data-test="perfil-mesas" style="margin-top: var(--space-md); display: grid; gap: var(--space-2xs);">
           <RouterLink v-for="m in misMesas" :key="m.id" class="side-item" :to="`/mesas/${m.id}`">
@@ -67,7 +59,6 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { verPerfil, editarPerfil } from '@/services/perfil'
-import { subirImagen } from '@/services/uploads'
 import { getMisMesas } from '@/services/mesas'
 import { useToast } from '@/composables/useToast'
 
@@ -77,10 +68,9 @@ const bio = ref('')
 const avatarUrl = ref(null)
 const rol = ref('usuario')
 const misMesas = ref([])
-const subiendo = ref(false)
 const guardando = ref(false)
 const error = ref(null)
-const { toast } = useToast()
+const toast = useToast()
 
 async function cargar() {
   error.value = null
@@ -97,22 +87,6 @@ async function cargar() {
   }
 }
 
-async function onArchivo(event) {
-  const archivo = event?.target?.files?.[0]
-  if (!archivo) return
-  subiendo.value = true
-  error.value = null
-  try {
-    const subida = await subirImagen(archivo)
-    avatarUrl.value = subida.url
-    toast('Imagen subida. Guardá para aplicarla.', 'success')
-  } catch (e) {
-    error.value = e.mensaje || e.message || 'La imagen no pudo subirse.'
-  } finally {
-    subiendo.value = false
-  }
-}
-
 async function guardar() {
   guardando.value = true
   error.value = null
@@ -121,7 +95,7 @@ async function guardar() {
     nombre.value = p.nombre
     bio.value = p.bio
     avatarUrl.value = p.avatarUrl
-    toast('Perfil actualizado.', 'success')
+    toast.ok('Perfil actualizado.')
   } catch (e) {
     error.value = e.mensaje || e.message || 'No se pudo actualizar el perfil.'
   } finally {

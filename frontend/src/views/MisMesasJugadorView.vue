@@ -28,6 +28,7 @@
             <span class="num" style="font-size: var(--text-sm);">{{ m.jugadores }}/{{ m.plazas }}</span>
             <RouterLink v-if="m.miRol === 'master'" class="btn btn--secondary btn--sm" :to="'/mesas/' + m.id + '/gestion'">Gestionar</RouterLink>
             <RouterLink v-else class="btn btn--secondary btn--sm" :to="'/mesas/' + m.id">Ver mesa</RouterLink>
+            <RouterLink v-if="m.miRol !== 'master'" class="btn btn--secondary btn--sm" :to="'/mesas/' + m.id + '/sesion/jugador'">Bitácora</RouterLink>
             <button v-if="m.miRol !== 'master'" class="btn btn--danger btn--sm" @click="salir(m)">Salir</button>
           </div>
         </div>

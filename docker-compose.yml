@@ -1,56 +1,37 @@
-# TFinder AE2 · Entorno de desarrollo reproducible (B01 + B02)
-# Un solo comando levanta la infraestructura:
-#   docker compose up -d
-# Los 4 servicios (mesas/builds/feed/notif-api) son opcionales:
-#   docker compose up -d --build mesas-api builds-api feed-api notif-api
-#
-# Convencion de puertos "localhost vs dentro del contenedor":
-#   - Desde el HOST usas: localhost:5432, localhost:6390, localhost:5673, localhost:1025
-#   - Dentro del contenedor (B02+) usas los nombres de servicio: postgres, redis, rabbitmq
-#
-# Usuario/password de desarrollo (solo local, nunca produccion): tfinder/tfinder
-# RabbitMQ panel: http://localhost:15673  (tfinder/tfinder)
-# MailHog   panel: http://localhost:8025
-
 name: tfinder
 
 services:
-  # ---------------- PostgreSQL 16 ----------------
   postgres:
     image: postgres:16-alpine
     container_name: tfinder-postgres
     environment:
-      POSTGRES_USER: tfinder          # usuario superusuario de la instancia
-      POSTGRES_PASSWORD: tfinder      # password solo de desarrollo (RNF-11)
-      POSTGRES_DB: mesas_db           # DB que la imagen crea automaticamente; el resto via init
+      POSTGRES_USER: tfinder
+      POSTGRES_PASSWORD: tfinder
+      POSTGRES_DB: mesas_db
     ports:
-      - "5432:5432"                   # host:contenedor -> psql desde tu maquina
+      - "5432:5432"
     volumes:
-      - tfinder-pg:/var/lib/postgresql/data          # datos persistentes
-      - ./infra/postgres-init:/docker-entrypoint-initdb.d  # crea builds/feed/notif_db
-    healthcheck:                       # criterio: postgres DEBE quedar healthy
+      - tfinder-pg:/var/lib/postgresql/data
+      - ./infra/postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
       test: ["CMD-SHELL", "pg_isready -U tfinder -d mesas_db"]
-      # pg_isready sale 0 cuando postgres acepta conexiones; el healthcheck
-      # del entrypoint lo corre cada 5s hasta que responde.
       interval: 5s
       timeout: 3s
       retries: 10
       start_period: 10s
 
-  # ---------------- Redis 7 ----------------
   redis:
     image: redis:7-alpine
     container_name: tfinder-redis
-    command: ["redis-server", "--appendonly", "yes"]  # persistencia AOF en disco
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "6390:6379"                   # 6379 interno publicado como 6390 (no chocar con local)
+      - "6390:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]   # redis-cli ping -> PONG -> exit 0
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
 
-  # ---------------- RabbitMQ (management) ----------------
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: tfinder-rabbitmq
@@ -58,28 +39,14 @@ services:
       RABBITMQ_DEFAULT_USER: tfinder
       RABBITMQ_DEFAULT_PASS: tfinder
     ports:
-      - "5673:5672"        # AMQP para pika
-      - "15673:15672"      # panel web management
+      - "5673:5672"
+      - "15673:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      # rabbitmq-diagnostics ping responde y sale 0 cuando el broker esta vivo
       interval: 10s
       timeout: 3s
       retries: 10
 
-  # ---------------- MailHog (email sandbox) ----------------
-  mailhog:
-    image: mailhog/mailhog:v1.0.1
-    container_name: tfinder-mailhog
-    ports:
-      - "1025:1025"        # SMTP (proveedor sandbox, B09)
-      - "8025:8025"        # panel web (bandeja de email)
-    # Sin healthcheck: mailhog responde apenas arranca (imagen trivial)
-
-  # ---------------- Servicios AE2 (opcionales, B02) ----------------
-  # Imagen única con ARG SERVICE; dentro del contenedor postgres se alcanza por
-  # nombre de servicio (no localhost). Levantá el que necesites:
-  #   docker compose up -d --build mesas-api builds-api feed-api notif-api
   mesas-api:
     build:
       context: .
@@ -89,102 +56,15 @@ services:
     environment:
       SERVICIO: mesas-api
       MESAS_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/mesas_db
-      REDIS_URL: redis://redis:6379/0        # interno; host publica 6390 (B01)
-      RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/  # interno; host publica 5673 (B01)
-      JWT_SECRET: ${JWT_SECRET:-dev-secret}  # B03: sesiones JWT
-      JWT_EXP_MIN: ${JWT_EXP_MIN:-1440}      # 24 h, default
-      DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
-      DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-DemoTFinder123!}
-      PORT: "8001"
-    ports:
-      - "8001:8001"        # /docs en http://localhost:8001
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  builds-api:
-    build:
-      context: .
-      args:
-        SERVICE: builds_api
-    container_name: tfinder-builds-api
-    environment:
-      SERVICIO: builds-api
-      BUILDS_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/builds_db
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
       JWT_SECRET: ${JWT_SECRET:-dev-secret}
-      MESA_URL: http://mesas-api:8001        # P1.8: membresías para vincular builds (B09)
-      MESAS_URL: http://mesas-api:8001  # B03: valida access_token de mesas-api
       JWT_EXP_MIN: ${JWT_EXP_MIN:-1440}
       DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
       DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-DemoTFinder123!}
       PORT: "8001"
     ports:
-      - "8002:8001"        # /docs en http://localhost:8002
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  feed-api:
-    build:
-      context: .
-      args:
-        SERVICE: feed_api
-    container_name: tfinder-feed-api
-    environment:
-      SERVICIO: feed-api
-      FEED_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/feed_db
-      REDIS_URL: redis://redis:6379/0
-      RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
-      JWT_SECRET: ${JWT_SECRET:-dev-secret}  # B03: valida access_token de mesas-api
-      MESA_URL: http://mesas-api:8001        # P1.6: contratos REST para visibilidad de wiki (B09)
-      MESAS_URL: http://mesas-api:8001       # alias de compatibilidad
-      DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
-      DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-DemoTFinder123!}
-      PORT: "8001"
-    ports:
-      - "8003:8001"        # /docs en http://localhost:8003
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  notif-api:
-    build:
-      context: .
-      args:
-        SERVICE: notif_api
-    container_name: tfinder-notif-api
-    environment:
-      SERVICIO: notif-api
-      NOTIF_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/notif_db
-      REDIS_URL: redis://redis:6379/0
-      RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
-      SMTP_HOST: mailhog           # B09: proveedor de email en sandbox
-      SMTP_PORT: "1025"
-      SMTP_TIMEOUT: "3"
-      MAIL_FROM: noreply@tfinder.local
-      MESAS_URL: http://mesas-api:8001       # contrato REST de miembros (B09)
-      JWT_SECRET: ${JWT_SECRET:-dev-secret}  # valida access_token de mesas-api (notificaciones, dlq, event-log)
-      MESAS_EMAIL: ${MESAS_EMAIL:-email_svc@tfinder.dev}
-      MESAS_PASSWORD: ${MESAS_PASSWORD:-DemoTFinder123!}
-      DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
-      DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-DemoTFinder123!}
-      PORT: "8001"
-    ports:
-      - "8004:8001"        # /docs en http://localhost:8004
+      - "8001:8001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -198,9 +78,6 @@ services:
       context: ./frontend
       args:
         VITE_MESAS_API: /mesas-api
-        VITE_BUILDS_API: /builds-api
-        VITE_FEED_API: /feed-api
-        VITE_NOTIF_API: /notif-api
         VITE_AUTH_MODE: api
         VITE_API_MODE: api
     container_name: tfinder-frontend
@@ -208,17 +85,6 @@ services:
       - "5173:80"
     depends_on:
       - mesas-api
-      - builds-api
-      - feed-api
-      - notif-api
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null || exit 1"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 5s
 
 volumes:
-  tfinder-pg:              # volumen nombrado: los datos de postgres sobreviven
-    # a `docker compose down`. Para resetear TODO (incl. las DBs extra del
-    # init): `docker compose down -v` (borra el volumen) y volver a `up`.
+  tfinder-pg:

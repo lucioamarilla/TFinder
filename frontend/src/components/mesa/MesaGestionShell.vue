@@ -3,7 +3,6 @@ import { ref, computed, provide, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getMesa } from '@/services/mesas.js'
 import { getMembresias } from '@/services/membresias.js'
-import { getWiki } from '@/services/wiki.js'
 import { getSesiones } from '@/services/sesiones.js'
 import { getMiembros } from '@/services/jugadores.js'
 import { isFeatureEnabled } from '@/config/features'
@@ -17,18 +16,15 @@ const toast = useToast()
 const mesa = ref(null)
 const cargando = ref(true)
 const noEncontrada = ref(false)
-const wikiCount = ref(0)
 const sesionesCount = ref(0)
 const ocupacion = ref({ miembros: 0, capacidad: 5 })
 const esGM = ref(false)
 
 const TABS = [
   { segmento: 'gestion', feature: 'gestionMesa', etiqueta: 'Resumen', glyph: '◆', flora: true },
-  { segmento: 'wiki', feature: 'wiki', etiqueta: 'Wiki', glyph: '', flora: false },
   { segmento: 'calendario', feature: 'calendario', etiqueta: 'Calendario & Votación', glyph: '', flora: false },
   { segmento: 'sesiones', feature: 'sesiones', etiqueta: 'Sesiones', glyph: '', flora: false },
   { segmento: 'jugadores', feature: 'jugadores', etiqueta: 'Jugadores', glyph: '', flora: false },
-  { segmento: 'builds', feature: 'builds', etiqueta: 'Builds', glyph: '', flora: false }
 ]
 
 // Solo se ofrecen las pestanas cuya funcion esta habilitada: asi una tab
@@ -45,7 +41,6 @@ function tabActiva(tab) {
 }
 
 function contador(tab) {
-  if (tab.segmento === 'wiki') return wikiCount.value
   if (tab.segmento === 'sesiones') return sesionesCount.value
   if (tab.segmento === 'jugadores') return `${ocupacion.value.miembros}/${ocupacion.value.capacidad}`
   return null
@@ -73,12 +68,6 @@ async function cargar() {
     return
   }
   let falloSecundario = false
-  try {
-    const wiki = await getWiki(props.mesaId)
-    wikiCount.value = wiki.total
-  } catch {
-    falloSecundario = true
-  }
   try {
     const sesiones = await getSesiones(props.mesaId)
     sesionesCount.value = sesiones.length
@@ -112,7 +101,7 @@ function invitarJugador() {
 onMounted(cargar)
 watch(() => props.mesaId, cargar)
 
-provide('mesaGestion', { mesa, cargando, wikiCount, sesionesCount, ocupacion, esGM })
+provide('mesaGestion', { mesa, cargando, sesionesCount, ocupacion, esGM })
 </script>
 
 <template>
@@ -176,7 +165,7 @@ provide('mesaGestion', { mesa, cargando, wikiCount, sesionesCount, ocupacion, es
       <RouterLink
         v-for="tab in tabsVisibles"
         :key="tab.segmento"
-        :to="tab.segmento === 'gestion' ? `${rutaBase}/gestion` : `${rutaBase}/${tab.segmento}`"
+        :to="tab.segmento === 'gestion' ? `${rutaBase}/gestion` : `${rutaBase}/gestion/${tab.segmento}`"
         :class="tabActiva(tab) ? 'tab tab--activa' : 'tab'"
       >
         <span v-if="tab.glyph" class="num">{{ tab.glyph }}</span>

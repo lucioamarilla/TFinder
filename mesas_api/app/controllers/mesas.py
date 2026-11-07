@@ -124,9 +124,3 @@ def eliminar_mesa_controller(mesa_id, usuario):
     _asegurar_propietario(usuario, fila)
     eliminar_mesa(mesa_id)
     invalidar_listado()
-    try:
-        from app.infra.rabbitmq import publicar
-
-        publicar("mesa.eliminada", {"mesa_id": mesa_id}, correlation_id="-")
-    except Exception:
-        pass

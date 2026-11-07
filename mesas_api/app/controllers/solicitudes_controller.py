@@ -12,11 +12,7 @@ from mesas_api.app.models.solicitudes import (
     rechazar_solicitud,
     salir_de_mesa,
 )
-from mesas_api.app.services.eventos import (
-    publicar_aceptacion,
-    publicar_expulsion,
-    publicar_solicitud,
-)
+from mesas_api.app.services.cache import invalidar_listado as invalidar_listado_mesas
 from mesas_api.app.services.idem import guardar_resultado, obtener_resultado
 
 # Los manejadores de errores importan desde este módulo (ruta histórica).
@@ -88,6 +84,10 @@ def crear_solicitud_controller(mesa_id, usuario_id, correlation_id, idem_key=Non
     if obtener_mesa_por_id(mesa_id) is None:
         raise MesaNoExisteError(f"Mesa {mesa_id} no encontrada")
     mesa = obtener_mesa_por_id(mesa_id)
+    if mesa.get("gm_id") is not None and int(usuario_id) == mesa["gm_id"]:
+        raise SolicitudProhibidaError(
+            "El GM de la mesa no puede solicitar unirse a su propia mesa."
+        )
     if mesa["estado"] == "cerrada":
         raise MesaCerradaError("La mesa no está abierta para solicitudes de unión.")
     if existe_solicitud_pendiente(mesa_id, usuario_id):
@@ -104,9 +104,6 @@ def crear_solicitud_controller(mesa_id, usuario_id, correlation_id, idem_key=Non
 
     if idem_key:
         guardar_resultado(idem_key, fila)
-    publicar_solicitud(
-        mesa_id, usuario_id, gm_id=mesa.get("gm_id"), correlation_id=correlation_id
-    )
     return fila
 
 
@@ -128,6 +125,8 @@ def salir_controller(mesa_id, usuario):
             "El master no puede salir de su mesa por esta vía: transferí la dirección o eliminá la mesa."
         )
     hubo, nuevo_cupo = salir_de_mesa(mesa_id, usuario_id)
+    if hubo:
+        invalidar_listado_mesas()
     if not hubo:
         raise SolicitudNoExisteError(f"El usuario {usuario_id} no es jugador de la mesa {mesa_id}.")
     return {"mesa_id": mesa_id, "jugadores_actuales": nuevo_cupo}
@@ -157,9 +156,7 @@ def responder_solicitud_controller(mesa_id, solicitud_id, accion, usuario, corre
 
     if accion == "aceptar":
         fila = aceptar_solicitud(solicitud_id, mesa_id)
-        publicar_aceptacion(
-            mesa_id, fila["usuario_id"], gm_id=mesa.get("gm_id"), correlation_id=correlation_id
-        )
+        invalidar_listado_mesas()
     else:
         fila = rechazar_solicitud(solicitud_id, mesa_id)
     return fila
@@ -171,13 +168,18 @@ def expulsar_miembro_controller(mesa_id, usuario_objetivo, usuario, correlation_
     if mesa is None:
         raise MesaNoExisteError(f"Mesa {mesa_id} no encontrada")
     _asegurar_propietario(usuario, mesa)
+    if mesa.get("gm_id") is not None and int(usuario_objetivo) == mesa["gm_id"]:
+        raise SolicitudProhibidaError("No podés expulsar al master de la mesa.")
+    from mesas_api.app.models.mesa import rol_de
+
+    if rol_de(int(usuario_objetivo), mesa_id) == "master":
+        raise SolicitudProhibidaError("No podés expulsar al master de la mesa.")
 
     hubo, nuevo_cupo = expulsar_miembro(mesa_id, usuario_objetivo)
+    if hubo:
+        invalidar_listado_mesas()
     if not hubo:
         raise SolicitudNoExisteError(
             f"El usuario {usuario_objetivo} no es miembro de la mesa {mesa_id}."
         )
-    publicar_expulsion(
-        mesa_id, usuario_objetivo, gm_id=mesa.get("gm_id"), correlation_id=correlation_id
-    )
     return {"mesa_id": mesa_id, "usuario_id": usuario_objetivo, "jugadores_actuales": nuevo_cupo}

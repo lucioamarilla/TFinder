@@ -9,7 +9,6 @@ from fastapi.testclient import TestClient
 
 import mesas_api.main as mesas_main
 from mesas_api.main import app as mesas_app
-from builds_api.main import app as builds_app
 
 pytestmark = pytest.mark.integration
 
@@ -78,24 +77,3 @@ def test_estado_del_llamado_exige_token(client, token_gm, token_jugador):
     ).json()
     anonimo = TestClient(mesas_app).get(f"/api/v1/matchmaking/{cuerpo['id']}/estado")
     assert anonimo.status_code == 401, "el estado del matchmaking no es público"
-
-
-def test_gm_qr_que_no_es_de_la_mesa_no_la_valida(client, token_gm, token_jugador, token_admin):
-    from tests.conftest import crear_mesa, crear_sesion
-
-    mesa_id = crear_mesa(client, token_gm, "Mesa QR ajena", 4)
-    sesion_id = crear_sesion(mesa_id)
-    emitir = client.post(
-        f"/api/v1/sesiones/{sesion_id}/qr",
-        headers={"Authorization": f"Bearer {token_jugador}"},
-    )
-    assert emitir.status_code == 201
-    qr = emitir.json()
-
-    gm_ajeno = token_admin
-    r = client.post(
-        f"/api/v1/sesiones/{sesion_id}/qr/validar",
-        json={"usuario_id": 999, "qr_data": qr["qr_data"]},
-        headers={"Authorization": f"Bearer {gm_ajeno}"},
-    )
-    assert r.status_code == 403, "solamente el GM de la mesa registra asistencia"

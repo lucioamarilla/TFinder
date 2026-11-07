@@ -28,7 +28,9 @@ def listar_mesas(
         where.append("tono ILIKE %s")
         params.append(f"%{tono}%")
     sql = (
-        "SELECT m.*, u.nombre AS gm_nombre FROM mesas m"
+        "SELECT m.*, u.nombre AS gm_nombre,"
+        " (SELECT COUNT(*) FROM miembros_mesa mm WHERE mm.mesa_id = m.id AND mm.rol = 'jugador') AS jugadores_calc"
+        " FROM mesas m"
         " LEFT JOIN usuarios u ON u.id = m.gm_id"
     )
     if where:
@@ -37,18 +39,29 @@ def listar_mesas(
     params += [limit, (page - 1) * limit]
     with get_connection() as conn:
         filas = conn.execute(sql, params).fetchall()
-        return [dict(fila) for fila in filas]
+        resultado = []
+        for fila in filas:
+            d = dict(fila)
+            d["jugadores_actuales"] = d.pop("jugadores_calc", d.get("jugadores_actuales", 0))
+            resultado.append(d)
+        return resultado
 
 
 def obtener_mesa_por_id(mesa_id):
     with get_connection() as conn:
         fila = conn.execute(
-            "SELECT m.*, u.nombre AS gm_nombre FROM mesas m"
+            "SELECT m.*, u.nombre AS gm_nombre,"
+            " (SELECT COUNT(*) FROM miembros_mesa mm WHERE mm.mesa_id = m.id AND mm.rol = 'jugador') AS jugadores_calc"
+            " FROM mesas m"
             " LEFT JOIN usuarios u ON u.id = m.gm_id"
             " WHERE m.id = %s",
             (mesa_id,),
         ).fetchone()
-        return dict(fila) if fila else None
+        if not fila:
+            return None
+        d = dict(fila)
+        d["jugadores_actuales"] = d.pop("jugadores_calc", d.get("jugadores_actuales", 0))
+        return d
 
 
 def crear_mesa(data, gm_id: int):
@@ -148,6 +161,7 @@ def listar_con_rol(usuario_id: int):
         filas = conn.execute(
             """
             SELECT m.*,
+                   (SELECT COUNT(*) FROM miembros_mesa mm WHERE mm.mesa_id = m.id AND mm.rol = 'jugador') AS jugadores_calc,
                    CASE WHEN m.gm_id = %s THEN 'master' ELSE 'jugador' END AS mi_rol
             FROM mesas m
             WHERE m.gm_id = %s
@@ -159,4 +173,9 @@ def listar_con_rol(usuario_id: int):
             """,
             (usuario_id, usuario_id, usuario_id),
         ).fetchall()
-        return [dict(fila) for fila in filas]
+        resultado = []
+        for fila in filas:
+            d = dict(fila)
+            d["jugadores_actuales"] = d.pop("jugadores_calc", d.get("jugadores_actuales", 0))
+            resultado.append(d)
+        return resultado

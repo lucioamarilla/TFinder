@@ -76,7 +76,7 @@ describe('MesaDetailJugadorView · cerrada (D-09)', () => {
     await flushPromises()
     expect(w.text()).toContain('Cerrada')
     const boton = w.findAll('button').find((b) => b.text().includes('Solicitar'))
-    expect(boton?.attributes('disabled')).toBeDefined()
+    expect(boton).toBeUndefined()
   })
 })
 

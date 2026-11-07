@@ -1,16 +1,18 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useShell } from '@/composables/useShell'
 import { NAV } from '@/config/nav'
 import { comingSoonPath, isFeatureEnabled } from '@/config/features'
+import ModalConfirmar from '@/components/modals/ModalConfirmar.vue'
 
 const router = useRouter()
 const { role, logout } = useAuth()
 const { mobileOpen, closeMenu } = useShell()
 
 const nav = computed(() => NAV[role.value])
+const modalSalir = ref(false)
 
 function navTarget(item) {
   return item.feature && !isFeatureEnabled(item.feature) ? comingSoonPath(item.feature) : item.to
@@ -21,7 +23,12 @@ function go() {
 }
 
 function onLogout() {
-  logout()
+  modalSalir.value = true
+}
+
+async function confirmarSalida() {
+  modalSalir.value = false
+  await logout()
   go()
   router.push('/')
 }
@@ -46,6 +53,16 @@ function onLogout() {
       <span v-else class="label lema-adicional">PF1e · OGL v1.0a</span>
     </nav>
   </div>
+
+  <ModalConfirmar
+    :open="modalSalir"
+    titulo="¿Cerrar sesión?"
+    mensaje="Vas a salir de tu cuenta en TFinder."
+    etiqueta-ok="Cerrar sesión"
+    etiqueta-cancel="Cancelar"
+    @close="modalSalir = false"
+    @accept="confirmarSalida"
+  />
 </template>
 
 <style scoped>

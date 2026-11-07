@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 
 pytestmark = pytest.mark.unit
 
-SERVICIOS = ("mesas_api", "builds_api", "feed_api", "notif_api")
+SERVICIOS = ("mesas_api",)
 
 
 @pytest.mark.parametrize("servicio", SERVICIOS)
@@ -61,9 +61,6 @@ def test_los_cuatro_comparten_el_mismo_modulo_de_errores():
 
 RUTA_SOLO_POST = {
     "mesas_api": "/api/v1/matchmaking/1/abrir",
-    "builds_api": "/api/v1/builds/1/pdf",
-    "feed_api": "/api/v1/mesas/1/sesiones/1/diario/pdf",
-    "notif_api": "/api/v1/notificaciones/1/leida",
 }
 
 

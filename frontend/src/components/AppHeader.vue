@@ -1,29 +1,23 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useShell } from '@/composables/useShell'
 import { getMisMesas } from '@/services/mesas'
-import { getNoLeidas, getNotificaciones } from '@/services/notificaciones'
+import ModalConfirmar from '@/components/modals/ModalConfirmar.vue'
 
 const router = useRouter()
-const { user, isAuthenticated, isAdmin, logout } = useAuth()
+const { user, isAuthenticated, logout } = useAuth()
 const { toggleMenu } = useShell()
 
 const menuAbierto = ref(false)
 
 // F1: header único — las fuentes de datos ya no son el simulador directo,
 // pasan por la capa de servicios (dual-mode demo/api).
-const noLeidas = ref(0)
-const frescas = ref([])
 const misCampanas = ref([])
 
 async function refrescarHeader() {
   if (!isAuthenticated.value) return
-  try {
-    noLeidas.value = await getNoLeidas()
-    frescas.value = (await getNotificaciones()).slice(-5).reverse()
-  } catch { /* sin datos aún: badge en 0 */ }
   try {
     misCampanas.value = (await getMisMesas()).map((m) => ({ mesaId: m.id, rol: m.miRol, mesa: m }))
   } catch {
@@ -35,9 +29,10 @@ onMounted(refrescarHeader)
 // El header puede montarse sin router (vistas aisladas en specs).
 router?.afterEach?.(() => refrescarHeader())
 
-// D-13: la ruta /busqueda fue retirada; el buscador global quedo sin backend.
+const modalSalir = ref(false)
 
-async function salir() {
+async function confirmarSalida() {
+  modalSalir.value = false
   menuAbierto.value = false
   await logout()
   router?.push('/')
@@ -57,9 +52,7 @@ async function salir() {
     <!-- buscador global retirado (sin backend) -->
     <nav>
       <RouterLink to="/mesas">Explorar mesas</RouterLink>
-      <RouterLink to="/feed">Feed</RouterLink>
       <RouterLink v-if="isAuthenticated" to="/mis-mesas">Mis mesas</RouterLink>
-      <RouterLink to="/builds">Builds</RouterLink>
       <!-- retirados: bestiario, compendio -->
     </nav>
 
@@ -78,36 +71,23 @@ async function salir() {
         </div>
       </details>
 
-      <details class="nav-menu nav-campana">
-        <summary data-test="campana" aria-label="Notificaciones">🔔
-          <span v-if="noLeidas > 0" class="bell-badge" data-test="badge-no-leidas">{{ noLeidas }}</span>
-        </summary>
-        <div data-test="panel-campana">
-          <p v-if="frescas.length === 0" class="nav-campana-empty">Silencio: nada sin leer.</p>
-          <RouterLink v-for="n in frescas" :key="n.id" :to="n.link || '/notificaciones'" :class="{ sinLeer: n.nueva }">
-            {{ n.texto }}
-          </RouterLink>
-          <RouterLink to="/notificaciones" class="nav-campana-todas">Ver todas las notificaciones</RouterLink>
-        </div>
-      </details>
-
-      <RouterLink class="nav-avatar" to="/perfil" aria-label="Tu perfil" :title="user.titulo">
-        <span class="num">{{ user.iniciales }}</span>
+      <RouterLink class="nav-perfil" to="/perfil" aria-label="Tu perfil" :title="user.titulo" data-test="perfil-acceso">
+        <span class="nav-avatar"><span class="num">{{ user.iniciales }}</span></span>
+        <span class="nav-nombre">{{ user.nombre }}</span>
       </RouterLink>
-      <details class="nav-menu" :open="menuAbierto" @toggle="menuAbierto = $event.target.open">
-        <summary aria-label="Menú de sesión">Menú</summary>
-        <div>
-          <RouterLink to="/mis-mesas" @click="menuAbierto = false">Mis mesas</RouterLink>
-          <RouterLink to="/builds" @click="menuAbierto = false">Builds</RouterLink>
-          <RouterLink to="/notificaciones" @click="menuAbierto = false">Notificaciones</RouterLink>
-          <RouterLink to="/perfil" @click="menuAbierto = false">Mi perfil</RouterLink>
-          <!-- D10: la consola admin es 100% simulada; solo en modo demo -->
-          <!-- retirado: consola admin -->
-          <button type="button" data-test="cerrar-sesion" @click="salir">Cerrar sesión</button>
-        </div>
-      </details>
+      <button type="button" class="btn btn--secondary nav-login" data-test="cerrar-sesion" @click="modalSalir = true">Cerrar sesión</button>
     </template>
   </nav>
+
+  <ModalConfirmar
+    :open="modalSalir"
+    titulo="¿Cerrar sesión?"
+    mensaje="Vas a salir de tu cuenta en TFinder."
+    etiqueta-ok="Cerrar sesión"
+    etiqueta-cancel="Cancelar"
+    @close="modalSalir = false"
+    @accept="confirmarSalida"
+  />
 </template>
 
 <style scoped>

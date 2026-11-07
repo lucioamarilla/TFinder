@@ -74,7 +74,7 @@ async function submit() {
   ocupado.value = true
   try {
     await login({ email: email.value, password: pass.value })
-    const destino = typeof route.query.redirect === 'string' && route.query.redirect ? route.query.redirect : '/feed'
+    const destino = typeof route.query.redirect === 'string' && route.query.redirect ? route.query.redirect : '/mesas'
     router.push(destino)
   } catch (e) {
     error.value = e.mensaje || 'No se pudo iniciar la sesión.'

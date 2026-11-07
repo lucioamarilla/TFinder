@@ -59,13 +59,13 @@ describe('LoginView', () => {
     expect(router.currentRoute.value.name).toBe('login')
   })
 
-  it('CA-04 · login válido crea sesión y navega al feed', async () => {
+  it('CA-04 · login válido crea sesión y navega a mesas', async () => {
     const { wrapper, router } = await montarLogin()
     await wrapper.find('#email').setValue('valeros@tfinder.dev')
     await wrapper.find('#pass').setValue('tfinder1234')
     await enviar(wrapper)
 
-    expect(router.currentRoute.value.path).toBe('/feed')
+    expect(router.currentRoute.value.path).toBe('/mesas')
     expect(currentRole()).toBe('auth')
   })
 

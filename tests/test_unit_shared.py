@@ -13,7 +13,7 @@ from mesas_api.app.schemas import MesaCreate, MesaUpdate
 
 pytestmark = pytest.mark.unit
 
-SERVICES = ("mesas_api", "builds_api", "feed_api", "notif_api")
+SERVICES = ("mesas_api",)
 
 
 def test_correlation_id_tiene_formato_y_es_unico():

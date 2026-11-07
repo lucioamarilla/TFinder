@@ -13,13 +13,13 @@ const route = useRoute()
 const router = useRouter()
 const { rolEn } = useRolEnMesa()
 const { isAuthenticated } = useAuth()
-const { toast } = useToast()
+const toast = useToast()
 
 onMounted(async () => {
   if (!isAuthenticated.value) return // el guard global ya manda a /login
   const rol = await rolEn(route.params.id)
   if (!rol) {
-    toast('No sos integrante de esa mesa: solo sus integrantes la administran.', 'error')
+    toast.error('No sos integrante de esa mesa: solo sus integrantes la administran.')
     router.replace('/mesas')
   }
 })

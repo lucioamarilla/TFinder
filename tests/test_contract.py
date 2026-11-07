@@ -4,17 +4,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 from mesas_api.main import app as mesas_app
-from feed_api.main import app as feed_app
 
 
 @pytest.fixture
 def mesas_client():
     return TestClient(mesas_app)
-
-
-@pytest.fixture
-def feed_client():
-    return TestClient(feed_app)
 
 
 def test_contrato_mesa_listado(mesas_client):
@@ -26,17 +20,6 @@ def test_contrato_mesa_listado(mesas_client):
         m = data[0]
         for campo in ("id", "nombre", "sistema", "estado", "jugadores_max", "jugadores_actuales"):
             assert campo in m, f"falta campo {campo} en Mesa"
-
-
-def test_contrato_feed_listado(feed_client):
-    r = feed_client.get("/api/v1/feed")
-    assert r.status_code == 200
-    data = r.json()
-    assert isinstance(data, list)
-    if data:
-        p = data[0]
-        for campo in ("id", "titulo", "cuerpo", "autor", "votos"):
-            assert campo in p, f"falta campo {campo} en Post"
 
 
 def test_contrato_error_envelope(mesas_client):

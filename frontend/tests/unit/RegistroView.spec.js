@@ -72,12 +72,12 @@ describe('RegistroView', () => {
     expect(currentRole()).toBe('guest')
   })
 
-  it('CA-01 · registro válido crea la cuenta, inicia sesión y navega al feed', async () => {
+  it('CA-01 · registro válido crea la cuenta, inicia sesión y navega a mesas', async () => {
     const { wrapper, router } = await montarRegistro()
     await completar(wrapper, { nombre: 'Aldric', email: 'aldric@tfinder.dev', pass: 'contraseña8', rolInput: 'jugador' })
     await enviar(wrapper)
 
-    expect(router.currentRoute.value.path).toBe('/feed')
+    expect(router.currentRoute.value.path).toBe('/mesas')
     expect(currentRole()).toBe('auth')
   })
 })

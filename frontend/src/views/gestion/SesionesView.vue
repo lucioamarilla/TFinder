@@ -106,15 +106,6 @@ watch(() => props.mesaId, cargar)
 
           <div class="acciones">
             <RouterLink
-              v-if="sesion.estado === 'abierta'"
-              data-test="qr-link"
-              :to="`/mesas/${mesaId}/gestion/sesiones/${sesion.id}/qr`"
-              class="btn btn--secondary btn--sm"
-            >
-              Asistencia (QR)
-            </RouterLink>
-
-            <RouterLink
               data-test="bitacora-link"
               :to="`/mesas/${mesaId}/gestion/sesiones/${sesion.id}/bitacora`"
               class="btn btn--secondary btn--sm"
@@ -122,13 +113,7 @@ watch(() => props.mesaId, cargar)
               Bitácora
             </RouterLink>
 
-            <RouterLink
-              data-test="diario-link"
-              :to="`/mesas/${mesaId}/gestion/sesiones/${sesion.id}/diario`"
-              class="text-link"
-            >
-              Diario de sesión
-            </RouterLink>
+
           </div>
         </article>
       </div>

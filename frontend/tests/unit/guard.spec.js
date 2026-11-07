@@ -46,7 +46,7 @@ describe('isFeatureEnabled (features cerradas por defecto)', () => {
     const { isFeatureEnabled, comingSoonPath } = await import('@/config/features')
     expect(isFeatureEnabled('crearMesa')).toBe(true)
     expect(isFeatureEnabled('inexistente')).toBe(false)
-    expect(comingSoonPath('feed')).toBe('/proximamente/feed')
+    expect(comingSoonPath('feed')).toBe('/proximamente/no-disponible')
     expect(comingSoonPath('Desconocido')).toBe('/proximamente/no-disponible')
   })
 })

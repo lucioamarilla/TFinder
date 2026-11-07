@@ -37,7 +37,7 @@ function registrarFallo(cb) {
     cb.abiertoDesde = Date.now()
   }
 }
-const SERVICIOS_NOMBRES = { mesas: 'mesas-api (8001)', builds: 'builds-api (8002)', feed: 'feed-api (8003)', notif: 'notif-api (8004)' }
+const SERVICIOS_NOMBRES = { mesas: 'mesas-api (8001)' }
 
 export class ApiError extends Error {
   constructor(codigo, mensaje, detalles = null) {

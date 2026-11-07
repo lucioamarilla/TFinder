@@ -15,8 +15,14 @@ main, aside { min-width: 0; }
 .nav-pill nav a { color: var(--color-ink); text-decoration: none; font-weight: 700; font-size: var(--text-sm); border-bottom: 2px solid var(--color-accent-2); padding-bottom: 1px; white-space: nowrap; }
 .nav-pill nav a:hover, .nav-pill nav a[aria-current="page"] { color: var(--color-accent-2); }
 .nav-pill nav a[aria-current="page"] { border-bottom-color: var(--color-accent); }
-.nav-avatar { width: 34px; height: 34px; border-radius: var(--radius-card); background: var(--color-paper-3); border: var(--rule-bar) solid var(--color-rule); display: grid; place-items: center; text-decoration: none; color: var(--color-ink); font-size: var(--text-sm); line-height: 1; }
+.nav-avatar { width: 34px; height: 34px; border-radius: var(--radius-card); background: var(--color-paper-3); border: var(--rule-bar) solid var(--color-rule); display: grid; place-items: center; text-decoration: none; color: var(--color-ink); font-size: var(--text-sm); line-height: 1; font-weight: 700; }
 .nav-avatar:hover { border-color: var(--color-focus); }
+.nav-perfil { display: inline-flex; align-items: center; gap: var(--space-2xs); text-decoration: none; color: var(--color-ink); }
+.nav-perfil:hover .nav-nombre { color: var(--color-accent-2); }
+.nav-nombre { font-weight: 700; font-size: var(--text-sm); color: var(--color-muted); white-space: nowrap; }
+@media (max-width: 60rem) { .nav-nombre { display: none; } }
+dialog.tf-dialog { border: 0; background: transparent; padding: 0; margin: auto; max-width: none; }
+dialog.tf-dialog::backdrop { background: color-mix(in oklab, var(--color-shade) 72%, transparent); }
 .nav-menu { display: none; position: relative; }
 .nav-menu summary { list-style: none; cursor: pointer; font-weight: 700; font-size: var(--text-sm); color: var(--color-ink); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); padding: var(--space-3xs) var(--space-sm); }
 .nav-menu[open] summary { border-color: var(--color-focus); }

@@ -112,26 +112,6 @@ describe('servicios · modo api (contrato FE↔BE P2)', () => {
     expect(res.confirmada).toBe(false)
   })
 
-  it('notificaciones: GET notif-api y mapea enlace {label,to} → link', async () => {
-    const f = vi.fn().mockResolvedValueOnce(
-      jsonRes(200, [
-        {
-          id: 77,
-          mensaje: 'Un jugador pidió entrar a la mesa 3',
-          enlace: { label: 'revisar solicitudes', to: '/mesas/3/gestion/solicitudes' },
-          leida: false,
-          fecha: '2026-11-05T01:02:03',
-          usuarioId: 7,
-        },
-      ]),
-    )
-    vi.stubGlobal('fetch', f)
-    const nt = await importarServicios('api', '@/services/notificaciones')
-    const lista = await nt.getNotificaciones()
-    expect(f.mock.calls[0][0]).toContain('/api/v1/notificaciones')
-    expect(lista[0].link).toBe('/mesas/3/gestion/solicitudes')
-    expect(lista[0].leida).toBe(false)
-  })
 
   it('sesiones.getSesiones: sesiones del backend en snake→camel', async () => {
     const f = vi.fn().mockResolvedValueOnce(
@@ -147,72 +127,7 @@ describe('servicios · modo api (contrato FE↔BE P2)', () => {
     expect(lista[0].confirmadaAt).toBeNull()
   })
 
-  it('sesiones.guardarDiario: POST al diario de feed-api en la ruta de la sesion', async () => {
-    const f = vi.fn().mockResolvedValueOnce(
-      jsonRes(201, { id: 41, titulo: 'Diario', embed: { sesion_id: 5, es_diario: true } }),
-    )
-    vi.stubGlobal('fetch', f)
-    const sn = await importarServicios('api', '@/services/sesiones')
-    const res = await sn.guardarDiario(3, 5, { titulo: 'Diario', cuerpo: 'Se jugó buenísimo' })
-    expect(f.mock.calls[0][0]).toContain('/api/v1/mesas/3/sesiones/5/diario')
-    expect(res.sesionId).toBe(5)
-  })
 
-  it('wiki.getWiki: listado con carpetas y páginas (RN-05 en detalle)', async () => {
-    const f = vi.fn().mockResolvedValueOnce(
-      jsonRes(200, {
-        carpetas: [{ id: 'notas', nombre: 'notas', icono: 'scroll', count: 1 }],
-        paginas: [
-          {
-            id: 21,
-            mesaId: 3,
-            carpeta: 'notas',
-            titulo: 'El Pérulo',
-            tipo: 'NPC',
-            fecha: 'HOY',
-            resumen: '',
-            visibilidad: 'jugadores',
-            contenido: [{ kind: 'parrafo', texto: 'Historia del Pérulo' }],
-          },
-        ],
-        total: 1,
-      }),
-    )
-    vi.stubGlobal('fetch', f)
-    const wk = await importarServicios('api', '@/services/wiki')
-    const wiki = await wk.getWiki(3)
-    expect(f.mock.calls[0][0]).toContain('/api/v1/wiki?mesa_id=3')
-    expect(wiki.paginas[0].cuerpo).toBe('Historia del Pérulo')
-    expect(wiki.paginas[0].visibilidad).toBe('jugadores')
-  })
 
-  it('feed.crearPost: POST /api/v1/feed (RF-16) y reparte el DTO', async () => {
-    const f = vi.fn().mockResolvedValueOnce(
-      jsonRes(201, {
-        id: 82,
-        tipo: 'post',
-        autorId: '9',
-        autorNombre: 'Aldren Valeros',
-        iniciales: 'AV',
-        tiempo: 'ahora',
-        horas: 0,
-        etiqueta: 'Debate Táctico',
-        titulo: 'Naves en el Aetherium',
-        cuerpo: 'Crónica completa',
-        votos: 0,
-        totalComentarios: 0,
-        embed: null,
-        comentarios: [],
-      }),
-    )
-    vi.stubGlobal('fetch', f)
-    const fd = await importarServicios('api', '@/services/feed')
-    const post = await fd.crearPost({ titulo: 'Naves en el Aetherium', cuerpo: 'Crónica completa' })
-    expect(f.mock.calls[0][0]).toContain('/api/v1/feed')
-    expect(JSON.parse(f.mock.calls[0][1].body)).toEqual(
-      expect.objectContaining({ titulo: 'Naves en el Aetherium', cuerpo: 'Crónica completa' }),
-    )
-    expect(post.totalComentarios).toBe(0)
-  })
 })
 

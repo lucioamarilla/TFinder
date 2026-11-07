@@ -50,7 +50,7 @@
               </span>
               <span class="num" style="font-size: var(--text-sm);">{{ ocupacionNormalizada(m) }}/{{ cupoDe(m) ?? '∞' }}</span>
             </div>
-            <button class="btn btn--sm" :disabled="!puedoPedir(m)" @click="unirse(m)">{{ etiquetaBoton(m) }}</button>
+            <button v-if="!esMasterDe(m)" class="btn btn--sm" :disabled="!puedoPedir(m)" @click="unirse(m)">{{ etiquetaBoton(m) }}</button>
           </div>
         </article>
       </div>
@@ -114,8 +114,11 @@ function etiquetaEstado(m) { return completa(m) ? 'Completa' : (estadoCrudo(m) =
 function etiquetaTono(m) { return completa(m) ? 'tag--ember' : 'tag--acid' }
 function mesaCompleta(m) { return completa(m) }
 
+function esMasterDe(m) {
+  return !!user.value && Number(m?.gmId ?? m?.gm_id) === Number(user.value?.id ?? user.value?.sub)
+}
 function puedoPedir(m) {
-  return isAuthenticated.value && estadoCrudo(m) === 'abierta' && !completa(m)
+  return isAuthenticated.value && !esMasterDe(m) && estadoCrudo(m) === 'abierta' && !completa(m)
 }
 
 function etiquetaBoton(m) {

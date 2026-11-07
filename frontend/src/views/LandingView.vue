@@ -27,12 +27,22 @@
     </template>
     <template v-else>
       <RouterLink class="nav-perfil" data-test="perfil-acceso" to="/perfil" :title="user?.titulo || 'Tu perfil'">
-        <span class="num">{{ user?.iniciales }}</span>
-        <span class="label nav-nombre">{{ user?.nombre }}</span>
+        <span class="nav-avatar"><span class="num">{{ user?.iniciales }}</span></span>
+        <span class="nav-nombre">{{ user?.nombre }}</span>
       </RouterLink>
-      <button type="button" class="btn btn--secondary nav-login" data-test="cerrar-sesion-landing" @click="salir">Cerrar sesión</button>
+      <button type="button" class="btn btn--secondary nav-login" data-test="cerrar-sesion-landing" @click="modalSalir = true">Cerrar sesión</button>
     </template>
   </nav>
+
+  <ModalConfirmar
+    :open="modalSalir"
+    titulo="¿Cerrar sesión?"
+    mensaje="Vas a salir de tu cuenta en TFinder."
+    etiqueta-ok="Cerrar sesión"
+    etiqueta-cancel="Cancelar"
+    @close="modalSalir = false"
+    @accept="confirmarSalida"
+  />
 
   <section class="section wrap" id="mesa-viva">
     <h2>La partida, en vivo</h2>
@@ -46,13 +56,13 @@
           <p class="post-title" style="margin: 0;">{{ postDestacado.titulo }}</p>
           <p class="label" style="margin-bottom: var(--space-2xs);">Publicado por {{ postDestacado.autorNombre || postDestacado.autor }}<span v-if="postDestacado.comunidad"> en {{ postDestacado.comunidad }}</span></p>
           <p style="font-size: var(--text-sm); color: var(--color-ink-2);">{{ postDestacado.cuerpo }}</p>
-          <p style="margin-top: var(--space-sm);"><RouterLink class="text-link" to="/feed">Leer en el feed →</RouterLink></p>
+          
         </div>
       </article>
       <div v-else class="card" style="padding: var(--space-lg);" data-test="vacio-post">
         <p class="label">El feed todavía está silencioso</p>
         <p style="font-size: var(--text-sm); color: var(--color-ink-2); margin-top: var(--space-2xs);">Cuando la comunidad publique, acá vas a ver la charla más votada.</p>
-        <RouterLink class="btn btn--secondary" to="/feed" style="margin-top: var(--space-sm);">Ir al feed</RouterLink>
+        
       </div>
 
       <div v-if="mesasAbiertas.length > 0" class="card" style="padding: var(--space-md);" data-test="landing-mesas-reales">
@@ -132,7 +142,7 @@
           Aún no hay comunidades. Publicá una nota en el feed y creá la primera.
         </p>
         <p v-for="c in comunidades" :key="c.id" style="font-size: var(--text-sm); margin: var(--space-3xs) 0;">
-          <RouterLink class="text-link" :to="`/feed?comunidad=${c.nombre}`">t/{{ c.nombre }}</RouterLink>
+          
           <span class="label" style="margin-left: var(--space-2xs);">{{ c.cantidad }} {{ c.cantidad === 1 ? 'publicación' : 'publicaciones' }}</span>
         </p>
       </div>
@@ -182,17 +192,21 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { registerAsciiD20, initLandingWiring } from '@/utils/asciiD20'
 import { getMesas } from '@/services/mesas'
-import { getFeedPosts, getComunidades } from '@/services/feed'
 import { useAuth } from '@/composables/useAuth'
+import ModalConfirmar from '@/components/modals/ModalConfirmar.vue'
 
 const router = useRouter()
 const { user, isAuthenticated, logout } = useAuth()
 
-// D-03: cerrar sesión visible también en la landing.
-async function salir() {
+const modalSalir = ref(false)
+
+// D-03: cerrar sesión visible también en la landing (con confirmación).
+async function confirmarSalida() {
+  modalSalir.value = false
   await logout()
   router?.push('/')
 }
+
 
 // F1: 2.5 — nada de cifras inventadas; datos reales con estados vacíos.
 const mesasAbiertas = ref([])
@@ -208,14 +222,6 @@ onMounted(async () => {
     mesasAbiertas.value = todas.filter((m) => m.estado === 'Abierta').slice(0, 5)
   } catch { mesasAbiertas.value = [] }
 
-  try {
-    const posts = await getFeedPosts({ orden: 'hot' })
-    postDestacado.value = posts[0] ?? null
-  } catch { postDestacado.value = null }
-
-  try {
-    comunidades.value = (await getComunidades()).slice(0, 5)
-  } catch { comunidades.value = [] }
 })
 </script>
 
@@ -265,9 +271,7 @@ h3 { font-family: var(--font-body); font-weight: 900; letter-spacing: -0.02em; l
 .js .nav-pill.show { opacity: 1; visibility: visible; transition: opacity var(--dur-long) var(--ease-out); }
 @media (max-width: 60rem) { .hero-overlay { align-items: flex-start; padding-top: 120px; } .hero-overlay .wrap { padding-bottom: 0; } }
 .ember-band { background: var(--color-accent); color: var(--color-accent-ink); padding-block: var(--space-xl); }
-.nav-perfil { display: inline-flex; align-items: center; gap: var(--space-2xs); text-decoration: none; }
-.nav-nombre { display: none; }
-@media (min-width: 60.0625rem) { .nav-nombre { display: inline; } }
+/* estilos de nav-perfil/nav-nombre definidos globalmente en app.css */
 .ember-band :focus-visible { outline-color: var(--color-accent-ink); }
 .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); align-items: start; }
 .grid-hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--gap-columns); align-items: center; }

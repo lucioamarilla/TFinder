@@ -151,6 +151,7 @@ async function confirmarExpulsion() {
                 <td class="label">{{ miembro.fecha }}</td>
                 <td class="centrado">
                   <button
+                    v-if="miembro.rol !== 'Master'"
                     type="button"
                     class="btn btn--danger btn--sm"
                     @click="abrirExpulsar(miembro)"

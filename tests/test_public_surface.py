@@ -6,7 +6,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-SERVICES = ("mesas_api", "builds_api", "feed_api", "notif_api")
+SERVICES = ("mesas_api",)
 MODULOS = (
     "app.infra.logge",
     "app.infra.redis",
@@ -29,7 +29,7 @@ def _modulos_servicio():
 
 def test_inventario_python_importa_todos_los_modulos_publicos():
     modulos = _modulos_servicio()
-    assert len(modulos) > 40
+    assert len(modulos) > 10
     for nombre in modulos:
         assert importlib.import_module(nombre) is not None
 
@@ -45,5 +45,5 @@ def test_inventario_python_expone_funciones_publicas():
             and (inspect.isfunction(valor) or inspect.isclass(valor))
         ]
     publicos = {nombre: valores for nombre, valores in publicos.items() if valores}
-    assert len(publicos) >= 30
-    assert sum(len(valores) for valores in publicos.values()) > 100
+    assert len(publicos) >= 10
+    assert sum(len(valores) for valores in publicos.values()) > 30

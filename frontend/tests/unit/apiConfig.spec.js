@@ -12,11 +12,8 @@ describe('config/api · contrato de construcción de URLs', () => {
     )
   })
 
-  it('sin configuración de entorno, cae a los puertos de desarrollo 8001-8004', () => {
+  it('sin configuración de entorno, cae al puerto de desarrollo 8001', () => {
     expect(apiUrl('mesas', '/api/v1/x')).toBe('http://localhost:8001/api/v1/x')
-    expect(apiUrl('builds', '/api/v1/x')).toBe('http://localhost:8002/api/v1/x')
-    expect(apiUrl('feed', '/api/v1/x')).toBe('http://localhost:8003/api/v1/x')
-    expect(apiUrl('notif', '/api/v1/x')).toBe('http://localhost:8004/api/v1/x')
   })
 
   it('RED: un servicio desconocido ya no cae silenciosamente al API de mesas', () => {

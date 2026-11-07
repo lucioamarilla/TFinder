@@ -38,7 +38,7 @@
           <textarea class="input" id="f-desc" v-model="desc" placeholder="Contá el tono, la campaña y qué esperás de las fichas…"></textarea>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: var(--space-sm);">
-          <RouterLink class="btn btn--secondary" to="/mis-mesas-gm">Cancelar</RouterLink>
+          <RouterLink class="btn btn--secondary" to="/mis-mesas">Cancelar</RouterLink>
           <button class="btn" type="submit" :disabled="ocupado">Publicar mesa</button>
         </div>
         <p class="hint-error" v-if="errorForma" role="alert" data-test="error-mesa">{{ errorForma }}</p>
@@ -129,7 +129,7 @@ async function submit() {
       descripcion: desc.value.trim()
     })
     // ok
-    router.push('/mis-mesas-gm')
+    router.push('/mis-mesas')
   } catch (e) {
     errorForma.value = e?.message || 'No se pudo crear la mesa.'
     // ok
