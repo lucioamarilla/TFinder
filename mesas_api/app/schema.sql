@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS usuarios (
     fecha_creacion TIMESTAMPTZ DEFAULT now()
 );
 
+-- F1/RN-02: propietario de la mesa. Se agrega después de usuarios para la FK.
+ALTER TABLE mesas ADD COLUMN IF NOT EXISTS gm_id BIGINT REFERENCES usuarios (id) ON DELETE SET NULL;
+
 CREATE TABLE IF NOT EXISTS matchmaking (
     id                SERIAL      PRIMARY KEY,
     mesa_id           INTEGER     NOT NULL REFERENCES mesas (id) ON DELETE CASCADE,
