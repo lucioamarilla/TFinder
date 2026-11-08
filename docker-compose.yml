@@ -15,6 +15,7 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: tfinder-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-tfinder}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requerido}
@@ -35,6 +36,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: tfinder-redis
+    restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "127.0.0.1:6390:6379"
@@ -50,6 +52,7 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: tfinder-rabbitmq
+    restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-tfinder}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS requerido}
@@ -68,6 +71,7 @@ services:
   mailhog:
     image: mailhog/mailhog:v1.0.1
     container_name: tfinder-mailhog
+    restart: unless-stopped
     ports:
       - "127.0.0.1:1025:1025"
       - "127.0.0.1:8025:8025"
@@ -79,6 +83,7 @@ services:
       args:
         SERVICE: mesas_api
     container_name: tfinder-mesas-api
+    restart: unless-stopped
     environment:
       SERVICIO: mesas-api
       MESAS_DATABASE_URL: ${MESAS_DATABASE_URL:?MESAS_DATABASE_URL requerida}
@@ -114,6 +119,7 @@ services:
       args:
         SERVICE: builds_api
     container_name: tfinder-builds-api
+    restart: unless-stopped
     environment:
       SERVICIO: builds-api
       BUILDS_DATABASE_URL: ${BUILDS_DATABASE_URL:?BUILDS_DATABASE_URL requerida}
@@ -149,6 +155,7 @@ services:
       args:
         SERVICE: feed_api
     container_name: tfinder-feed-api
+    restart: unless-stopped
     environment:
       SERVICIO: feed-api
       FEED_DATABASE_URL: ${FEED_DATABASE_URL:?FEED_DATABASE_URL requerida}
@@ -187,6 +194,7 @@ services:
       args:
         SERVICE: notif_api
     container_name: tfinder-notif-api
+    restart: unless-stopped
     environment:
       SERVICIO: notif-api
       NOTIF_DATABASE_URL: ${NOTIF_DATABASE_URL:?NOTIF_DATABASE_URL requerida}
@@ -239,6 +247,7 @@ services:
         VITE_AUTH_MODE: api
         VITE_API_MODE: api
     container_name: tfinder-frontend
+    restart: unless-stopped
     ports:
       - "100.68.203.96:5173:80"
     depends_on:
