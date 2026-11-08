@@ -4,17 +4,18 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: tfinder-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: tfinder
-      POSTGRES_PASSWORD: tfinder
-      POSTGRES_DB: mesas_db
+      POSTGRES_USER: ${POSTGRES_USER:-tfinder}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requerido}
+      POSTGRES_DB: ${POSTGRES_DB:-mesas_db}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - tfinder-pg:/var/lib/postgresql/data
       - ./infra/postgres-init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tfinder -d mesas_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tfinder} -d ${POSTGRES_DB:-mesas_db}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -23,9 +24,12 @@ services:
   redis:
     image: redis:7-alpine
     container_name: tfinder-redis
+    restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "6390:6379"
+      - "127.0.0.1:6390:6379"
+    volumes:
+      - tfinder-redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -35,12 +39,15 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: tfinder-rabbitmq
+    restart: unless-stopped
     environment:
-      RABBITMQ_DEFAULT_USER: tfinder
-      RABBITMQ_DEFAULT_PASS: tfinder
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-tfinder}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS requerido}
     ports:
-      - "5673:5672"
-      - "15673:15672"
+      - "127.0.0.1:5673:5672"
+      - "127.0.0.1:15673:15672"
+    volumes:
+      - tfinder-rabbitmq:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
@@ -53,18 +60,30 @@ services:
       args:
         SERVICE: mesas_api
     container_name: tfinder-mesas-api
+    restart: unless-stopped
     environment:
       SERVICIO: mesas-api
-      MESAS_DATABASE_URL: postgresql://tfinder:tfinder@postgres:5432/mesas_db
-      REDIS_URL: redis://redis:6379/0
-      RABBITMQ_URL: amqp://tfinder:tfinder@rabbitmq:5672/
-      JWT_SECRET: ${JWT_SECRET:-dev-secret}
+      MESAS_DATABASE_URL: ${MESAS_DATABASE_URL:?MESAS_DATABASE_URL requerida}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      RABBITMQ_URL: ${RABBITMQ_URL:?RABBITMQ_URL requerida}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET requerido}
       JWT_EXP_MIN: ${JWT_EXP_MIN:-1440}
-      DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-true}
-      DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-DemoTFinder123!}
+      SESSION_IDLE_MIN: ${SESSION_IDLE_MIN:-30}
+      QR_SECRET: ${QR_SECRET:?QR_SECRET requerido}
+      DEBUG: ${DEBUG:-false}
+      MESAS_EMAIL: ${MESAS_EMAIL:-email_svc@tfinder.dev}
+      RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-100}
       PORT: "8001"
+      DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-false}
+      DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-}
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,10 +100,20 @@ services:
         VITE_AUTH_MODE: api
         VITE_API_MODE: api
     container_name: tfinder-frontend
+    restart: unless-stopped
     ports:
-      - "5173:80"
+      - "127.0.0.1:5173:80"
     depends_on:
-      - mesas-api
+      mesas-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
 volumes:
   tfinder-pg:
+  tfinder-redis:
+  tfinder-rabbitmq:
