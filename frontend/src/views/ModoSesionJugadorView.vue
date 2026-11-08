@@ -26,7 +26,8 @@
           </option>
         </select>
         <div style="margin-top: var(--space-md);">
-          <button class="btn" :disabled="!sesionActiva || asistiendo" @click="marcarAsistencia">Marcar asistencia</button>
+          <button class="btn" :disabled="!puedeMarcar || asistiendo" @click="marcarAsistencia">Marcar asistencia</button>
+          <p v-if="sesionSeleccionada && !puedeMarcar" class="label" style="margin-top: var(--space-2xs);">La sesión está cerrada; no se puede registrar asistencia.</p>
           <p v-if="mensajeAsistencia" class="label" style="margin-top: var(--space-2xs);">{{ mensajeAsistencia }}</p>
         </div>
         <BitacoraFor :mesa-id="mesaId" :sesion-id="sesionActiva" />
@@ -36,7 +37,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, defineAsyncComponent } from 'vue'
+import { computed, onMounted, ref, watch, defineAsyncComponent } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { getSesiones } from '@/services/sesiones'
 import { sesionesApi } from '@/api/endpoints'
@@ -51,6 +52,15 @@ const sesionActiva = ref(null)
 const asistiendo = ref(false)
 const mensajeAsistencia = ref('')
 
+const sesionSeleccionada = computed(
+  () => sesiones.value.find((s) => String(s.id) === sesionActiva.value) ?? null
+)
+const puedeMarcar = computed(() => sesionSeleccionada.value?.estado === 'abierta')
+
+watch(sesionActiva, () => {
+  mensajeAsistencia.value = ''
+})
+
 onMounted(async () => {
   try {
     sesiones.value = await getSesiones(mesaId)
@@ -61,7 +71,7 @@ onMounted(async () => {
 })
 
 async function marcarAsistencia() {
-  if (!sesionActiva.value) return
+  if (!puedeMarcar.value) return
   asistiendo.value = true
   mensajeAsistencia.value = ''
   try {

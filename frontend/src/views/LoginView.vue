@@ -26,7 +26,6 @@
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm);">
           <label style="display: flex; gap: var(--space-2xs); align-items: center;"><input type="checkbox" v-model="recordar" /> Recordarme</label>
-          <RouterLink class="text-link" to="/recuperar">Olvidé mi contraseña</RouterLink>
         </div>
         <button class="btn" type="submit" :disabled="ocupado">Ingresar</button>
         <p class="hint-error" v-if="error" role="alert" data-test="error-sesion">{{ error }}</p>

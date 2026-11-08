@@ -31,8 +31,6 @@ from mesas_api.app.errors import (
     manejar_mesa_inexistente,
     manejar_no_encontrado,
     manejar_prohibido,
-    manejar_qr_conflicto,
-    manejar_qr_invalido,
     manejar_sesion_inexistente,
     manejar_solicitud_inexistente,
 )
@@ -43,7 +41,6 @@ from mesas_api.app.routes.v1.matchmaking import router as matchmaking_router
 from mesas_api.app.routes.v1.mesas import router as mesas_router
 from mesas_api.app.routes.v1.sesiones import router as sesiones_router
 from mesas_api.app.routes.v1.solicitudes import router as solicitudes_router
-from mesas_api.app.services.qr_asistencia import _Conflict, _Invalid
 from app.servicio import crear_app
 
 app = crear_app(
@@ -75,7 +72,5 @@ app = crear_app(
         AccionInvalidaError: manejar_accion_invalida,
         SesionNotFoundError: manejar_sesion_inexistente,
         SesionCerradaError: manejar_conflicto,
-        _Conflict: manejar_qr_conflicto,
-        _Invalid: manejar_qr_invalido,
     },
 )

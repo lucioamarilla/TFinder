@@ -1,7 +1,7 @@
 // Sesión del frontend TFinder.
 // DOS modos de operación, elegido por VITE_AUTH_MODE:
 //  - "demo" (default): sesión local en localStorage, sin backend. Misma firma
-//    pública (login/register/logout/recuperar/clearSession/currentRole/
+//    pública (login/register/logout/clearSession/currentRole/
 //    currentAccessToken/useAuth) para que guard, header y vistas no dependan
 //    del backend mientras dure la demo.
 //  - "api": sesión REAL contra mesas-api (JWT + refresh + perfil). Los tokens
@@ -222,20 +222,6 @@ export async function register(credentials) {
   return instalarSesion(normalizado, rol, nombre)
 }
 
-export async function recuperar(email) {
-  const errorForma = validarEmail(email)
-  if (errorForma) throw errorNegocio('400', errorForma)
-
-  if (ES_API) {
-    const { recuperar: recuperarReal } = await cliente()
-    const { datos } = await recuperarReal({ email })
-    return datos ?? { ok: true }
-  }
-
-  // Demo sin correo real: la vista informa que el enlace "fue enviado".
-  return { ok: true }
-}
-
 export async function logout() {
   if (ES_API) {
     try {
@@ -351,5 +337,5 @@ export function useAuth() {
     return mapaRol(state.user?.rol) === required
   }
 
-  return { role, user, isAuthenticated, isAdmin, can, login, logout, register, recuperar, clearSession, editarPerfil, cambiarPassword, hidratarSesion }
+  return { role, user, isAuthenticated, isAdmin, can, login, logout, register, clearSession, editarPerfil, cambiarPassword, hidratarSesion }
 }

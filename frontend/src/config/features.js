@@ -6,7 +6,6 @@ export const FEATURES = {
   gestionMesa: { label: 'Gestión de campaña', available: true },
   calendario: { label: 'Calendario y votación', available: true },
   sesiones: { label: 'Sesiones', available: true },
-  qr: { label: 'Asistencia por QR', available: true },
   jugadores: { label: 'Gestión de jugadores', available: true },
   matchmaking: { label: 'Matchmaking', available: true }
 }

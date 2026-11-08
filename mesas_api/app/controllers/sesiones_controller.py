@@ -14,13 +14,7 @@ from mesas_api.app.models.sesiones import (
     obtener_sesion_de_mesa,
     registrar_asistencia,
 )
-from mesas_api.app.schemas import SesionOut, QrValidate
-from mesas_api.app.services.qr_asistencia import (
-    _Conflict,
-    _Invalid,
-    generar_sesion_qr,
-    validar_sesion_qr,
-)
+from mesas_api.app.schemas import SesionOut
 
 
 class SesionNotFoundError(Exception):
@@ -89,39 +83,6 @@ def anotaciones_controller(mesa_id: int, sesion_id: int):
     return salida
 
 
-def emitir_qr(sesion_id: int, usuario_id: int):
-    if obtener_sesion(sesion_id) is None:
-        raise SesionNotFoundError(f"Sesión {sesion_id} no encontrada")
-    return generar_sesion_qr(sesion_id, usuario_id)
-
-
-def validar_qr(sesion_id: int, body: QrValidate, usuario: dict | None = None):
-    if obtener_sesion(sesion_id) is None:
-        raise SesionNotFoundError(f"Sesión {sesion_id} no encontrada")
-    if usuario is not None:
-        fila = obtener_sesion(sesion_id)
-        from mesas_api.app.models.mesa import obtener_mesa_por_id
-
-        mesa = obtener_mesa_por_id(fila["mesa_id"])
-        if mesa is None:
-            raise SesionNotFoundError(f"La mesa de la sesión no existe")
-        gmid = mesa.get("gm_id")
-        # ÚNICAMENTE el GM propietario registra asistencia (incluso admin fuera).
-        if gmid is None or int(usuario["sub"]) != gmid:
-            raise HTTPException(
-                status_code=403,
-                detail="No tienes permisos para registrar asistencia de esta mesa (solo su GM).",
-            )
-    try:
-        validar_sesion_qr(sesion_id, body.usuario_id, body.qr_data)
-    except _Conflict:
-        raise
-    except _Invalid:
-        raise
-    registrar_asistencia(sesion_id, body.usuario_id)
-    return {"asistencia": "registrada"}
-
-
 # ---- Gestión de sesiones (cierre AE2) ---------------------------------------
 
 def crear_sesion_controller(mesa_id: int) -> SesionOut:
@@ -188,5 +149,9 @@ def marcar_asistencia_controller(sesion_id: int, usuario: dict) -> dict:
         raise SesionNotFoundError(f"La mesa de la sesión no existe")
     if int(usuario["sub"]) != mesa.get("gm_id") and rol_de(int(usuario["sub"]), mesa_id) is None:
         raise HTTPException(status_code=403, detail="No eres miembro de esta mesa.")
+    if fila["estado"] == "cerrada":
+        raise SesionCerradaError(
+            f"La sesión {sesion_id} está cerrada; no se puede registrar asistencia"
+        )
     registrar_asistencia(sesion_id, int(usuario["sub"]))
     return {"asistencia": "registrada"}
