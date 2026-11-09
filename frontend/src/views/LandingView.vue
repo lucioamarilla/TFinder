@@ -1,7 +1,14 @@
 <template>
-  <div class="d20-runway" style="--d20-fg: var(--color-accent-2); --d20-bg: var(--color-paper); --d20-accent: var(--color-ink);">
-    <ascii-d20 id="dado" result="20" scroll-height="100%" cy="0.6"></ascii-d20>
-    <div class="hero-overlay hero">
+  <ascii-d20
+    ref="dadoEl"
+    dock="right"
+    bg="#111827"
+    fg="#F472B6"
+    accent="#F0FDF4"
+    result="20"
+    scroll-height="350vh"
+  >
+    <div class="hero-overlay hero show">
       <div class="wrap">
         <h1 style="font-size: var(--text-display); max-width: 12ch; margin: 0 0 var(--space-md);">Encontrá tu mesa y tirá iniciativa</h1>
         <p class="lead" style="margin: 0 0 var(--space-lg);">Campañas de PF1e en español, fichas sincronizadas, un GM esperándote.</p>
@@ -11,9 +18,9 @@
         </div>
       </div>
     </div>
-  </div>
+  </ascii-d20>
 
-  <nav class="nav-pill" aria-label="Principal">
+  <nav class="nav-pill show" aria-label="Principal">
     <RouterLink class="wordmark" to="/"><img src="/assets/logo-tfinder.png" alt="Logo de TFinder" width="38" height="38" style="width:38px;height:38px;object-fit:contain;">TFinder</RouterLink>
     <nav>
       <a href="#mesas">Explorar mesas</a>
@@ -188,15 +195,20 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { registerAsciiD20, initLandingWiring } from '@/utils/asciiD20'
+import '@/components/ascii-d20.js'
 import { getMesas } from '@/services/mesas'
 import { useAuth } from '@/composables/useAuth'
 import ModalConfirmar from '@/components/modals/ModalConfirmar.vue'
 
 const router = useRouter()
 const { user, isAuthenticated, logout } = useAuth()
+
+const dadoEl = ref(null)
+function onDado(e) {
+  document.documentElement.dataset.intro = e.detail.progress >= 0.98 ? 'done' : 'playing'
+}
 
 const modalSalir = ref(false)
 
@@ -214,14 +226,19 @@ const postDestacado = ref(null)
 const comunidades = ref([])
 
 onMounted(async () => {
-  registerAsciiD20()
-  setTimeout(initLandingWiring, 0)
+  document.documentElement.dataset.intro = 'playing'
+  dadoEl.value?.addEventListener('d20-progress', onDado)
 
   try {
     const todas = await getMesas()
     mesasAbiertas.value = todas.filter((m) => String(m.estado ?? '').toLowerCase() === 'abierta').slice(0, 5)
   } catch { mesasAbiertas.value = [] }
 
+})
+
+onUnmounted(() => {
+  dadoEl.value?.removeEventListener('d20-progress', onDado)
+  delete document.documentElement.dataset.intro
 })
 </script>
 
@@ -280,4 +297,10 @@ footer.colophon { border-top: var(--rule-bar) solid var(--color-rule); padding-b
 footer.colophon .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-lg); }
 footer.colophon a { color: var(--color-ink-2); text-decoration: none; border-bottom: 2px solid var(--color-accent-2); }
 @media (max-width: 60rem) { footer.colophon .cols { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<style>
+.nav-pill { transition: opacity .5s ease, visibility .5s ease; }
+html[data-intro='playing'] .nav-pill { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
+html[data-intro='done'] .nav-pill { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; }
 </style>
