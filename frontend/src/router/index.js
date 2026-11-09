@@ -5,6 +5,7 @@ import { currentRole } from '@/composables/useAuth'
 const LandingView = () => import('@/views/LandingView.vue')
 const LoginView = () => import('@/views/LoginView.vue')
 const RegistroView = () => import('@/views/RegistroView.vue')
+const RecuperarView = () => import('@/views/RecuperarView.vue')
 const MesasListView = () => import('@/views/MesasListView.vue')
 const MesaDetailJugadorView = () => import('@/views/MesaDetailJugadorView.vue')
 const MesaDetailGmView = () => import('@/views/MesaDetailGmView.vue')
@@ -29,6 +30,7 @@ export const routes = [
   { path: '/', name: 'landing', component: LandingView },
   { path: '/login', name: 'login', component: LoginView, meta: { roles: ['guest'], layout: 'guest' } },
   { path: '/registro', name: 'registro', component: RegistroView, meta: { roles: ['guest'], layout: 'guest' } },
+  { path: '/recuperar', name: 'recuperar', component: RecuperarView, meta: { roles: ['guest'], layout: 'guest' } },
   { path: '/dashboard', redirect: '/mesas' },
   { path: '/mesas', name: 'mesas', component: MesasListView },
   { path: '/mesas/nueva', name: 'mesa-nueva', component: CrearMesaView, meta: { roles: ['auth'] } },

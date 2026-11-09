@@ -28,7 +28,12 @@
           <input class="input" :class="{ 'is-error': !okP && touchedCod }" id="nueva" v-model="nueva" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
           <p class="hint-error" :hidden="okP || !touchedCod">La contraseña debe tener al menos 8 caracteres.</p>
         </div>
-        <button class="btn" type="submit" :disabled="ocupado">Cambiar contraseña</button>
+        <div class="field">
+          <label class="label" for="confirmar">Confirmar contraseña</label>
+          <input class="input" :class="{ 'is-error': !okConfirm && touchedCod }" id="confirmar" v-model="confirmarPass" type="password" placeholder="Repetí la contraseña" autocomplete="new-password" />
+          <p class="hint-error" :hidden="okConfirm || !touchedCod">Las contraseñas no coinciden.</p>
+        </div>
+        <button class="btn" type="submit" :disabled="ocupado || !(okC && okP && okConfirm)">Cambiar contraseña</button>
         <button class="btn btn--secondary" type="button" :disabled="cooldown > 0 || ocupado" @click="reenviar" data-test="reenviar-codigo">
           {{ cooldown > 0 ? `Reenviar código (${cooldown}s)` : 'Reenviar código' }}
         </button>
@@ -64,6 +69,7 @@ const ocupado = ref(false)
 // Paso 2
 const codigo = ref('')
 const nueva = ref('')
+const confirmarPass = ref('')
 const touchedCod = ref(false)
 const cooldown = ref(0)
 let temporizador = null
@@ -71,6 +77,7 @@ let temporizador = null
 const okM = computed(() => validarEmail(email.value) === null)
 const okC = computed(() => /^\d{6}$/.test(codigo.value))
 const okP = computed(() => validarPassword(nueva.value) === null)
+const okConfirm = computed(() => confirmarPass.value.length > 0 && confirmarPass.value === nueva.value)
 
 function soloDigitos(e) {
   codigo.value = e.target.value.replace(/\D/g, '').slice(0, 6)
@@ -121,7 +128,7 @@ async function reenviar() {
 async function confirmar() {
   touchedCod.value = true
   error.value = null
-  if (!(okC.value && okP.value)) return
+  if (!(okC.value && okP.value && okConfirm.value)) return
   ocupado.value = true
   try {
     await confirmarRecupero(email.value, codigo.value, nueva.value)

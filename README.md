@@ -132,27 +132,132 @@ Los valores de `.env` apuntan a **`localhost`** porque el desarrollo principal c
 
 Los scripts de `docker-entrypoint-initdb.d` (que crean `builds_db`, `feed_db` y `notif_db`) **solo corren la primera vez**, cuando el volumen de postgres está vacío. Si borraste un servicio o reseteaste con `docker compose up` sin volumen, para recrear las bases extra: `docker compose down -v && docker compose up -d postgres`. (El script es idempotente, así que un segundo arranque no falla.)
 
-## Ejecución
+## Ejecucion
 
-Desde el host (requiere la infraestructura de compose levantada):
+### Levantar en localhost (desarrollo)
+
+Requisitos: Python 3.11+, Node.js, Docker y Docker Compose.
+
+1. Clonar el repositorio y entrar a la carpeta del proyecto.
 
 ```bash
-uvicorn mesas_api.main:app --port 8001    # CRUD de mesas (http://localhost:8001/docs)
-uvicorn builds_api.main:app --port 8002   # builds/tags
-uvicorn feed_api.main:app --port 8003     # feed/wiki
-uvicorn notif_api.main:app --port 8004    # notificaciones/event-log
+git clone https://github.com/lucioamarilla/TFinder
+cd TFinder/App_Final
 ```
 
-O dentro de contenedores:
+2. Crear el entorno virtual e instalar dependencias de Python.
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+3. Configurar las variables de entorno.
+
+```bash
+cp .env.example .env
+```
+
+Editar `.env` y completar los secretos (POSTGRES_PASSWORD, JWT_SECRET, QR_SECRET, RABBITMQ_DEFAULT_PASS, MESAS_DATABASE_URL, RABBITMQ_URL). Para envio de correos, configurar SMTP_* si se desea; si se deja vacio, los flujos de correo responden 503.
+
+4. Levantar la infraestructura (postgres, redis, rabbitmq).
+
+```bash
+docker compose up -d postgres redis rabbitmq
+docker compose ps
+```
+
+Verificar que los tres servicios queden con estado healthy.
+
+5. Levantar el backend con recarga automatica.
+
+```bash
+source .env
+venv/bin/uvicorn mesas_api.main:app --port 8001 --reload
+```
+
+6. En otra terminal, levantar el frontend con Vite.
+
+```bash
+cd frontend
+npm install
+npm run dev -- --port 5173
+```
+
+7. Acceder a la aplicacion.
+
+- Frontend: http://localhost:5173
+- API Mesas (docs): http://localhost:8001/docs
+- Health: http://localhost:8001/health
+- RabbitMQ UI: http://localhost:15673 (usuario tfinder / contrasena tfinder)
+
+Alternativa rapida: ejecutar `bash dev.sh`, que levanta la infraestructura, el backend y el frontend en un solo comando.
+
+### Levantar en Tailscale (despliegue externo)
+
+Esta variante expone la aplicacion en la IP de Tailscale del host, para consumo desde otra maquina de la red.
+
+Requisitos: Docker, Docker Compose y Tailscale instalados y conectados en el host de despliegue.
+
+1. Clonar el repositorio en el host de despliegue.
+
+```bash
+git clone https://github.com/lucioamarilla/TFinder
+cd TFinder
+git checkout origin/hosteo/despliegue
+```
+
+2. Configurar las variables de entorno.
+
+```bash
+cp .env.example .env
+```
+
+Completar los secretos en `.env`. Los valores de host deben usar los nombres de servicio de compose (postgres, redis, rabbitmq) si el API corre en contenedor, o localhost si corre en el host.
+
+3. Ajustar el docker-compose.yml para publicar el frontend en la IP de Tailscale del host. Ejemplo:
+
+```yaml
+frontend:
+  ports:
+    - "100.x.x.x:5173:80"
+```
+
+Reemplazar 100.x.x.x por la IP de Tailscale del host. Los servicios de datos y administracion (postgres, redis, rabbitmq) deben escuchar solo en 127.0.0.1.
+
+4. Levantar todos los servicios.
 
 ```bash
 docker compose up -d --build
+docker compose ps
 ```
 
-- Frontend Vue servido por Nginx en `http://localhost:5173`.
-- El frontend usa proxies same-origin hacia las cuatro APIs.
-- Al arrancar, cada servicio abre su pool `psycopg_pool` contra su `*_db`, crea sus tablas (`schema.sql` idempotente) y aplica sus índices.
-- Documentación interactiva de cada servicio en `http://localhost:<puerto>/docs`.
+Verificar que todos los servicios con healthcheck queden en estado healthy.
+
+5. Acceder desde un equipo remoto de la red Tailscale.
+
+- Frontend: http://100.x.x.x:5173
+- El frontend proxya las APIs same-origin en /mesas-api, por lo que no se requiere CORS ni exponer puertos adicionales.
+
+### Detener la aplicacion
+
+En localhost:
+
+```bash
+# Detener backend y frontend (PIDs mostrados por dev.sh)
+kill <pid-backend> <pid-frontend>
+# Detener infraestructura
+docker compose down
+```
+
+En Tailscale:
+
+```bash
+docker compose down
+```
+
+Para borrar tambien los volumenes de datos: `docker compose down -v`.
 
 ### Datos demo
 
