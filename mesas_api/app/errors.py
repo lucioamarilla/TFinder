@@ -1,7 +1,8 @@
 """Errores de mesas-api. Reexporta el envelope canonico de app.infra.errors.
 
-Los handlers de dominio (MesaNotFoundError, CupoAgotadoError, QR) son propios de
-este servicio; la forma del cuerpo y los handlers genericos son compartidos.
+Los handlers de dominio (MesaNotFoundError, CupoAgotadoError, sesiones) son
+propios de este servicio; la forma del cuerpo y los handlers genericos son
+compartidos.
 """
 
 from fastapi.responses import JSONResponse
@@ -23,8 +24,6 @@ from mesas_api.app.controllers.solicitudes_controller import (
     SolicitudNoExisteError,
     SolicitudProhibidaError,
 )
-from mesas_api.app.services.qr_asistencia import _Conflict, _Invalid
-
 __all__ = [
     "manejar_conflicto",
     "manejar_error_interno",
@@ -32,8 +31,6 @@ __all__ = [
     "manejar_mesa_inexistente",
     "manejar_no_encontrado",
     "manejar_prohibido",
-    "manejar_qr_conflicto",
-    "manejar_qr_invalido",
     "manejar_sesion_inexistente",
     "manejar_solicitud_inexistente",
     "manejar_validacion",
@@ -67,11 +64,3 @@ def manejar_mesa_inexistente(request, exc: MesaNoExisteError):
 
 def manejar_sesion_inexistente(request, exc: SesionNotFoundError):
     return JSONResponse(status_code=404, content=_body_error(404, str(exc)))
-
-
-def manejar_qr_conflicto(request, exc: _Conflict):
-    return JSONResponse(status_code=409, content=_body_error(409, str(exc)))
-
-
-def manejar_qr_invalido(request, exc: _Invalid):
-    return JSONResponse(status_code=400, content=_body_error(400, str(exc)))

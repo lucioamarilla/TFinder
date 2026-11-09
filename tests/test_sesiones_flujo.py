@@ -154,3 +154,32 @@ def test_404_sesiones_inexistentes(client, token_gm):
         f"/api/v1/mesas/{otra_mesa}/sesiones/{sesion_ajena}/confirmar", headers=auth
     )
     assert ajena.status_code == 404
+
+
+def test_marcar_asistencia_sesion_abierta(client, token_gm):
+    mesa_id = crear_mesa(client, token_gm, "Mesa asistencia abierta", jugadores_max=4)
+    sesion_id = _crear_sesion(client, token_gm, mesa_id)["id"]
+
+    r = client.post(
+        f"/api/v1/sesiones/{sesion_id}/asistencia",
+        headers={"Authorization": f"Bearer {token_gm}"},
+    )
+    assert r.status_code == 200
+    assert r.json() == {"asistencia": "registrada"}
+
+
+def test_marcar_asistencia_sesion_cerrada_responde_409(client, token_gm):
+    mesa_id = crear_mesa(client, token_gm, "Mesa asistencia cerrada", jugadores_max=4)
+    sesion_id = _crear_sesion(client, token_gm, mesa_id)["id"]
+    cerrar = client.post(
+        f"/api/v1/mesas/{mesa_id}/sesiones/{sesion_id}/cerrar",
+        headers={"Authorization": f"Bearer {token_gm}"},
+    )
+    assert cerrar.status_code == 200
+
+    r = client.post(
+        f"/api/v1/sesiones/{sesion_id}/asistencia",
+        headers={"Authorization": f"Bearer {token_gm}"},
+    )
+    assert r.status_code == 409
+    assert r.json()["error"]["codigo"] == 409

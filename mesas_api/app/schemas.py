@@ -114,18 +114,6 @@ class ConfirmarRecupero(BaseModel):
     nueva_password: str = Field(min_length=8)
 
 
-class QrValidate(BaseModel):
-    usuario_id: int
-    qr_data: str
-
-
-class QROut(BaseModel):
-    qr_data: str
-    png_base64: str
-    expira_en_seg: int
-    sesion_id: int
-
-
 class SesionOut(BaseModel):
     """Sesión de juego de una mesa (B07)."""
 

@@ -17,7 +17,6 @@ async function montarLogin() {
     routes: [
       { path: '/login', name: 'login', component: LoginView },
       { path: '/registro', name: 'registro', component: OTRA },
-      { path: '/recuperar', name: 'recuperar', component: OTRA },
       { path: '/feed', name: 'feed', component: OTRA }
     ]
   })
