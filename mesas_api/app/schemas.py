@@ -89,6 +89,31 @@ class AuthRegistro(BaseModel):
     rol: ROLES = "usuario"
 
 
+class SolicitudEmail(BaseModel):
+    """Sólo un email: pedidos públicos (reenvío de código / solicita recupero)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+
+
+class VerificarCodigo(BaseModel):
+    """Código de 6 dígitos enviado por mail (registro | recupero)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+    codigo: str = Field(pattern=r"^\d{6}$")
+
+
+class ConfirmarRecupero(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+    codigo: str = Field(pattern=r"^\d{6}$")
+    nueva_password: str = Field(min_length=8)
+
+
 class QrValidate(BaseModel):
     usuario_id: int
     qr_data: str

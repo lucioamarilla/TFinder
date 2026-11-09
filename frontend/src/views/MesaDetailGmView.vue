@@ -41,7 +41,7 @@
 
         <div class="card" style="padding: var(--space-md);">
           <h3>Bandeja de solicitudes</h3>
-          <p class="hint-error" v-if="errorBandeja" role="alert" data-test="error-gm-bandeja">{{ errorBandeja }}</p>
+          <Aviso v-if="errorBandeja" tipo="error" data-test="error-gm-bandeja">{{ errorBandeja }}</Aviso>
           <div v-if="pendientes.length === 0" style="font-size: var(--text-sm); color: var(--color-ink-2);">No queda nadie esperando: la bandeja está limpia.</div>
           <div v-for="s in pendientes" :key="s.id" class="solicitud">
             <div class="quien">
@@ -65,14 +65,24 @@
             <input class="input" id="e-nombre" v-model="edicion.nombre" />
           </div>
           <div class="field">
-            <label class="label" for="e-horario">Horario</label>
-            <input class="input" id="e-horario" v-model="edicion.horario" />
+            <span class="label">Horario</span>
+            <div class="grid-2" style="gap: var(--space-md);">
+              <div class="field">
+                <label class="label" for="e-dia">Día</label>
+                <input class="input" type="date" id="e-dia" data-test="input-dia" v-model="edicion.dia" @input="edicion.horarioTocado = true" />
+              </div>
+              <div class="field">
+                <label class="label" for="e-hora">Hora</label>
+                <input class="input" type="time" id="e-hora" data-test="input-hora" v-model="edicion.hora" @input="edicion.horarioTocado = true" />
+              </div>
+            </div>
+            <p class="label">Opcional: día y hora sugeridos.</p>
           </div>
           <div class="field">
             <label class="label" for="e-cupo">Cupo</label>
             <input class="input" id="e-cupo" data-test="input-cupo" v-model.number="edicion.cupo" type="number" min="1" />
           </div>
-          <p class="hint-error" v-if="errorEdicion" role="alert" data-test="error-edicion">{{ errorEdicion }}</p>
+          <Aviso v-if="errorEdicion" tipo="error" data-test="error-edicion">{{ errorEdicion }}</Aviso>
           <button class="btn btn--sm" data-test="guardar-detalle" @click="guardar">Guardar cambios</button>
         </details>
       </main>
@@ -93,10 +103,12 @@ import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { getMesa, actualizarMesa, esMesaCerrada, cupoDe } from '@/services/mesas'
-import { getMiembros, getSolicitudes, aceptarSolicitud, rechazarSolicitud } from '@/services/jugadores'
+import { getMiembros, getSolicitudes, aceptarSolicitud, rechazarSolicitud, contarJugadores } from '@/services/jugadores'
 import { mesasApi } from '@/api/endpoints'
 // sin demo
 import { validarMesa, validarCupo } from '@/rules/mesas'
+import { componerHorario, descomponerHorario } from '@/rules/fechas'
+import Aviso from '@/components/Aviso.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -109,7 +121,10 @@ const pendientes = ref([])
 const errorBandeja = ref(null)
 const errorEdicion = ref(null)
 
-const edicion = reactive({ nombre: '', horario: '', cupo: null })
+// D-11: el horario se edita con pickers día/hora. `horarioPrevio` conserva el
+// texto legal del contrato; si el GM no toca los pickers, ese texto viaja
+// tal cual al PUT (los horarios heredados nunca cambian a la mandadera).
+const edicion = reactive({ nombre: '', dia: '', hora: '', horarioPrevio: '', horarioTocado: false, cupo: null })
 
 const esGM = computed(() => !!mesa.value && !!user.value && mesa.value.gmId === Number(user.value?.id ?? user.value?.sub))
 
@@ -131,7 +146,11 @@ onMounted(async () => {
   }
   try {
     const miembros = await getMiembros(mesa.value.id, mesa.value)
-    ocupacion.value = miembros?.miembros?.length ?? mesa.value.jugadores ?? 0
+    // El master no ocupa asiento: se cuentan solo jugadores (rol 'Jugador'),
+    // coherente con mesa.jugadores del buscador (0/5 y vacantes 5 el día 0).
+    ocupacion.value = miembros?.miembros
+      ? contarJugadores(miembros.miembros)
+      : (mesa.value.jugadores ?? 0)
   } catch {
     ocupacion.value = mesa.value.jugadores ?? 0 // contingencia sin membresía
   }
@@ -143,7 +162,11 @@ onMounted(async () => {
     errorBandeja.value = e?.message || 'No se pudo cargar la bandeja de solicitudes.'
   }
   edicion.nombre = mesa.value.nombre
-  edicion.horario = mesa.value.horario
+  const desarmado = descomponerHorario(mesa.value.horario)
+  edicion.dia = desarmado.dia
+  edicion.hora = desarmado.hora
+  edicion.horarioPrevio = mesa.value.horario ?? ''
+  edicion.horarioTocado = false
   edicion.cupo = mesa.value.plazas
   cargando.value = false
 })
@@ -194,7 +217,10 @@ async function guardar() {
     return
   }
   try {
-    const actualizada = await actualizarMesa(mesa.value.id, { nombre: edicion.nombre, horario: edicion.horario, cupo: edicion.cupo })
+    const horario = edicion.horarioTocado
+      ? componerHorario(edicion.dia, edicion.hora)
+      : edicion.horarioPrevio
+    const actualizada = await actualizarMesa(mesa.value.id, { nombre: edicion.nombre, horario, cupo: edicion.cupo })
     mesa.value.nombre = actualizada.nombre
     mesa.value.horario = actualizada.horario
     mesa.value.plazas = actualizada.plazas

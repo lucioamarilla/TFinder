@@ -26,8 +26,14 @@ def _credencial(email):
 def _usuario(client):
     email = f"vert_{uuid.uuid4().hex[:8]}@tfinder.dev"
     client.post("/api/v1/auth/register", json=_credencial(email))
-    login = client.post("/api/v1/auth/login", json={"email": email, "password": "secreto123"})
-    return login.json()
+    from tests.conftest import codigo_del_ultimo_mail
+
+    verif = client.post(
+        "/api/v1/auth/register/verificar",
+        json={"email": email, "codigo": codigo_del_ultimo_mail(destino=email)},
+    )
+    assert verif.status_code == 200
+    return verif.json()
 
 
 # ---- VAL-08: sistema único válido -------------------------------------------
@@ -340,14 +346,22 @@ def test_bandeja_del_gm_muestra_quien_pidio(client, token_gm, token_jugador):
         headers={"Authorization": f"Bearer {token_gm}"},
     ).json()["id"]
 
-    email_jugador = client.post(
+    email_jugador = f"bandeja_{uuid.uuid4().hex[:8]}@tfinder.dev"
+    client.post(
         "/api/v1/auth/register",
         json={
-            "email": f"bandeja_{uuid.uuid4().hex[:8]}@tfinder.dev",
+            "email": email_jugador,
             "password": "secreto123",
             "nombre": "Nombre Visible",
         },
-    ).json()["perfil"]["email"]
+    )
+    from tests.conftest import codigo_del_ultimo_mail
+
+    verif_jugador = client.post(
+        "/api/v1/auth/register/verificar",
+        json={"email": email_jugador, "codigo": codigo_del_ultimo_mail(destino=email_jugador)},
+    )
+    assert verif_jugador.status_code == 200
     login = client.post(
         "/api/v1/auth/login",
         json={"email": email_jugador, "password": "secreto123"},
@@ -371,18 +385,27 @@ def test_votos_del_calendario_muestran_el_nombre_del_votante(client, token_gm):
         headers={"Authorization": f"Bearer {token_gm}"},
     ).json()["id"]
 
-    email_votante = client.post(
+    email_votante = f"voto_{uuid.uuid4().hex[:8]}@tfinder.dev"
+    client.post(
         "/api/v1/auth/register",
         json={
-            "email": f"voto_{uuid.uuid4().hex[:8]}@tfinder.dev",
+            "email": email_votante,
             "password": "secreto123",
             "nombre": "Votarón Ana",
         },
-    ).json()["perfil"]["email"]
+    )
+    from tests.conftest import codigo_del_ultimo_mail
+
+    verif_votante = client.post(
+        "/api/v1/auth/register/verificar",
+        json={"email": email_votante, "codigo": codigo_del_ultimo_mail(destino=email_votante)},
+    )
+    assert verif_votante.status_code == 200
     login = client.post(
         "/api/v1/auth/login",
         json={"email": email_votante, "password": "secreto123"},
     )
+    assert login.status_code == 200, login.text
     auth_vot = {"Authorization": f"Bearer {login.json()['access_token']}"}
 
     client.post(

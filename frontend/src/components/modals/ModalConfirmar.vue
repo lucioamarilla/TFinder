@@ -37,10 +37,10 @@ function onBackdrop(e) {
 
 <template>
   <dialog ref="dialog" class="tf-dialog" data-test="modal-cerrar-sesion" @close="emit('close')" @click="onBackdrop">
-    <div class="tf-modal">
-      <h3>{{ titulo }}</h3>
-      <p v-if="mensaje">{{ mensaje }}</p>
-      <div class="tf-modal-actions">
+    <div class="tf-dlg-card">
+      <h3 class="tf-dlg-title">{{ titulo }}</h3>
+      <p v-if="mensaje" class="tf-dlg-msg">{{ mensaje }}</p>
+      <div class="tf-dlg-fila tf-dlg-fila--top">
         <button type="button" class="btn btn--secondary" data-test="cancelar-salir" @click="emit('close')">
           {{ etiquetaCancel }}
         </button>

@@ -3,7 +3,6 @@ from fastapi import HTTPException
 from mesas_api.app.models.auth_model import (
     actualizar_password_hash,
     crear_token,
-    crear_usuario,
     decodificar_token,
     guardar_sesion,
     guardar_sesion_familia,
@@ -15,7 +14,14 @@ from mesas_api.app.models.auth_model import (
     sesion_valida,
     verificar_password,
 )
-from mesas_api.app.schemas import AuthLogin, AuthRefresh, AuthRegistro
+from mesas_api.app.schemas import (
+    AuthLogin,
+    AuthRefresh,
+    AuthRegistro,
+    ConfirmarRecupero,
+    SolicitudEmail,
+    VerificarCodigo,
+)
 
 
 def _emitir_tokens(usuario):
@@ -40,10 +46,42 @@ def _emitir_tokens(usuario):
 
 
 def registrar(data: AuthRegistro):
-    if obtener_usuario_por_email(data.email):
-        raise HTTPException(status_code=400, detail="El email ya está registrado")
-    usuario = crear_usuario(data.email, data.password, data.nombre, data.rol)
-    return _emitir_tokens(usuario)
+    from mesas_api.app.services import verificacion
+
+    # Registro pendiente: NO crea el usuario. Deja los datos en Redis hasta que
+    # el usuario confirme el código enviado a su mail (POST /register/verificar).
+    return verificacion.registrar(
+        data.email,
+        hash_password(data.password),
+        data.nombre,
+        data.rol,
+    )
+
+
+def verificar_registro(data: VerificarCodigo):
+    from mesas_api.app.services import verificacion
+
+    return verificacion.verificar_registro(data.email, data.codigo)
+
+
+def reenviar_registro(data: SolicitudEmail):
+    from mesas_api.app.services import verificacion
+
+    return verificacion.reenviar_registro(data.email)
+
+
+def solicitar_recupero(data: SolicitudEmail):
+    from mesas_api.app.services import verificacion
+
+    return verificacion.solicitar_recupero(data.email)
+
+
+def confirmar_recupero(data: ConfirmarRecupero):
+    from mesas_api.app.services import verificacion
+
+    return verificacion.confirmar_recupero(
+        data.email, data.codigo, hash_password(data.nueva_password)
+    )
 
 
 def iniciar_sesion(data: AuthLogin):

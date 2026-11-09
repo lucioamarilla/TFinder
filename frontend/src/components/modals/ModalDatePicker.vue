@@ -50,15 +50,9 @@ watch(() => props.open, () => {
 </template>
 
 <style scoped>
-.tf-dlg-card { background: var(--color-paper-2); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: var(--space-lg); max-width: 440px; width: 100%; display: grid; gap: var(--space-sm); }
-.tf-dlg-ico { width: 44px; height: 44px; display: grid; place-items: center; border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); color: var(--color-accent-2); }
-.tf-dlg-ico--warn { color: var(--color-accent-2); border-color: var(--color-accent-2); }
-.tf-dlg-title { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
-.tf-dlg-chip { font-size: var(--text-xs); color: var(--color-muted); }
-.tf-dlg-msg { margin: 0; font-size: var(--text-sm); color: var(--color-ink-2); }
-.tf-dlg-fila { display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-sm); flex-wrap: wrap; }
+.tf-dlg-ico { justify-self: start; }
 .tf-pick-fechas { display: grid; gap: var(--space-2xs); }
-.tf-pick-op { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); padding: var(--space-2xs) var(--space-sm); border-radius: var(--radius-card); background: transparent; border: var(--rule-hair) solid var(--color-rule); color: var(--color-ink); font-family: var(--font-body); font-size: var(--text-sm); cursor: pointer; text-align: left; transition: border-color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out); }
-.tf-pick-op i { font-style: normal; color: var(--color-muted); font-size: var(--text-xs); }
+.tf-pick-op { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-sm); padding: var(--space-2xs) var(--space-sm); border-radius: var(--radius-card); background: transparent; border: var(--rule-hair) solid var(--color-rule); color: var(--color-ink); font-family: var(--font-body); font-size: var(--text-sm); cursor: pointer; text-align: left; white-space: nowrap; transition: border-color var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out); }
+.tf-pick-op i { font-style: normal; color: var(--color-muted); font-size: var(--text-xs); flex: none; }
 .tf-pick-op--sel { border-color: var(--color-accent); background: color-mix(in oklab, var(--color-accent) 12%, transparent); color: var(--color-ink); }
 </style>

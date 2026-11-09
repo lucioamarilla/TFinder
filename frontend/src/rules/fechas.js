@@ -36,3 +36,32 @@ export function puedeVotarFecha({ esGM = false, esMiembro = false } = {}) {
   if (!esMiembro) return { ok: false, codigo: '403', mensaje: 'Solo los miembros de la mesa pueden votar fechas' }
   return { ok: true }
 }
+
+// D-11: el horario sugerido de una mesa se compone desde dos pickers nativos
+// (día + hora) y se persiste en el campo de texto `horario` del contrato.
+// Formato canónico: "YYYY-MM-DD", "HH:MM" o "YYYY-MM-DD HH:MM".
+
+const PATRON_DIA = /^\d{4}-\d{2}-\d{2}$/
+const PATRON_HORA = /^\d{1,2}:\d{2}$/
+
+// Normaliza "H:MM" a "HH:MM"; devuelve vacío si la hora no es reconocible.
+function horaCanonica(hora) {
+  const h = String(hora ?? '').trim()
+  if (!PATRON_HORA.test(h)) return ''
+  return `${h.split(':')[0].padStart(2, '0')}:${h.split(':')[1]}`
+}
+
+export function componerHorario(dia, hora) {
+  const d = String(dia ?? '').trim()
+  return [PATRON_DIA.test(d) ? d : '', horaCanonica(hora)].filter(Boolean).join(' ')
+}
+
+// Best-effort: busca la fecha ISO y la primera hora legible del texto guardado.
+// Horarios heredados tipo "Jueves 21:00" aportan solo la hora; lo que no
+// calza (p. ej. "V") vuelve vacío para que el picker muestre "--".
+export function descomponerHorario(texto) {
+  const t = String(texto ?? '').trim()
+  const dia = /(\d{4}-\d{2}-\d{2})/.exec(t)?.[1] ?? ''
+  const hallazgo = /(?:^|[^\d])(\d{1,2}:\d{2})(?::\d{2})?/.exec(t)
+  return { dia, hora: horaCanonica(hallazgo?.[1] ?? '') }
+}

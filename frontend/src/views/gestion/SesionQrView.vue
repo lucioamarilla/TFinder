@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { sesionesApi } from '@/api/endpoints'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import Aviso from '@/components/Aviso.vue'
 
 const props = defineProps({
   mesaId: { type: String, required: true },
@@ -106,14 +107,14 @@ onUnmounted(() => countdown && clearInterval(countdown))
     </header>
 
     <section class="card principal">
-      <h1 class="titulo">✦ Pase de Asistencia</h1>
+      <h1 class="titulo">Pase de Asistencia</h1>
       <p class="label">
         QR single-use validado por el director de juego (TTL de 600 s en Redis).
       </p>
 
-      <p v-if="error" class="hint-error aviso" role="alert">
+      <Aviso v-if="error" tipo="error" banner>
         {{ error }}
-      </p>
+      </Aviso>
 
       <div v-if="cargando" class="label central">Generando el sello del gremio…</div>
 
@@ -179,10 +180,9 @@ onUnmounted(() => countdown && clearInterval(countdown))
 .principal { padding: var(--space-md); display: grid; gap: var(--space-sm); }
 .titulo { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
 .sub { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
-.aviso { margin: 0; }
 .central { text-align: center; padding-block: var(--space-lg); }
 .cola { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); }
-.imagen { width: 14rem; height: 14rem; border: var(--rule-bar) solid var(--color-rule); background: #fff; padding: var(--space-2xs); }
+.imagen { width: 14rem; height: 14rem; border: var(--rule-bar) solid var(--color-rule); background: var(--color-qr-paper); padding: var(--space-2xs); }
 .datos { width: 100%; margin-top: var(--space-2xs); }
 .codigo { display: block; margin-top: var(--space-2xs); padding: var(--space-sm); background: var(--color-ink); color: var(--color-accent-2); font-family: var(--font-outlier); font-size: var(--text-xs); overflow-wrap: anywhere; border-radius: var(--radius-card); }
 .ok { color: var(--color-accent-2); font-weight: 700; }

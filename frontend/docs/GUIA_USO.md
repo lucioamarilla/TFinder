@@ -107,11 +107,12 @@ Qué probar:
 
 ### 3.4 Registro (`/registro`)
 - **Validaciones:** email inválido, contraseña corta y contraseñas distintas muestran alertas.
-- Enviá un form válido → toast de bienvenida y navega a `/dashboard` como `auth`.
+- **Verificación de correo:** al enviarse el form, el registro queda *pendiente* y se mandan un código de 6 dígitos al mail (SMTP real configurado en el backend). El paso 2 pide el código, con reenvío (cooldown 60 s); al confirmar se crea la cuenta y la sesión.
+- En modo demo el registro se auto-verifica y navega directo (`en modo demo nada sale por mail`).
 
 ### 3.5 Login (`/login`)
 - Email inválido → error. Con cualquier email + contraseña → sesión `auth` y redirección a `/dashboard` (o al `redirect` original).
-- **Recuperar contraseña** (`/recuperar`): enviá y verificá el aviso.
+- **Recuperar contraseña** (`/recuperar`): paso 1 email → paso 2 código + nueva contraseña (hermandad con el mail real); la respuesta nunca revela si el correo existe.
 
 ### 3.6 Guard de rutas
 - Con sesión limpia entrá a `/dashboard` o `/admin/moderacion` → te redirige a `/login?redirect=...`.

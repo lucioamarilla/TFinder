@@ -172,7 +172,6 @@ const parametros = computed(() => {
         <div class="card peligrosa-card">
           <div class="peligrosa-texto">
             <div class="peligrosa-titulo-numerado">
-              <span class="num">⚠</span>
               <span class="peligrosa-titulo">Zona Peligrosa de Campaña</span>
             </div>
             <p class="label">La disolución de la mesa archivará permanentemente las notas de la crónica, foros tácticos y desvinculará las fichas de los jugadores.</p>
@@ -208,7 +207,7 @@ const parametros = computed(() => {
 .param-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md) var(--space-lg); }
 .param-col { display: grid; gap: var(--space-xs); min-width: 0; }
 .param-fila { display: flex; justify-content: space-between; gap: var(--space-sm); padding-block: var(--space-2xs); border-bottom: var(--rule-hair) solid var(--color-rule); flex-wrap: wrap; }
-.claves { font-weight: 700; font-size: var(--text-sm); color: var(--color-accent-2); text-transform: uppercase; letter-spacing: .04em; }
+.claves { font-weight: 700; font-size: var(--text-sm); color: var(--color-accent-2); }
 .valores { font-size: var(--text-md); color: var(--color-ink); display: inline-flex; align-items: center; gap: var(--space-2xs); }
 .valores.ok { color: var(--color-accent-2); font-weight: 700; }
 .tu { font-size: var(--text-xs); }
@@ -225,7 +224,7 @@ const parametros = computed(() => {
 .fecha { color: var(--color-ink-2); }
 .peligrosa { border-top: var(--rule-bar) solid var(--color-rule); padding-top: var(--space-md); }
 .peligrosa-card { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); border-color: var(--color-error); flex-wrap: wrap; }
-.peligrosa-titulo-numerado { display: flex; gap: var(--space-2xs); align-items: center; color: var(--color-error); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: var(--text-sm); }
+.peligrosa-titulo-numerado { display: flex; gap: var(--space-2xs); align-items: center; color: var(--color-error); font-weight: 700; font-size: var(--text-sm); }
 .peligrosa-texto { display: grid; gap: var(--space-2xs); max-width: 60ch; }
 @media (max-width: 60rem) { .param-grid { grid-template-columns: minmax(0, 1fr); } }
 </style>

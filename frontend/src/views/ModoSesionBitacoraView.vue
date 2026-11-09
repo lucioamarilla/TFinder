@@ -11,7 +11,7 @@
         <RouterLink class="text-link" :to="`/mesas/${mesaId}/gestion/sesiones`">← Ver sesiones</RouterLink>
       </div>
 
-      <div v-if="sesiones.length === 0" class="card" style="padding: var(--space-lg); text-align: center; margin-top: var(--space-md);" data-test="sin-sesiones">
+      <div v-if="sesiones.length === 0" style="text-align: center; padding: var(--space-lg); margin-top: var(--space-md);" data-test="sin-sesiones">
         <p class="label">No hay sesiones para anotar todavía</p>
         <p style="font-size: var(--text-sm); color: var(--color-ink-2); margin-top: var(--space-2xs);">
           Creá una sesión desde la pestaña Sesiones y volvé a la bitácora.
@@ -23,7 +23,7 @@
 
       <template v-else>
         <label class="label" style="display: block; margin-top: var(--space-md);" for="sel-sesion">Sesión</label>
-        <select id="sel-sesion" class="input" v-model="sesionActiva" style="max-width: 380px;" data-test="select-sesion">
+        <select id="sel-sesion" class="input input--medio" v-model="sesionActiva" data-test="select-sesion">
           <option v-for="s in sesiones" :key="s.id" :value="String(s.id)">
             Sesión del {{ (s.fecha || '').slice(0, 10) }} · {{ s.estado }}
           </option>

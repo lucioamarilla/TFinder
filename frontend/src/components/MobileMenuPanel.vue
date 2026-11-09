@@ -66,24 +66,25 @@ async function confirmarSalida() {
 </template>
 
 <style scoped>
+/* panel en el idioma del sistema (antes: una superficie clara fuera de la línea) */
 .panel {
-  position: fixed; inset: 0; z-index: 900;
+  position: fixed; inset: 0; z-index: var(--z-modal);
   display: flex; flex-direction: column;
-  background: var(--color-ink);
+  background: var(--color-paper-2);
   border-top: var(--rule-bar) solid var(--color-accent);
   padding: var(--space-lg) var(--gutter);
 }
 .panel-nav { display: flex; flex-direction: column; gap: var(--space-3xs); }
 .panel-nav a, .panel-nav button {
-  color: var(--color-paper); text-decoration: none;
+  color: var(--color-ink); text-decoration: none;
   padding: var(--space-2xs) var(--space-sm); border-radius: var(--radius-card);
   font-weight: 700; font-size: var(--text-md); text-align: left;
   background: transparent; border: 0; cursor: pointer;
 }
-.panel-nav a:hover, .panel-nav button:hover { background: var(--color-paper-3); color: var(--color-accent); }
-.panel-nav .salir { color: var(--color-error); border: var(--rule-hair) solid var(--color-error); font-weight: 900; }
+.panel-nav a:hover, .panel-nav button:hover { background: var(--color-paper-3); color: var(--color-accent-2); }
+.panel-nav .salir { color: var(--color-error); border: var(--rule-bar) solid var(--color-error); font-weight: 900; }
 .panel-nav .salir:hover { background: var(--color-error); color: var(--color-paper); }
-.proximamente { display: block; font-size: var(--text-xs); text-transform: uppercase; color: var(--color-muted); }
+.proximamente { display: block; font-size: var(--text-xs); color: var(--color-muted); }
 .perfil { color: var(--color-muted); }
-.lema-adicional { padding-top: var(--space-sm); color: var(--color-muted); text-transform: uppercase; letter-spacing: .14em; font-size: var(--text-xs); }
+.lema-adicional { padding-top: var(--space-sm); font-size: var(--text-xs); text-transform: none; }
 </style>

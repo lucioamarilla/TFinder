@@ -6,6 +6,11 @@ os.environ.setdefault(
 )
 os.environ.setdefault("REDIS_URL", "redis://localhost:6390/15")
 os.environ.setdefault("JWT_SECRET", "test-secret-no-prod")
+# SMTP de prueba: los tests NUNCA envían correos reales (el autouse
+# capturar_mails stubbea app.infra.mailer.enviar_email más abajo).
+os.environ.setdefault("SMTP_HOST", "smtp.test.tfinder")
+os.environ.setdefault("SMTP_PORT", "25")
+os.environ.setdefault("MAIL_FROM", "noreply@tfinder.dev")
 # mesas_api apunta a su base de test.
 
 # ---- Aislamiento de RabbitMQ -------------------------------------------------
@@ -216,6 +221,33 @@ def client_aislado():
     return TestClient(app)
 
 
+mails_capturados: list[dict] = []
+
+
+@pytest.fixture(autouse=True)
+def capturar_mails(monkeypatch):
+    """Stub del mailer: los tests NUNCA llegan a un SMTP real.
+
+    Además no sale a la red: cada mail queda en tests/mailbox.py
+    (`codigo_del_ultimo_mail()` extrae el código para completar los flujos).
+    """
+    from tests import mailbox
+
+    mailbox.limpiar()
+
+    def _registrar_mail(destino, asunto, texto, html):
+        mailbox.agregar(destino, asunto, texto, html)
+
+    from app.infra import mailer
+
+    monkeypatch.setattr(mailer, "enviar_email", _registrar_mail)
+    yield
+    mailbox.limpiar()
+
+
+from tests.mailbox import codigo_del_ultimo_mail  # noqa: E402  (re-export p/ suites)
+
+
 def _registrar(client, rol):
     email = f"test_{uuid.uuid4().hex[:10]}@{rol}.tfinder"
     resp = client.post(
@@ -227,12 +259,15 @@ def _registrar(client, rol):
             "rol": rol,
         },
     )
-    assert resp.status_code == 201
-    login = client.post(
-        "/api/v1/auth/login",
-        json={"email": email, "password": "secreto123"},
+    assert resp.status_code == 202, resp.text
+    # Registro pendiente: el usuario nace al confirmar el código del mail.
+    codigo = codigo_del_ultimo_mail(destino=email)
+    resp = client.post(
+        "/api/v1/auth/register/verificar",
+        json={"email": email, "codigo": codigo},
     )
-    return login.json()["access_token"]
+    assert resp.status_code == 200, resp.text
+    return resp.json()["access_token"]
 
 
 def _crear_con_rol(rol):

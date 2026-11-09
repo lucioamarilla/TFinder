@@ -73,6 +73,15 @@ services:
       DEBUG: ${DEBUG:-false}
       MESAS_EMAIL: ${MESAS_EMAIL:-email_svc@tfinder.dev}
       RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-100}
+      # Envío real de correos (registro/recuperación). Sin valores, los flujos
+      # de correo responden 503 con el mensaje de configuración faltante.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-TFinder}
+      MAIL_SECURE: ${MAIL_SECURE:-tls}
       PORT: "8001"
       DEMO_SEED_ENABLED: ${DEMO_SEED_ENABLED:-false}
       DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-}

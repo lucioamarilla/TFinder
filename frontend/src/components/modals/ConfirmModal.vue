@@ -38,12 +38,9 @@ const emit = defineEmits(['close', 'accept'])
 </template>
 
 <style scoped>
-.tf-dlg-card { background: var(--color-paper-2); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: var(--space-lg); max-width: 440px; width: 100%; display: grid; gap: var(--space-sm); }
-.tf-dlg-ico { width: 44px; height: 44px; display: grid; place-items: center; border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); color: var(--color-ink); }
-.tf-dlg-ico--warn { color: var(--color-accent-2); border-color: var(--color-accent-2); }
-.tf-dlg-ico--danger { color: var(--color-error); border-color: var(--color-error); }
-.tf-dlg-title { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
-.tf-dlg-chip { font-size: var(--text-xs); color: var(--color-muted); text-transform: none; letter-spacing: 0; }
-.tf-dlg-msg { margin: 0; font-size: var(--text-sm); color: var(--color-ink-2); }
-.tf-dlg-fila { display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-sm); flex-wrap: wrap; }
+/* variación centrada posesión de este modal: el icono y el texto van al centro */
+.tf-dlg-ico { justify-self: center; }
+.tf-dlg-title, .tf-dlg-chip, .tf-dlg-msg { text-align: center; }
+.tf-dlg-fila { justify-content: stretch; }
+.tf-dlg-fila .btn { flex: 1; }
 </style>

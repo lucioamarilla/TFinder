@@ -37,12 +37,30 @@ describe('getMiembros · rol y capacidad reales (D-11)', () => {
       return Promise.resolve(jsonRes(200, []))
     }))
     await Promise.all([import('@/api/endpoints'), import('@/services/mesas')])
-    const { getMiembros } = await import('@/services/jugadores')
+    const { getMiembros, contarJugadores } = await import('@/services/jugadores')
     const { normalizarMesa } = await import('@/services/mesas')
     const mesa = normalizarMesa({ id: 77, estado: 'abierta', jugadores_max: 5, jugadores_actuales: 1 })
     const { miembros, capacidad } = await getMiembros('77', mesa)
     expect(miembros.find((m) => m.id === '9')?.rol).toBe('Master')
     expect(miembros.find((m) => m.id === '3')?.rol).toBe('Jugador')
     expect(capacidad).toBe(5)
+    // Master + 1 jugador: el master NO ocupa plaza, el conteo es 1 (no 2).
+    expect(contarJugadores(miembros)).toBe(1)
+  })
+
+  it('contarJugadores: excluye al Master, default seguro sin rol y tolera vacios', async () => {
+    await import('@/api/endpoints')
+    const { contarJugadores } = await import('@/services/jugadores')
+    const miembros = [
+      { id: '9', rol: 'Master' },
+      { id: '3', rol: 'Jugador' },
+      { id: '4', rol: 'Jugador' },
+    ]
+    expect(contarJugadores(miembros)).toBe(2)
+    // Default seguro: miembro sin rol cuenta como jugador (no se pierde cupo).
+    expect(contarJugadores([{ id: '5' }])).toBe(1)
+    expect(contarJugadores([{ id: '9', rol: 'Master' }])).toBe(0)
+    expect(contarJugadores([])).toBe(0)
+    expect(contarJugadores(null)).toBe(0)
   })
 })

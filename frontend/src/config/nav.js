@@ -1,6 +1,6 @@
 export const NAV = {
   guest: [
-    { label: '✦ Explorar', to: '/mesas' },
+    { label: 'Explorar', to: '/mesas' },
     { label: 'Registrarse', to: '/registro', cta: true },
     { label: 'Iniciar sesión', to: '/login' }
   ],

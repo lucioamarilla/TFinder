@@ -2,6 +2,10 @@ import { api } from '@/api/http'
 
 export const authApi = {
   register: (b) => api('mesas', '/api/v1/auth/register', { metodo: 'POST', cuerpo: b }),
+  verificarRegistro: (b) => api('mesas', '/api/v1/auth/register/verificar', { metodo: 'POST', cuerpo: b }),
+  reenviarRegistro: (b) => api('mesas', '/api/v1/auth/register/reenviar', { metodo: 'POST', cuerpo: b }),
+  recuperar: (b) => api('mesas', '/api/v1/auth/recuperar', { metodo: 'POST', cuerpo: b }),
+  confirmarRecupero: (b) => api('mesas', '/api/v1/auth/recuperar/verificar', { metodo: 'POST', cuerpo: b }),
   login: (b) => api('mesas', '/api/v1/auth/login', { metodo: 'POST', cuerpo: b }),
   logout: () => api('mesas', '/api/v1/auth/logout', { metodo: 'POST' }),
   me: () => api('mesas', '/api/v1/auth/me')

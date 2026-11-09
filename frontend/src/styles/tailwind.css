@@ -1,6 +1,6 @@
 /* D-07 (corregido): el arranque de la app define su imagen con los tokens del
    proyecto (tokens/base/app). Tailwind compila SOLO utilidades para los
    componentes que ya las usan; sin directiva de base (preflight) ni components
-   para no alterar el look global. El prototipo pergamino (crono/harness.css)
-   no forma parte del diseño del producto y no se importa. */
+   para no alterar el look global. (Las hojas del prototipo pergamino fueron
+   estudiantes retiradas del repo en la estandarización de UI.) */
 @tailwind utilities;

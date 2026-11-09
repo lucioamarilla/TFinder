@@ -43,7 +43,7 @@
 | TC-AUTH-009 | Registro | Registro sin aceptar términos | 1. Completar datos<br>2. NO marcar checkbox<br>3. "Crear cuenta" | Error "Falta aceptar los términos." Sin request. | `[ ]` | |
 | TC-AUTH-010 | Registro | Contraseña corta | 1. Password de 5 caracteres | Validación "La contraseña debe tener al menos 8 caracteres." | `[ ]` | |
 | TC-AUTH-011 | Registro | Email duplicado | 1. Registrar email ya existente | Error "El correo ya está registrado" (409). | `[ ]` | |
-| TC-AUTH-012 | Recuperación | Solicitar recuperación | 1. `/recuperar`<br>2. Email válido<br>3. Enviar | Mensaje "Si el correo existe, enviamos un enlace." (no revela existencia). 202 del backend. | `[ ]` | |
+| TC-AUTH-012 | Recuperación | Solicitar recuperación | 1. `/recuperar`<br>2. Email válido<br>3. Enviar | Mensaje "Si el correo existe, enviamos un código." (no revela existencia). 202 del backend. Llega un mail real con un código de 6 dígitos (vía SMTP_* en `.env`). | `[ ]` | |
 | TC-AUTH-013 | Recuperación | Email inválido | 1. `/recuperar`<br>2. Email sin `@` | Validación inline. Sin request. | `[ ]` | |
 | TC-AUTH-014 | Sesión | Token expirado (simulado) | 1. Modificar `access_token` en localStorage a un valor inválido<br>2. Navegar a `/mis-mesas` | Redirect a `/login?redirect=/mis-mesas`. (Idealmente con banner "Tu sesión venció".) | `[ ]` | |
 | TC-AUTH-015 | Logout móvil | Cerrar sesión desde panel móvil | 1. Auth → hamburguesa → "Cerrar sesión" | Sesión limpiada, redirect `/`. Panel se cierra. | `[ ]` | |

@@ -20,6 +20,7 @@ from fastapi import FastAPI, Response
 from fastapi.openapi.utils import get_openapi
 
 from app.infra import metrics
+from app.infra import mailer as mailer_infra
 from app.infra.errors import registrar_manejadores
 from app.infra.logge import logger
 from app.infra.ready import evaluar_ready
@@ -52,6 +53,17 @@ def crear_app(
         if seed:
             seed()
         logger.info("servicio iniciado")
+
+        # Diagnóstico de mail (B09 real): que falten SMTP_* debe verse al
+        # arrancar, aunque no impida el arranque del resto del servicio.
+        faltan_smtp = mailer_infra.sin_configurar()
+        if faltan_smtp:
+            logger.warning(
+                "SMTP sin configurar (%s): register/recuperar no podrán enviar "
+                "correos hasta completar .env",
+                ", ".join(faltan_smtp),
+            )
+
         for objetivo in hilos:
             Thread(target=objetivo, daemon=True).start()
         yield

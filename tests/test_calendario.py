@@ -21,9 +21,15 @@ def _usuario(client):
         "/api/v1/auth/register",
         json={"email": email, "password": "secreto123", "nombre": "Jugador Calendario"},
     )
-    assert r.status_code == 201
-    login = client.post("/api/v1/auth/login", json={"email": email, "password": "secreto123"})
-    return login.json()
+    assert r.status_code == 202
+    from tests.conftest import codigo_del_ultimo_mail
+
+    verif = client.post(
+        "/api/v1/auth/register/verificar",
+        json={"email": email, "codigo": codigo_del_ultimo_mail(destino=email)},
+    )
+    assert verif.status_code == 200, verif.text
+    return verif.json()
 
 
 def _mesa(client, token_gm):

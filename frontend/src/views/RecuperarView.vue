@@ -1,42 +1,91 @@
 <template>
-  <div class="auth-grid">
-    <aside class="auth-side">
-      <p class="label">Recuperación de acceso</p>
-      <div class="auth-figure well crt" style="height: 320px; display: grid; place-items: center;">
-        <span class="figure-lg">1d4</span>
+  <AuthShell figura="1d4">
+    <form v-if="paso === 1" class="auth-card" novalidate @submit.prevent="submit">
+      <div>
+        <h2>Recuperar contraseña</h2>
+        <p class="lead">Ingresá tu email y te enviamos un código para restablecerla.</p>
       </div>
-      <p class="label">OGL 1.0a, Paizo Inc. 100% Pathfinder 1ª Edición</p>
-    </aside>
-
-    <main class="auth-form">
-      <form class="auth-card" novalidate @submit.prevent="submit">
+      <div class="field">
+        <label class="label" for="email">Email</label>
+        <input class="input" :class="{ 'is-error': !okM && touched }" id="email" v-model="email" type="email" placeholder="tu@email.com" autocomplete="email" />
+        <p class="hint-error" :hidden="okM || !touched">El correo electrónico no tiene un formato válido</p>
+      </div>
+      <button class="btn" type="submit" :disabled="ocupado">Enviar código</button>
+      <p class="label"><RouterLink class="text-link" to="/login">Volver al login</RouterLink></p>
+    </form>
+    <form v-else-if="paso === 2" class="auth-card" novalidate @submit.prevent="confirmar">
         <div>
-          <h2>Recuperar contraseña</h2>
-          <p class="lead">Te enviamos un enlace para restablecerla.</p>
+          <h2>Código de recuperación</h2>
+          <p class="lead">Si el correo existe, te enviamos un código. También revisá el spam.</p>
         </div>
         <div class="field">
-          <label class="label" for="email">Email</label>
-          <input class="input" :class="{ 'is-error': !okM && touched }" id="email" v-model="email" type="email" placeholder="tu@email.com" autocomplete="email" />
-          <p class="hint-error" :hidden="okM || !touched">El correo electrónico no tiene un formato válido</p>
+          <label class="label" for="codigo">Código de verificación</label>
+          <input class="input" :class="{ 'is-error': !okC && touchedCod }" id="codigo" v-model="codigo" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code" @input="soloDigitos" />
+          <p class="hint-error" :hidden="okC || !touchedCod">El código tiene 6 dígitos</p>
         </div>
-        <button class="btn" type="submit">Enviar enlace</button>
-        <p style="font-size: var(--text-sm); color: var(--color-muted);"><RouterLink class="text-link" to="/login">Volver al login</RouterLink></p>
+        <div class="field">
+          <label class="label" for="nueva">Nueva contraseña</label>
+          <input class="input" :class="{ 'is-error': !okP && touchedCod }" id="nueva" v-model="nueva" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+          <p class="hint-error" :hidden="okP || !touchedCod">La contraseña debe tener al menos 8 caracteres.</p>
+        </div>
+        <button class="btn" type="submit" :disabled="ocupado">Cambiar contraseña</button>
+        <button class="btn btn--secondary" type="button" :disabled="cooldown > 0 || ocupado" @click="reenviar" data-test="reenviar-codigo">
+          {{ cooldown > 0 ? `Reenviar código (${cooldown}s)` : 'Reenviar código' }}
+        </button>
+        <Aviso v-if="error" tipo="error" data-test="error-recupero">{{ error }}</Aviso>
       </form>
-    </main>
-  </div>
+
+      <div v-else class="auth-card">
+        <div>
+          <h2>Listo</h2>
+          <p class="lead">La contraseña quedó actualizada. Entrá con la nueva.</p>
+        </div>
+        <RouterLink class="btn" to="/login">Ingresar</RouterLink>
+      </div>
+  </AuthShell>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { validarEmail } from '@/rules/auth'
+import { validarEmail, validarPassword } from '@/rules/auth'
+import Aviso from '@/components/Aviso.vue'
+import AuthShell from '@/components/AuthShell.vue'
 
-const { recuperar } = useAuth()
+const { recuperar, confirmarRecupero } = useAuth()
+
+const paso = ref(1)
 const email = ref('')
 const touched = ref(false)
 const error = ref(null)
 const ocupado = ref(false)
+
+// Paso 2
+const codigo = ref('')
+const nueva = ref('')
+const touchedCod = ref(false)
+const cooldown = ref(0)
+let temporizador = null
+
 const okM = computed(() => validarEmail(email.value) === null)
+const okC = computed(() => /^\d{6}$/.test(codigo.value))
+const okP = computed(() => validarPassword(nueva.value) === null)
+
+function soloDigitos(e) {
+  codigo.value = e.target.value.replace(/\D/g, '').slice(0, 6)
+}
+
+function arrancarCooldown(segundos = 60) {
+  cooldown.value = segundos
+  clearInterval(temporizador)
+  temporizador = setInterval(() => {
+    cooldown.value -= 1
+    if (cooldown.value <= 0) clearInterval(temporizador)
+  }, 1000)
+}
+
+onUnmounted(() => clearInterval(temporizador))
 
 async function submit() {
   touched.value = true
@@ -44,9 +93,41 @@ async function submit() {
   if (!okM.value) return
   ocupado.value = true
   try {
+    // Respuesta genérica del backend: no revela si el correo existe.
     await recuperar(email.value)
+    email.value = String(email.value).trim().toLowerCase()
+    paso.value = 2
+    arrancarCooldown()
   } catch (e) {
-    error.value = e.mensaje || 'No se pudo enviar el enlace.'
+    error.value = e.mensaje || 'No se pudo enviar el código.'
+  } finally {
+    ocupado.value = false
+  }
+}
+
+async function reenviar() {
+  error.value = null
+  ocupado.value = true
+  try {
+    await recuperar(email.value) // reenvía con cooldown del backend
+    arrancarCooldown()
+  } catch (e) {
+    error.value = e.mensaje || 'No se pudo reenviar el código.'
+  } finally {
+    ocupado.value = false
+  }
+}
+
+async function confirmar() {
+  touchedCod.value = true
+  error.value = null
+  if (!(okC.value && okP.value)) return
+  ocupado.value = true
+  try {
+    await confirmarRecupero(email.value, codigo.value, nueva.value)
+    paso.value = 3
+  } catch (e) {
+    error.value = e.mensaje || 'No se pudo restablecer la contraseña.'
   } finally {
     ocupado.value = false
   }
@@ -54,9 +135,5 @@ async function submit() {
 </script>
 
 <style scoped>
-.auth-grid { min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.auth-side { background: var(--color-paper); border-right: var(--rule-bar) solid var(--color-rule); display: flex; flex-direction: column; justify-content: space-between; padding: var(--space-xl); overflow: hidden; position: relative; }
-.auth-form { display: grid; place-items: center; padding: var(--space-xl); }
-.auth-card { width: 100%; max-width: 420px; display: grid; gap: var(--space-md); }
-@media (max-width: 60rem) { .auth-grid { grid-template-columns: minmax(0, 1fr); } .auth-side { display: none; } }
+/* la armadura vive en AuthShell.vue; aquí solo queda el formulario */
 </style>

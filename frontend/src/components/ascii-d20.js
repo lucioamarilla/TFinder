@@ -18,7 +18,7 @@ class AsciiD20 extends HTMLElement {
         .hud { display:none; position:absolute; left:16px; top:calc(14px + env(safe-area-inset-top,0px)); font:12px ui-monospace,Menlo,monospace; letter-spacing:.08em; pointer-events:none; }
         .hud b { font-weight:700; }
         :host([hud]) .hud { display:block; }
-        .content { position:absolute; inset:0; opacity:0; visibility:hidden; pointer-events:none; will-change:opacity,transform; }
+        .content { position:absolute; inset:0; opacity:0; visibility:hidden; pointer-events:none; will-change:opacity; }
         ::slotted(*) { width:100%; height:100%; }
         .hint { display: none; }
       </style>
@@ -212,7 +212,6 @@ class AsciiD20 extends HTMLElement {
     this.hint.style.opacity = p < 0.02 ? 0.6 : 0;
     const reveal = ss(0.9, 1, p);   // el contenido del slot aparece recién cuando el dado terminó
     this.content.style.opacity = reveal;
-    this.content.style.transform = `translateX(${(1 - reveal) * -28}px)`;
     this.content.style.visibility = reveal > 0.01 ? 'visible' : 'hidden';
     this.dispatchEvent(new CustomEvent('d20-progress', { detail: { progress: p, reveal, value: done ? this.value : null } }));
   }

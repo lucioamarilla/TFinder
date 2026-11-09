@@ -21,7 +21,12 @@ def _registro(client, email=None):
         "/api/v1/auth/register",
         json={"email": email, "password": "secreto123", "nombre": "Dora Exploradora"},
     )
-    assert resp.status_code == 201
+    assert resp.status_code == 202
+    from tests.conftest import codigo_del_ultimo_mail
+
+    codigo = codigo_del_ultimo_mail(destino=email)
+    resp = client.post("/api/v1/auth/register/verificar", json={"email": email, "codigo": codigo})
+    assert resp.status_code == 200
     return email, resp.json()
 
 

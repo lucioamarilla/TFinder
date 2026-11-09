@@ -100,19 +100,14 @@ describe('useAuth · modo API (sesión real con bearer)', () => {
     })
   })
 
-  it('register real: POST /auth/register tipo usuario con el perfil devuelto', async () => {
+  it('register real: POST /auth/register queda pendiente (sin sesión instalada)', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(
-      jsonRes(201, {
-        access_token: 'acc-nuevo',
-        refresh_token: 'ref-nuevo',
-        rol: 'usuario',
-        perfil: { id: 9, email: 'nuevo@tfinder.dev', nombre: 'Nuevo Aventurero', rol: 'usuario' },
-      }),
+      jsonRes(202, { pendiente: true, email: 'nuevo@tfinder.dev' }),
     )
     vi.stubGlobal('fetch', fetchMock)
     const { register, currentAccessToken } = await importarAuth('api')
 
-    const user = await register({
+    const res = await register({
       nombre: 'Nuevo Aventurero',
       email: 'nuevo@tfinder.dev',
       password: 'secreto123',
@@ -123,8 +118,74 @@ describe('useAuth · modo API (sesión real con bearer)', () => {
     expect(JSON.parse(init.body)).toEqual(
       expect.objectContaining({ email: 'nuevo@tfinder.dev', password: 'secreto123' }),
     )
-    expect(user.rol).toBe('usuario')
+    // La cuenta nace al verificar el código del mail: acá aún no hay sesión.
+    expect(res).toEqual({ pendiente: true, email: 'nuevo@tfinder.dev' })
+    expect(currentAccessToken()).toBeNull()
+  })
+
+  it('verificarRegistro real: confirma el código y nace la sesión', async () => {
+    const tokens = {
+      access_token: 'acc-nuevo',
+      refresh_token: 'ref-nuevo',
+      rol: 'usuario',
+      perfil: { id: 9, email: 'nuevo@tfinder.dev', nombre: 'Nuevo Aventurero', rol: 'usuario' },
+    }
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonRes(202, { pendiente: true, email: 'nuevo@tfinder.dev' }))
+      .mockResolvedValueOnce(jsonRes(200, tokens))
+    vi.stubGlobal('fetch', fetchMock)
+    const { register, verificarRegistro, currentAccessToken } = await importarAuth('api')
+
+    await register({ nombre: 'Nuevo Aventurero', email: 'nuevo@tfinder.dev', password: 'secreto123' })
+    await verificarRegistro('nuevo@tfinder.dev', '123456')
+
+    expect(fetchMock.mock.calls[1][0]).toContain('/api/v1/auth/register/verificar')
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({
+      email: 'nuevo@tfinder.dev',
+      codigo: '123456',
+    })
     expect(currentAccessToken()).toBe('acc-nuevo')
+  })
+
+  it('verificarRegistro con código mal formado falla sin llamar al backend', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const { verificarRegistro } = await importarAuth('api')
+
+    await expect(verificarRegistro('nuevo@tfinder.dev', '12ab6')).rejects.toMatchObject({
+      codigo: '400',
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('recuperar real: POST /auth/recuperar responde genérico (202)', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      jsonRes(202, { mensaje: 'Si el correo existe, te enviamos un código para restablecer la contraseña.' }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const { recuperar } = await importarAuth('api')
+
+    const res = await recuperar('viejo@tfinder.dev')
+    expect(fetchMock.mock.calls[0][0]).toContain('/api/v1/auth/recuperar')
+    expect(res.mensaje).toContain('Si el correo existe')
+  })
+
+  it('confirmarRecupero real: POST /auth/recuperar/verificar con código y nueva clave', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      jsonRes(200, { mensaje: 'Contraseña actualizada. Ya podés entrar con la nueva.' }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const { confirmarRecupero } = await importarAuth('api')
+
+    const res = await confirmarRecupero('viejo@tfinder.dev', '654321', 'nuevaclave99')
+    expect(fetchMock.mock.calls[0][0]).toContain('/api/v1/auth/recuperar/verificar')
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      email: 'viejo@tfinder.dev',
+      codigo: '654321',
+      nueva_password: 'nuevaclave99',
+    })
+    expect(res.mensaje).toContain('actualizada')
   })
 })
 

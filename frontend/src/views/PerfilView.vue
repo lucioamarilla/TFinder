@@ -32,7 +32,7 @@
           <label class="label" for="pv-bio">Descripción</label>
           <textarea id="pv-bio" class="input" v-model="bio" rows="3" placeholder="Contá quién sos y qué jugás…"></textarea>
         </div>
-        <p v-if="error" class="hint-error" role="alert">{{ error }}</p>
+        <Aviso v-if="error" tipo="error">{{ error }}</Aviso>
         <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-md);">
           <button class="btn" :disabled="guardando" @click="guardar">Guardar perfil</button>
           <button class="btn btn--secondary" @click="cargar">Revertir</button>
@@ -61,6 +61,7 @@ import { RouterLink } from 'vue-router'
 import { verPerfil, editarPerfil } from '@/services/perfil'
 import { getMisMesas } from '@/services/mesas'
 import { useToast } from '@/composables/useToast'
+import Aviso from '@/components/Aviso.vue'
 
 const email = ref('')
 const nombre = ref('')

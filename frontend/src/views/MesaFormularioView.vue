@@ -2,8 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getMesa, crearMesa, actualizarMesa } from '@/services/mesas'
+import { componerHorario, descomponerHorario } from '@/rules/fechas'
 import { useToast } from '@/composables/useToast'
 import ModalDatePicker from '@/components/modals/ModalDatePicker.vue'
+import Aviso from '@/components/Aviso.vue'
 
 const props = defineProps({
   id: { type: String, default: null }
@@ -17,7 +19,13 @@ const esEdicion = computed(() => Boolean(props.id))
 const nombre = ref('')
 const descripcion = ref('')
 const tono = ref('')
-const frecuencia = ref('')
+// D-11: la frecuencia/horario se edita con pickers día/hora. `frecuenciaPrevio`
+// conserva el texto legal del contrato; si el GM no toca los pickers, ese texto
+// viaja tal cual (los horarios heredados nunca cambian a la mandadera).
+const frecDia = ref('')
+const frecHora = ref('')
+const frecuenciaPrevio = ref('')
+const frecuenciaTocada = ref(false)
 const nivelInicial = ref(1)
 const jugadoresMax = ref(6)
 const estado = ref('Abierta')
@@ -61,7 +69,11 @@ async function load() {
     tono.value = mesa.tono
     // D-08: usar el horario real del contrato; el normalizador deriva
     // 'frecuencia' con el literal "A coordinar" y no debe contaminarlo.
-    frecuencia.value = mesa.horario ?? ''
+    const desarmado = descomponerHorario(mesa.horario ?? '')
+    frecDia.value = desarmado.dia
+    frecHora.value = desarmado.hora
+    frecuenciaPrevio.value = mesa.horario ?? ''
+    frecuenciaTocada.value = false
     const match = /(\d+)/.exec(mesa.rangoNivel ?? mesa.nivel ?? '')
     nivelInicial.value = match ? Number(match[1]) : 1
     jugadoresMax.value = Number(mesa.plazas ?? 6)
@@ -81,14 +93,20 @@ async function enviar() {
     return
   }
 
+  // D-11: componer el horario del contrato desde los pickers día/hora;
+  // si el usuario no tocó los pickers, el valor previo viaja tal cual.
+  const frecuencia = frecuenciaTocada.value
+    ? componerHorario(frecDia.value, frecHora.value)
+    : frecuenciaPrevio.value
+
   try {
     if (esEdicion.value) {
       await actualizarMesa(props.id, {
         nombre: nombre.value.trim(),
         descripcion: descripcion.value,
         tono: tono.value,
-        frecuencia: frecuencia.value,
-        nivel: String(nivelInicial.value),
+        frecuencia,
+        nivel: Number(nivelInicial.value),
         rangoNivel: `Nivel ${nivelInicial.value}`,
         plazas: Number(jugadoresMax.value),
         estado: estado.value,
@@ -104,8 +122,8 @@ async function enviar() {
         estadoCategoria: estado.value === 'Abierta' ? 'En Reclutamiento' : 'Privada',
         tono: tono.value,
         rangoNivel: `Nivel ${nivelInicial.value}`,
-        nivel: String(nivelInicial.value),
-        frecuencia: frecuencia.value,
+        nivel: Number(nivelInicial.value),
+        frecuencia,
         modalidad: 'Online',
         ubicacion: 'Discord · VTT',
         descripcion: descripcion.value,
@@ -145,12 +163,12 @@ onMounted(load)
       </div>
 
       <div v-if="isLoading" class="cargando" role="status" aria-live="polite">
-        <div class="sckels">
-          <div class="linea linea--grande"></div>
-          <div class="linea"></div>
-          <div class="linea linea--mitad"></div>
+        <div class="sckels" aria-hidden="true">
+          <div class="skel skel--grande"></div>
+          <div class="skel"></div>
+          <div class="skel skel--mitad"></div>
         </div>
-        <p class="label">Cargando el rollo de campaña...</p>
+        <p class="label">Cargando el rollo de campaña</p>
       </div>
 
       <div v-else-if="error" class="cargando" role="alert">
@@ -161,9 +179,8 @@ onMounted(load)
 
       <template v-else>
         <div class="cabecera">
-          <div class="etiqueta-chequeo">❖ GESTIÓN DE CRÓNICA &amp; MESA DE JUEGO ❖</div>
+          <div class="etiqueta-chequeo">Gestión de crónica y mesa de juego</div>
           <h1 class="titulo">{{ esEdicion ? 'Editar Campaña' : 'Nueva Campaña' }}</h1>
-          <div class="ornamento num">◆ ✦ ◆</div>
           <p class="label sub-cabecera">Define los estatutos y parámetros para convocar a los aventureros en Golarion</p>
         </div>
 
@@ -191,10 +208,19 @@ onMounted(load)
               <input v-model="tono" type="text" placeholder="Ej: Terror gótico, investigación, misterio oscuro" class="input" />
             </label>
 
-            <label class="field">
-              <span class="etiqueta"><span>Frecuencia y Horario</span></span>
-              <input v-model="frecuencia" type="text" placeholder="Ej: Semanal • Sábados 18:00 - 22:00 (GMT+1)" class="input" />
-            </label>
+            <div class="field">
+              <span class="etiqueta"><span>Frecuencia y Horario</span><span class="detalle">Opcional: día y hora sugeridos</span></span>
+              <div class="par-dia-hora">
+                <label>
+                  <span class="sub-etiqueta">Día</span>
+                  <input v-model="frecDia" @input="frecuenciaTocada = true" type="date" class="input" />
+                </label>
+                <label>
+                  <span class="sub-etiqueta">Hora</span>
+                  <input v-model="frecHora" @input="frecuenciaTocada = true" type="time" class="input" />
+                </label>
+              </div>
+            </div>
 
             <label class="field">
               <span class="etiqueta"><span>Nivel Inicial</span><span class="detalle">Mínimo nivel 1</span></span>
@@ -229,10 +255,9 @@ onMounted(load)
             </div>
           </div>
 
-          <p v-if="errorForm" class="hint-error" role="alert">{{ errorForm }}</p>
+          <Aviso v-if="errorForm" tipo="error">{{ errorForm }}</Aviso>
 
           <div class="nota">
-            <span class="num">✦</span>
             <span>Al guardar la campaña se generará el grimorio maestro de gestión del GM, la sección de Wiki con glosarios de Golarion y el registro de sesiones compatible con el sistema d20 OGL v1.0a.</span>
           </div>
 
@@ -241,7 +266,7 @@ onMounted(load)
               Cancelar
             </button>
             <button type="submit" class="btn">
-              Guardar Campaña ✦
+              Guardar Campaña
             </button>
           </div>
         </form>
@@ -262,20 +287,19 @@ onMounted(load)
 .formulario-shell { display: flex; align-items: center; justify-content: center; padding: var(--space-lg) var(--gutter); min-height: 100%; }
 .panel { width: 100%; max-width: 50rem; padding: var(--space-lg); position: relative; display: grid; gap: var(--space-md); }
 .miga { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); border-bottom: var(--rule-hair) solid var(--color-rule); padding-bottom: var(--space-2xs); flex-wrap: wrap; }
-.miga-ruta { display: inline-flex; align-items: center; gap: var(--space-2xs); font-size: var(--text-xs); color: var(--color-muted); text-transform: uppercase; letter-spacing: .08em; }
-.volver { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+.miga-ruta { display: inline-flex; align-items: center; gap: var(--space-2xs); font-size: var(--text-xs); color: var(--color-muted); }
+.volver { font-size: var(--text-xs); font-weight: 700; }
 .flecha { margin-right: var(--space-3xs); }
 .contra { color: var(--color-error); }
 .cargando { padding-block: var(--space-lg); text-align: center; display: grid; gap: var(--space-sm); justify-items: center; }
 .sckels { width: 100%; max-width: 28rem; display: grid; gap: var(--space-2xs); }
-.linea { height: 10px; border-radius: 999px; background: var(--color-paper-3); }
-.linea--grande { width: 66%; height: 16px; }
-.linea--mitad { width: 50%; }
+.sckels .skel { height: 10px; }
+.sckels .skel--grande { width: 66%; height: 16px; }
+.sckels .skel--mitad { width: 50%; }
 .reintentar { justify-self: center; }
 .cabecera { text-align: center; display: grid; gap: var(--space-3xs); justify-items: center; }
-.etiqueta-chequeo { color: var(--color-accent-2); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .14em; }
+.etiqueta-chequeo { color: var(--color-accent-2); font-size: var(--text-xs); }
 .titulo { margin: 0; font-size: var(--text-display-s); color: var(--color-ink); }
-.ornamento { color: var(--color-muted); font-size: 10px; user-select: none; }
 .sub-cabecera { margin: 0; color: var(--color-ink-2); font-style: italic; }
 .cuerpo { display: grid; gap: var(--space-md); }
 .grilla { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
@@ -291,6 +315,9 @@ onMounted(load)
 .area--chica { min-height: 7.5rem; }
 .selector-fecha { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); text-align: left; cursor: pointer; }
 .apagado { color: var(--color-muted); }
+.par-dia-hora { display: grid; gap: var(--space-3xs); }
+.par-dia-hora label { display: grid; gap: var(--space-3xs); min-width: 0; }
+.sub-etiqueta { font-size: var(--text-xs); color: var(--color-muted); }
 .estados { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: center; padding: var(--space-2xs) var(--space-sm); border: var(--rule-hair) solid var(--color-rule); }
 .estado-opcion { display: inline-flex; align-items: center; cursor: pointer; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

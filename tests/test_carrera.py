@@ -30,11 +30,14 @@ def _registrar_y_token(client, rol, idx):
             "rol": rol,
         },
     )
-    login = client.post(
-        "/api/v1/auth/login",
-        json={"email": email, "password": "secreto123"},
+    from tests.conftest import codigo_del_ultimo_mail
+
+    verif = client.post(
+        "/api/v1/auth/register/verificar",
+        json={"email": email, "codigo": codigo_del_ultimo_mail(destino=email)},
     )
-    return login.json()["access_token"]
+    assert verif.status_code == 200, verif.text
+    return verif.json()["access_token"]
 
 
 def _solicitar_concurrente(client, mesa_id, tokens):

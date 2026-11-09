@@ -6,6 +6,7 @@
 // /gestion/sesiones/:id/diario (feed-api) tras cerrar la sesion.
 import { ref, computed, onMounted, watch } from 'vue'
 import { getSesiones } from '@/services/sesiones.js'
+import Aviso from '@/components/Aviso.vue'
 
 const props = defineProps({ mesaId: { type: String, required: true } })
 
@@ -14,8 +15,8 @@ const cargando = ref(true)
 const error = ref(null)
 
 const ETIQUETAS_ESTADO = {
-  abierta: { texto: 'ABIERTA', cls: 'tag--acid' },
-  cerrada: { texto: 'CERRADA', cls: 'tag--ember' }
+  abierta: { texto: 'Abierta', cls: 'tag--acid' },
+  cerrada: { texto: 'Cerrada', cls: 'tag--ember' }
 }
 
 // La mas reciente siempre arriba; la fecha real ordena (no hay numero en el
@@ -29,7 +30,9 @@ function ordinal(indice) {
 }
 
 function etiqueta(estado) {
-  return ETIQUETAS_ESTADO[estado] ?? { texto: String(estado ?? '').toUpperCase(), cls: 'tag--ink' }
+  const crudo = String(estado ?? '')
+  const capitalizado = crudo.charAt(0).toUpperCase() + crudo.slice(1)
+  return ETIQUETAS_ESTADO[estado] ?? { texto: capitalizado, cls: 'tag--ink' }
 }
 
 function fmt(fecha) {
@@ -74,7 +77,12 @@ watch(() => props.mesaId, cargar)
         <span class="tag tag--ink">{{ resumen }}</span>
       </div>
 
-      <p v-if="error" class="hint-error" role="alert" data-test="error-sesiones">{{ error }}</p>
+      <Aviso v-if="error" tipo="error" banner data-test="error-sesiones">
+        {{ error }}
+        <div class="aviso-acciones">
+          <button class="btn btn--sm" type="button" @click="cargar">Reintentar</button>
+        </div>
+      </Aviso>
 
       <div v-if="!cargando && !error && orden.length === 0" class="card vacio" data-test="sin-sesiones">
         Aún no hay sesiones convocadas. Proponé una fecha en el Calendario y confirmala para abrirla aquí.

@@ -20,7 +20,7 @@
         data-test="bitacora-texto"
         placeholder="Qué pasó, quién hizo qué, qué quedó pendiente…"
       ></textarea>
-      <p class="hint-error" v-if="error" role="alert" data-test="bitacora-error">{{ error }}</p>
+      <Aviso v-if="error" tipo="error" data-test="bitacora-error">{{ error }}</Aviso>
       <div style="display: flex; justify-content: flex-end;">
         <button class="btn" type="submit" :disabled="enviando" data-test="bitacora-enviar">
           {{ enviando ? 'Guardando…' : 'Registrar anotación' }}
@@ -31,10 +31,12 @@
     <div v-if="cargando" class="card" style="padding: var(--space-lg); text-align: center; margin-top: var(--space-md);" role="status">
       Cargando la bitácora…
     </div>
-    <div v-else-if="errorCarga" class="card" style="padding: var(--space-lg); text-align: center; margin-top: var(--space-md);" role="alert">
-      <p>No pudimos abrir la bitácora de esta sesión.</p>
-      <button class="btn btn--secondary" style="margin-top: var(--space-sm);" @click="cargar">Reintentar</button>
-    </div>
+    <Aviso v-else-if="errorCarga" tipo="error" banner style="margin-top: var(--space-md);">
+      No pudimos abrir la bitácora de esta sesión.
+      <div class="aviso-acciones">
+        <button class="btn btn--secondary btn--sm" type="button" @click="cargar">Reintentar</button>
+      </div>
+    </Aviso>
     <div v-else-if="anotaciones.length === 0" class="card" style="padding: var(--space-lg); text-align: center; margin-top: var(--space-md);" data-test="bitacora-vacia">
       <p class="label">La bitácora está en blanco</p>
       <p style="font-size: var(--text-sm); color: var(--color-ink-2); margin-top: var(--space-2xs);">
@@ -63,6 +65,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { getAnotaciones, registrarAnotacion } from '@/services/sesiones'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import Aviso from '@/components/Aviso.vue'
 
 const route = useRoute()
 const props = defineProps({

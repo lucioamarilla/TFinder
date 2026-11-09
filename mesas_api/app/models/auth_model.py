@@ -79,6 +79,20 @@ def crear_usuario(email, password, nombre, rol=ROL_USUARIO):
         ).fetchone()
 
 
+def crear_usuario_con_hash(email, password_hash, nombre, rol=ROL_USUARIO):
+    """Alta con el hash ya calculado (verificación de correo: el hash se guardó
+    en Redis durante el registro pendiente y nunca pasó de vuelta por HTTP)."""
+    with get_connection() as conn:
+        return conn.execute(
+            """
+            INSERT INTO usuarios (email, password_hash, nombre, rol)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id, email, nombre, rol
+            """,
+            (email, password_hash, nombre, rol),
+        ).fetchone()
+
+
 def obtener_usuario_por_email(email):
     with get_connection() as conn:
         return conn.execute(
@@ -110,6 +124,15 @@ def revocar_familia(jti: str, usuario_id):
         _r.delete(f"sesion:{j.decode() if isinstance(j, bytes) else j}")
     _r.delete(f"sesiones_usuario:{usuario_id}")
     _r.delete(f"sesion:{jti}")
+
+
+def revocar_todas_las_sesiones(usuario_id):
+    """Cierra toda la familia de sesiones del usuario (recupero de contraseña)."""
+    _r = get_redis()
+    claves = _r.smembers(f"sesiones_usuario:{usuario_id}")
+    for j in claves:
+        _r.delete(f"sesion:{j.decode() if isinstance(j, bytes) else j}")
+    _r.delete(f"sesiones_usuario:{usuario_id}")
 
 def obtener_perfil(usuario_id: int):
     from mesas_api.app.models.usuarios_lookup import obtener_usuario_por_id

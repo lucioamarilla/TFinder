@@ -74,6 +74,21 @@ describe('CrearMesaView · ambientación libre (D-06)', () => {
     expect(cuerpo.tono).toBe('El ruido del mar en Skarn')
     expect(cuerpo.lugar).toBeUndefined()
   })
+
+  it('submit: los pickers dia/hora componen el horario ISO del contrato (D-11)', async () => {
+    const w = await montar()
+    await w.find('#f-nombre').setValue('Cripta de Vellmar')
+    await w.find('#f-dia').setValue('2026-11-12')
+    await w.find('#f-hora').setValue('21:00')
+    await w.find('form').trigger('submit')
+    await flushPromises()
+    const llamada = fetchMock.mock.calls.find(([u, o]) => new URL(u).pathname === '/api/v1/mesas' && o?.method === 'POST')
+    expect(llamada).toBeTruthy()
+    const cuerpo = JSON.parse(llamada?.[1]?.body)
+    expect(cuerpo.horario).toBe('2026-11-12 21:00')
+    // el aside de preview muestra el mismo horario compuesto
+    expect(w.text()).toContain('2026-11-12 21:00')
+  })
 })
 
 describe('servicios/mesas · mapeo de horario (D-08)', () => {

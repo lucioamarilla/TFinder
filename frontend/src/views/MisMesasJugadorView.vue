@@ -21,7 +21,7 @@
           <div class="mesa-thumb">{{ m.nombre.split(' ').map(x=>x[0]).slice(0,2).join('') }}</div>
           <div style="min-width: 0;">
             <p style="font-weight: 700; font-size: var(--text-sm); margin: 0;">{{ m.nombre }}</p>
-            <p style="font-size: var(--text-xs); color: var(--color-muted); margin: 0;">{{ m.gm }}, {{ m.horario }}, nivel {{ m.nivel }}</p>
+            <p style="font-size: var(--text-xs); color: var(--color-muted); margin: 0;">{{ m.gm }}, {{ m.horario || 'A coordinar' }}, nivel {{ m.nivel }}</p>
           </div>
           <div class="mesa-row-actions" style="display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap;">
             <span class="tag tag--ink">{{ m.miRol === 'master' ? 'Director' : 'Jugador' }}</span>

@@ -103,6 +103,14 @@ describe('Detalle de mesa tolerante a fallos secundarios (D-01)', () => {
     expect(w.text()).toContain('Sin miembros')
   })
 
+  it('PANENA Resumen (pestaña por defecto): muestra los parametros de la mesa', async () => {
+    const w = await montar('@/views/MesaDetailJugadorView.vue', '/mesas/:id', { usuario: sesionGM() })
+    expect(w.text()).toContain('Resumen de la mesa')
+    expect(w.text()).toContain('Terror') // ambientacion
+    expect(w.text()).toContain('Viernes 20:00') // frecuencia / horario
+    expect(w.text()).toContain('GM Ostirion') // dirigida por
+  })
+
   it('mesa inexistente (404) sigue mostrando "Mesa no encontrada"', async () => {
     const w = await montar('@/views/MesaDetailJugadorView.vue', '/mesas/:id', {
       usuario: sesionGM(),

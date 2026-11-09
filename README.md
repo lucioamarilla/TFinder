@@ -113,7 +113,8 @@ Documentadas en `.env.example` (todas con valores de ejemplo no sensibles):
 | REDIS_URL | Cliente Redis compartido (`app/infra/redis.py`) | redis://localhost:6390/0 |
 | RABBITMQ_URL | Broker RabbitMQ (`app/infra/rabbitmq.py`) | amqp://tfinder:tfinder@localhost:5673/ |
 | JWT_SECRET / JWT_EXP_MIN | Firma y expiración de JWT | change-me-en-produccion / 1440 |
-| SMTP_HOST / SMTP_PORT / MAIL_FROM | Email sandbox (MailHog) | localhost / 1025 / noreply@tfinder.local |
+| SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASSWORD | Envío real de correos por SMTP (registro/recuperación). Gmail: `smtp.gmail.com` + contraseña de aplicación de 16 dígitos | smtp.gmail.com / 587 / noreply@tfinder.dev |
+| MAIL_FROM / MAIL_FROM_NAME / MAIL_SECURE | Remitente y cifrado (`ssl` \| `tls` \| `none`) | noreply@tfinder.dev / TFinder / tls |
 | VITE_API_URL | URL del API para el frontend | http://localhost:8001 |
 
 ### `localhost` vs nombres de servicio (dentro del contenedor)
@@ -196,11 +197,16 @@ Todas las rutas tienen el prefijo `/api/v1` y los errores usan el envelope unifi
 `{"error":{"codigo","mensaje"}}`. La referencia OpenAPI de cada puerto (`/docs`)
 incluye `securitySchemes: BearerAuth`. Resumen por servicio (puerto host):
 
-**mesas-api 8001** — `mesas`, `auth` (register/login/refresh/logout/me + acceso
-admin), `matchmaking/{mesa_id}/abrir` + `estado` (con sesión), `sesiones`
-(crear/confirmar/cerrar + QR `emitir/validar` — valida asistencia solo el GM de
-la mesa), **`fechas`** (propuestas del GM + voto editable de miembros +
-`confirmar` → crea la sesión, RF-10/11).
+**mesas-api 8001** — `mesas`, `auth` (login/refresh/logout/me + acceso admin),
+**`register` con verificación de correo**: guardar los datos en Redis (TTL 15
+min) y enviar un código de 6 dígitos al mail; `register/verificar` (código
+correcto → crea la cuenta y emite sesión), `register/reenviar` (cooldown 60 s;
+así los correos sin confirmar nunca llegan a la BD), `recuperar` +
+`recuperar/verificar` (código + nueva contraseña; revoca todas las sesiones
+previas del usuario), `matchmaking/{mesa_id}/abrir` + `estado` (con sesión),
+`sesiones` (crear/confirmar/cerrar + QR `emitir/validar` — valida asistencia
+solo el GM de la mesa), **`fechas`** (propuestas del GM + voto editable de
+miembros + `confirmar` → crea la sesión, RF-10/11).
 
 **builds-api 8002** — `builds` (listado con filtros `mesa_id/autor_id/tag`,
 oculta `privado/borrador` ajenos), **`POST/PUT/DELETE /builds`** con

@@ -7,7 +7,12 @@
           <p class="label">{{ pendientes.length }} pendientes en tus mesas</p>
         </div>
       </div>
-      <p class="hint-error" v-if="error" role="alert" data-test="error-bandeja">{{ error }}</p>
+      <Aviso v-if="error" tipo="error" banner data-test="error-bandeja">
+        {{ error }}
+        <div class="aviso-acciones">
+          <button class="btn btn--sm" type="button" @click="cargar">Reintentar</button>
+        </div>
+      </Aviso>
       <div class="card" style="padding: var(--space-md);">
         <div v-if="cargando" class="label">Cargando…</div>
         <div v-else-if="pendientes.length === 0" style="font-size: var(--text-sm); color: var(--color-ink-2);">Todavía no hay solicitudes para tus mesas.</div>
@@ -33,6 +38,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { getMisMesas } from '@/services/mesas'
 import { getSolicitudes, aceptarSolicitud, rechazarSolicitud } from '@/services/jugadores'
+import Aviso from '@/components/Aviso.vue'
 // sin demo
 
 const pendientes = ref([])

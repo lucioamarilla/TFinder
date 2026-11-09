@@ -61,13 +61,13 @@ onMounted(() => load())
   <main class="dash" aria-label="Dashboard personal">
     <div class="dash-card">
       <div v-if="isLoading" class="cargando" role="status" aria-live="polite">
-        <div class="sckels">
-          <div class="linea linea--grande"></div>
-          <div class="linea"></div>
-          <div class="linea"></div>
-          <div class="linea linea--mitad"></div>
+        <div class="sckels" aria-hidden="true">
+          <div class="skel skel--grande"></div>
+          <div class="skel"></div>
+          <div class="skel"></div>
+          <div class="skel skel--mitad"></div>
         </div>
-        <p class="label">Abriendo el Códex...</p>
+        <p class="label">Abriendo el Códex</p>
       </div>
 
       <div v-else-if="error" class="cargando" role="alert">
@@ -98,8 +98,8 @@ onMounted(() => load())
           <!-- Mis Mesas -->
           <article aria-label="Mis mesas">
             <div class="seccion-cabecera">
-              <h2 class="subtitulo">◆ Mis Mesas</h2>
-              <span class="label conteo">
+              <h2 class="subtitulo">Mis Mesas</h2>
+              <span class="label">
                 {{ membresias.length }} {{ membresias.length === 1 ? 'Campaña activa' : 'Campañas activas' }}
               </span>
             </div>
@@ -109,7 +109,7 @@ onMounted(() => load())
                 v-for="m in membresias"
                 :key="m.mesaId"
                 :to="destinoMesa(m)"
-                class="card fila-mesa"
+                class="fila-mesa"
               >
                 <div class="fila-mesa-ident">
                   <div class="fila-mesa-chips">
@@ -122,7 +122,7 @@ onMounted(() => load())
                     <strong>{{ m.rol === 'gm' ? 'Director de Juego (GM)' : `Jugador (${m.personaje})` }}</strong>
                   </p>
                 </div>
-                <span class="text-link">Entrar →</span>
+                <span class="text-link">Entrar</span>
               </RouterLink>
             </div>
           </article>
@@ -130,11 +130,11 @@ onMounted(() => load())
           <!-- Actividad Reciente -->
           <article aria-label="Actividad reciente">
             <div class="seccion-cabecera">
-              <h2 class="subtitulo">◆ Actividad Reciente</h2>
-              <span class="label conteo">Actualizaciones de Campaña</span>
+              <h2 class="subtitulo">Actividad Reciente</h2>
+              <span class="label">Actualizaciones de Campaña</span>
             </div>
 
-            <div class="card lista-actividad">
+            <div class="lista-actividad">
               <div v-for="item in actividad" :key="item.id" class="actividad">
                 <div class="crt icono-actividad">
                   <svg class="glifo-actividad" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true" v-html="iconoActividad(item.icono)"></svg>
@@ -154,8 +154,8 @@ onMounted(() => load())
           <!-- Próximos Eventos -->
           <article aria-label="Próximos eventos">
             <div class="seccion-cabecera">
-              <h2 class="subtitulo">◆ Próximos Eventos</h2>
-              <span class="label conteo">Convocatorias y votaciones</span>
+              <h2 class="subtitulo">Próximos Eventos</h2>
+              <span class="label">Convocatorias y votaciones</span>
             </div>
 
             <div class="lista-eventos">
@@ -168,7 +168,7 @@ onMounted(() => load())
                   </div>
                 </div>
                 <RouterLink :to="`/mesas/${ev.mesaId}`" class="text-link">
-                  Ver mesa →
+                  Ver mesa
                 </RouterLink>
               </div>
             </div>
@@ -179,7 +179,7 @@ onMounted(() => load())
         <aside class="col-lateral" aria-label="Feed rápido">
           <div class="lateral-cuerpo">
             <div class="seccion-cabecera">
-              <h2 class="subtitulo lateral-titulo">❖ Feed Rápido</h2>
+              <h2 class="subtitulo lateral-titulo">Feed Rápido</h2>
             </div>
 
             <div class="posts">
@@ -190,7 +190,7 @@ onMounted(() => load())
                   <span class="label post-tiempo">{{ post.tiempo }}</span>
                 </div>
                 <p class="post-cuerpo">“{{ post.cuerpo }}”</p>
-                <RouterLink to="/feed" class="text-link">Leer más en Feed →</RouterLink>
+                <RouterLink to="/feed" class="text-link">Leer más en Feed</RouterLink>
               </div>
             </div>
 
@@ -230,23 +230,23 @@ onMounted(() => load())
 @media (min-width: 60rem) { .dash-card { flex-direction: row; align-items: stretch; } }
 .contra { color: var(--color-error); }
 .cargando { padding: var(--space-lg); text-align: center; display: grid; gap: var(--space-sm); justify-items: center; width: 100%; }
+/* silueta única de carga: el .skel global con anchuras locales */
 .sckels { width: 100%; max-width: 28rem; display: grid; gap: var(--space-2xs); }
-.linea { height: 10px; border-radius: 999px; background: var(--color-paper-3); }
-.linea--grande { width: 66%; height: 16px; }
-.linea--mitad { width: 50%; }
+.sckels .skel { height: 10px; }
+.sckels .skel--grande { width: 66%; height: 16px; }
+.sckels .skel--mitad { width: 50%; }
 .col-principal { display: flex; flex-direction: column; gap: var(--space-lg); padding: var(--space-md); width: 100%; }
 @media (min-width: 60rem) { .col-principal { width: 70%; padding: var(--space-lg); } }
 .resumen { display: grid; gap: var(--space-2xs); grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 40rem) { .resumen { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.chip-numero { background: var(--color-ink); border: var(--rule-hair) solid var(--color-accent); padding: var(--space-sm); text-align: center; border-radius: var(--radius-card); }
-.resumen-clave { text-transform: uppercase; letter-spacing: .14em; font-size: var(--text-xs); color: var(--color-accent); margin: 0; }
-.resumen-num { color: var(--color-accent); font-family: var(--font-display); font-size: var(--text-xl); margin: var(--space-3xs) 0 0; font-weight: 700; }
+.chip-numero { background: var(--color-paper-2); border: var(--rule-hair) solid var(--color-rule); padding: var(--space-sm); text-align: center; border-radius: var(--radius-card); }
+.resumen-clave { font-size: var(--text-xs); color: var(--color-muted); margin: 0; }
+.resumen-num { color: var(--color-accent-2); font-family: var(--font-display); font-size: var(--text-xl); margin: var(--space-3xs) 0 0; font-weight: 700; }
 .seccion-cabecera { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); border-bottom: var(--rule-hair) solid var(--color-rule); padding-bottom: var(--space-2xs); margin-bottom: var(--space-sm); }
 .subtitulo { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
-.lateral-titulo { font-size: var(--text-md); text-transform: uppercase; }
-.conteo { text-transform: uppercase; letter-spacing: .06em; }
+.lateral-titulo { font-size: var(--text-md); }
 .lista-mesas { display: grid; gap: var(--space-2xs); }
-.fila-mesa { display: flex; flex-direction: column; gap: var(--space-2xs); border-left: var(--rule-bar) solid var(--color-accent); padding: var(--space-sm) var(--space-md); text-decoration: none; align-items: flex-start; }
+.fila-mesa { display: flex; flex-direction: column; gap: var(--space-2xs); background: var(--color-paper-2); border: var(--rule-hair) solid var(--color-rule); border-left: var(--rule-bar) solid var(--color-accent); border-radius: var(--radius-card); padding: var(--space-sm) var(--space-md); text-decoration: none; align-items: flex-start; }
 @media (min-width: 40rem) { .fila-mesa { flex-direction: row; align-items: center; justify-content: space-between; min-height: 72px; } }
 .fila-mesa:hover { background: var(--color-paper-3); }
 .fila-mesa-ident { display: grid; gap: var(--space-3xs); min-width: 0; }
@@ -274,15 +274,12 @@ onMounted(() => load())
 .posts { display: grid; gap: var(--space-md); }
 .post { display: grid; gap: var(--space-3xs); }
 .post-cabeza { display: grid; grid-template-columns: auto auto 1fr; gap: var(--space-2xs); align-items: center; }
-.avatar { width: 22px; height: 22px; display: grid; place-content: center; border-radius: 999px; background: var(--color-accent-2); color: var(--color-paper); font-weight: 700; font-size: 10px; }
+.avatar { width: 22px; height: 22px; display: grid; place-content: center; border-radius: var(--radius-card); background: var(--color-accent-2); color: var(--color-paper); font-weight: 700; font-size: 10px; }
 .post-autor { font-weight: 700; font-size: var(--text-sm); color: var(--color-ink); }
 .post-tiempo { text-align: right; color: var(--color-muted); }
 .post-cuerpo { margin: 0; font-size: var(--text-sm); color: var(--color-ink-2); font-style: italic; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .lateral-bloque { display: grid; gap: var(--space-2xs); border-top: var(--rule-hair) solid var(--color-rule); padding-top: var(--space-sm); }
 .lateral-caja { padding: var(--space-sm); border: var(--rule-hair) solid var(--color-rule); text-align: center; display: grid; gap: var(--space-2xs); justify-items: center; }
 .lateral-pie { border-top: var(--rule-hair) solid var(--color-rule); padding-top: var(--space-sm); text-align: center; }
-.lateral-pie .label { margin: 0; text-transform: uppercase; letter-spacing: .14em; }
 .reintentar { justify-self: center; }
-.fab { position: fixed; bottom: 2rem; right: 2rem; width: 3.5rem; height: 3.5rem; border-radius: 999px; background: var(--color-accent); border: 2px solid var(--color-accent-ink); box-shadow: 0 4px 16px var(--color-shade), inset 0 1px 1px var(--color-paper); color: var(--color-accent-ink); font-size: 1.75rem; font-weight: 900; line-height: 1; display: grid; place-content: center; cursor: pointer; z-index: 50; padding-block-end: 2px; }
-.fab:hover { transform: scale(1.05); }
 </style>

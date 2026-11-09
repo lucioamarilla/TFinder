@@ -21,6 +21,16 @@ function solicitudApiNormalizada(s) {
   }
 }
 
+// El master NO se cuenta como jugador: es miembro de la mesa con rol de
+// direccion, pero no ocupa una de las plazas de la mesa de aventureros.
+// Los exploradores de mesa usan mesa.jugadores (COUNT rol='jugador'), asi
+// que aqui conteamos lo mismo para evitar el 1 vs 0 entre vistas.
+// '!== Master' (y no '=== Jugador') para que un miembro sin rol cuente como
+// jugador; un master nunca se cuenta doble.
+export function contarJugadores(miembros) {
+  return (miembros ?? []).filter((m) => m.rol !== 'Master').length
+}
+
 export async function getMiembros(mesaId, mesa = null) {
   const { mesasApi } = await import('@/api/endpoints')
   const { datos } = await mesasApi.miembros(mesaId)

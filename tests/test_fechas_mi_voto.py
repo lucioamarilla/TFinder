@@ -17,9 +17,15 @@ pytestmark = pytest.mark.integration
 def _auth_de(client):
     email = f"voto_{uuid.uuid4().hex[:8]}@tfinder.dev"
     r = client.post("/api/v1/auth/register", json={"email": email, "password": "secreto123", "nombre": "Votante Ana"})
-    assert r.status_code == 201
-    login = client.post("/api/v1/auth/login", json={"email": email, "password": "secreto123"})
-    return {"Authorization": f"Bearer {login.json()['access_token']}"}
+    assert r.status_code == 202
+    from tests.conftest import codigo_del_ultimo_mail
+
+    verif = client.post(
+        "/api/v1/auth/register/verificar",
+        json={"email": email, "codigo": codigo_del_ultimo_mail(destino=email)},
+    )
+    assert verif.status_code == 200
+    return {"Authorization": f"Bearer {verif.json()['access_token']}"}
 
 
 def test_listado_fechas_incluye_mi_voto(client, token_gm):

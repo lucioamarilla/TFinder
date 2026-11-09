@@ -6,7 +6,7 @@ import '@/styles/base.css'
 import '@/styles/app.css'
 // D-07 (corregido): SOLO utilidades de Tailwind (sin base/preflight):
 // el diseño visual proviene de tokens/base/app, que es el estilo del proyecto.
-// El prototipo pergamino (crono/harness) NO se carga.
+// (Las hojas muertas del prototipo pergamino fueron retiradas del repo.)
 import '@/styles/tailwind.css'
 document.documentElement.classList.add('js')
 

@@ -129,7 +129,9 @@ export async function crearMesa(entrada, opciones = {}) {
     // D-08: frecuencia y horario son dos nombres de vista para el mismo
     // dato del contrato; mapear ambos evita perder el horario al crear.
     horario: entrada.horario ?? entrada.frecuencia ?? '',
-    nivel_inicial: entrada.nivel_inicial ?? entrada.nivel ?? null,
+    nivel_inicial: (entrada.nivel_inicial ?? entrada.nivel) != null && (entrada.nivel_inicial ?? entrada.nivel) !== ''
+      ? Number(entrada.nivel_inicial ?? entrada.nivel)
+      : null,
     jugadores_max: entrada.jugadores_max ?? entrada.cupo ?? null
   })
   return normalizarMesa(datos)
@@ -145,7 +147,7 @@ export async function actualizarMesa(id, cambios, opciones = {}) {
   if (cambios.estado !== undefined) payload.estado = String(cambios.estado).toLowerCase()
   if (cambios.cupo !== undefined) payload.jugadores_max = cambios.cupo
   if (cambios.plazas !== undefined) payload.jugadores_max = cambios.plazas
-  if (cambios.nivel !== undefined) payload.nivel_inicial = cambios.nivel
+  if (cambios.nivel !== undefined && cambios.nivel !== null && cambios.nivel !== '') payload.nivel_inicial = Number(cambios.nivel)
   if (cambios.tono !== undefined) payload.tono = cambios.tono
   const { datos } = await mesasApi.actualizar(id, payload)
   return normalizarMesa(datos)

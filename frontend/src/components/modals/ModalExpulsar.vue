@@ -29,11 +29,5 @@ const emit = defineEmits(['close', 'accepted'])
 </template>
 
 <style scoped>
-.tf-dlg-card { background: var(--color-paper-2); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: var(--space-lg); max-width: 440px; width: 100%; display: grid; gap: var(--space-sm); }
-.tf-dlg-ico { width: 44px; height: 44px; display: grid; place-items: center; border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); }
-.tf-dlg-ico--danger { color: var(--color-error); border-color: var(--color-error); }
-.tf-dlg-title { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
-.tf-dlg-chip { font-size: var(--text-xs); color: var(--color-muted); }
-.tf-dlg-msg { margin: 0; font-size: var(--text-sm); color: var(--color-ink-2); }
-.tf-dlg-fila { display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-sm); flex-wrap: wrap; }
+.tf-dlg-ico { justify-self: start; }
 </style>

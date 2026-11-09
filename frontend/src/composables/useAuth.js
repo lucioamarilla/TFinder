@@ -201,14 +201,15 @@ export async function register(credentials) {
   if (errorForma) throw errorNegocio('400', errorForma)
 
   if (ES_API) {
-    // El backend fuerza rol 'usuario' en el registro público (no escalable).
+    // Registro pendiente: el backend NO crea la cuenta todavía; manda un
+    // código de 6 dígitos al mail. La sesión nace en verificarRegistro().
     const { register: registrarRemoto } = await cliente()
     const { datos } = await registrarRemoto({
       nombre: nombre.trim(),
       email: String(email).trim().toLowerCase(),
       password,
     })
-    return instalarSesionBack(datos)
+    return datos ?? { pendiente: true }
   }
 
   sembrar()
@@ -233,6 +234,58 @@ export async function recuperar(email) {
   }
 
   // Demo sin correo real: la vista informa que el enlace "fue enviado".
+  return { ok: true }
+}
+
+// Verifica el código de registro (modo api) e instala la sesión que devuelve
+// el backend. En demo el registro ya nace verificado, así que no se usa.
+export async function verificarRegistro(email, codigo) {
+  const errorForma =
+    validarEmail(email) ??
+    (typeof codigo === 'string' && /^\d{6}$/.test(codigo.trim())
+      ? null
+      : 'El código tiene 6 dígitos')
+  if (errorForma) throw errorNegocio('400', errorForma)
+
+  if (ES_API) {
+    const { verificarRegistro: verificarRemota } = await cliente()
+    const { datos } = await verificarRemota({ email, codigo: codigo.trim() })
+    return instalarSesionBack(datos)
+  }
+  return { ok: true }
+}
+
+// Reenvía el código del registro pendiente (el backend aplica cooldown 60 s).
+export async function reenviarRegistro(email) {
+  const errorForma = validarEmail(email)
+  if (errorForma) throw errorNegocio('400', errorForma)
+
+  if (ES_API) {
+    const { reenviarRegistro: reenviarRemota } = await cliente()
+    await reenviarRemota({ email })
+  }
+  return { ok: true }
+}
+
+export async function confirmarRecupero(email, codigo, nuevaPassword) {
+  const errorForma =
+    validarEmail(email) ??
+    (typeof codigo === 'string' && /^\d{6}$/.test(codigo.trim())
+      ? null
+      : 'El código tiene 6 dígitos') ??
+    validarPassword(nuevaPassword)
+  if (errorForma) throw errorNegocio('400', errorForma)
+
+  if (ES_API) {
+    const { confirmarRecupero: confirmarRemota } = await cliente()
+    const { datos } = await confirmarRemota({
+      email,
+      codigo: codigo.trim(),
+      nueva_password: nuevaPassword,
+    })
+    return datos ?? { ok: true }
+  }
+  // Demo sin correo real: la vista informa que la clave "fue cambiada".
   return { ok: true }
 }
 
@@ -351,5 +404,5 @@ export function useAuth() {
     return mapaRol(state.user?.rol) === required
   }
 
-  return { role, user, isAuthenticated, isAdmin, can, login, logout, register, recuperar, clearSession, editarPerfil, cambiarPassword, hidratarSesion }
+  return { role, user, isAuthenticated, isAdmin, can, login, logout, register, verificarRegistro, reenviarRegistro, recuperar, confirmarRecupero, clearSession, editarPerfil, cambiarPassword, hidratarSesion }
 }

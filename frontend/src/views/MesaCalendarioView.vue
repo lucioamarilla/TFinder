@@ -22,7 +22,7 @@
         </div>
 
         <form v-if="esGM" class="card" style="padding: var(--space-md); display: grid; gap: var(--space-sm);" data-test="form-proponer" novalidate @submit.prevent="proponer">
-          <h3>Proporner nueva sesión</h3>
+          <h3>Proponer nueva sesión</h3>
           <div class="grid-2" style="gap: var(--space-md);">
             <div class="field">
               <label class="label" for="c-fecha">Fecha</label>
@@ -37,11 +37,11 @@
             <label class="label" for="c-titulo">Título</label>
             <input class="input" id="c-titulo" v-model="nueva.titulo" placeholder="Sesión: la cripta se abre" />
           </div>
-          <p class="hint-error" v-if="errorPropuesta" role="alert" data-test="error-fecha">{{ errorPropuesta }}</p>
+          <Aviso v-if="errorPropuesta" tipo="error" data-test="error-fecha">{{ errorPropuesta }}</Aviso>
           <button class="btn btn--sm" type="submit" data-test="btn-proponer">Proponer fecha</button>
         </form>
 
-        <p class="hint-error" v-if="errorVoto" role="alert" data-test="error-calendario">{{ errorVoto }}</p>
+        <Aviso v-if="errorVoto" tipo="error" data-test="error-calendario">{{ errorVoto }}</Aviso>
 
         <div class="card" style="padding: var(--space-md);">
           <h3>Propuestas</h3>
@@ -85,6 +85,7 @@ import { useAuth } from '@/composables/useAuth'
 import { getMesa } from '@/services/mesas'
 import { getVotaciones, votar as votarApi, proponerFecha as proponerApi, confirmarFecha as confirmarApi } from '@/services/votaciones'
 import { getMiembros } from '@/services/jugadores'
+import Aviso from '@/components/Aviso.vue'
 
 const props = defineProps({ mesaId: { type: [String, Number], default: null } })
 
@@ -131,8 +132,9 @@ onMounted(async () => {
 
 function fmt(f) {
   if (!f) return ''
-  const [y, m, d] = String(f).split('-')
-  return `${d}/${m}/${y}`
+  const m = String(f).match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return String(f)
+  return `${m[3]}/${m[2]}/${m[1]}`
 }
 
 function miVoto(p) {
