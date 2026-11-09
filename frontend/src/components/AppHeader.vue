@@ -73,7 +73,6 @@ async function confirmarSalida() {
 
       <RouterLink class="nav-perfil" to="/perfil" aria-label="Tu perfil" :title="user.titulo" data-test="perfil-acceso">
         <span class="nav-avatar"><span class="num">{{ user.iniciales }}</span></span>
-        <span class="nav-nombre">{{ user.nombre }}</span>
       </RouterLink>
       <button type="button" class="btn btn--secondary nav-login" data-test="cerrar-sesion" @click="modalSalir = true">Cerrar sesión</button>
     </template>
@@ -91,17 +90,9 @@ async function confirmarSalida() {
 </template>
 
 <style scoped>
-nav a[aria-current="page"] { color: var(--color-accent-2); border-bottom-color: var(--color-accent); }
-.menu-movil { background: transparent; border: var(--rule-hair) solid var(--color-rule); cursor: pointer; padding: var(--space-2xs) var(--space-sm); font-weight: 700; }
+/* aria-current del nav vive en app.css; aquí solo el disparador móvil */
+.menu-movil { background: transparent; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); cursor: pointer; padding: var(--space-2xs) var(--space-sm); font-weight: 700; min-height: 32px; min-width: 32px; }
+/* móvil: el burger es el control primario de navegación; lleva mínimum de 44px de toque */
+@media (max-width: 40rem) { .menu-movil { min-width: 44px; min-height: 44px; } }
 @media (min-width: 60.0625rem) { .menu-movil { display: none; } }
-.nav-menu button { width: 100%; text-align: left; padding: var(--space-2xs) var(--space-sm); font-weight: 700; font-size: var(--text-sm); color: var(--color-error); background: transparent; border: 0; cursor: pointer; }
-.nav-menu button:hover { color: var(--color-error); text-decoration: underline; }
-.nav-busqueda { flex: none; }
-.nav-busqueda .input { height: 34px; width: clamp(100px, 22vw, 260px); font-size: var(--text-xs); padding-block: 0; }
-.nav-campana summary { position: relative; }
-.bell-badge { position: absolute; top: -6px; right: -8px; min-width: 16px; height: 16px; border-radius: 999px; background: var(--color-error); color: var(--color-paper); font: 700 10px/16px var(--font-body); text-align: center; padding-inline: 3px; }
-.nav-campana-empty { padding: var(--space-2xs) var(--space-sm); font-size: var(--text-xs); color: var(--color-muted); }
-.nav-campana div a { display: block; }
-.nav-campana div a.sinLeer { color: var(--color-accent-2); }
-@media (max-width: 60rem) { .nav-busqueda { display: none; } }
 </style>

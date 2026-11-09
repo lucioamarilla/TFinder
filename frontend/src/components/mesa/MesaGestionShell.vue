@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import { getMesa } from '@/services/mesas.js'
 import { getMembresias } from '@/services/membresias.js'
 import { getSesiones } from '@/services/sesiones.js'
-import { getMiembros } from '@/services/jugadores.js'
+import { getMiembros, contarJugadores } from '@/services/jugadores.js'
 import { isFeatureEnabled } from '@/config/features'
 import { useToast } from '@/composables/useToast.js'
 
@@ -21,10 +21,10 @@ const ocupacion = ref({ miembros: 0, capacidad: 5 })
 const esGM = ref(false)
 
 const TABS = [
-  { segmento: 'gestion', feature: 'gestionMesa', etiqueta: 'Resumen', glyph: '◆', flora: true },
-  { segmento: 'calendario', feature: 'calendario', etiqueta: 'Calendario & Votación', glyph: '', flora: false },
-  { segmento: 'sesiones', feature: 'sesiones', etiqueta: 'Sesiones', glyph: '', flora: false },
-  { segmento: 'jugadores', feature: 'jugadores', etiqueta: 'Jugadores', glyph: '', flora: false },
+  { segmento: 'gestion', feature: 'gestionMesa', etiqueta: 'Resumen', corta: 'Resumen', flora: true },
+  { segmento: 'calendario', feature: 'calendario', etiqueta: 'Calendario & Votación', corta: 'Calendario', glyph: '', flora: false },
+  { segmento: 'sesiones', feature: 'sesiones', etiqueta: 'Sesiones', corta: 'Sesiones', glyph: '', flora: false },
+  { segmento: 'jugadores', feature: 'jugadores', etiqueta: 'Jugadores', corta: 'Jugadores', glyph: '', flora: false },
 ]
 
 // Solo se ofrecen las pestanas cuya funcion esta habilitada: asi una tab
@@ -49,9 +49,9 @@ function contador(tab) {
 const estadoBadge = computed(() => {
   const estado = (mesa.value?.estado || '').toLowerCase()
   if (estado.includes('abiert')) {
-    return { texto: 'ABIERTA', cls: 'tag--acid', pulso: true }
+    return { texto: 'Abierta', cls: 'tag--acid', pulso: true }
   }
-  return { texto: 'CERRADA', cls: 'tag--ember', pulso: false }
+  return { texto: 'Cerrada', cls: 'tag--ember', pulso: false }
 })
 
 async function cargar() {
@@ -76,8 +76,11 @@ async function cargar() {
   }
   try {
     const jugadores = await getMiembros(props.mesaId, mesa.value)
+    // El master no ocupa plaza: el badge cuenta solo jugadores (rol 'Jugador')
+    // para que coincida con mesa.jugadores del buscador (0/5, no 1/5).
+    const lista = jugadores?.miembros
     ocupacion.value = {
-      miembros: jugadores?.miembros?.length ?? mesa.value.jugadores ?? 0,
+      miembros: lista ? contarJugadores(lista) : (mesa.value.jugadores ?? 0),
       capacidad: jugadores?.capacidad ?? mesa.value.plazas ?? null
     }
   } catch {
@@ -92,10 +95,6 @@ async function cargar() {
   }
   if (falloSecundario) toast.info('Algunas secciones de la mesa no se pudieron cargar.')
   cargando.value = false
-}
-
-function invitarJugador() {
-  toast.ok('Enlace de invitación copiado al portapapeles (simulado).')
 }
 
 onMounted(cargar)
@@ -149,13 +148,7 @@ provide('mesaGestion', { mesa, cargando, sesionesCount, ocupacion, esGM })
           >
             Editar mesa
           </RouterLink>
-          <button
-            type="button"
-            class="btn btn--sm"
-            @click="invitarJugador"
-          >
-            Invitar jugador
-          </button>
+          <!-- Invitar jugador: retirado (el botón no tenía funcionalidad real). -->
         </div>
       </div>
     </section>
@@ -168,8 +161,8 @@ provide('mesaGestion', { mesa, cargando, sesionesCount, ocupacion, esGM })
         :to="tab.segmento === 'gestion' ? `${rutaBase}/gestion` : `${rutaBase}/gestion/${tab.segmento}`"
         :class="tabActiva(tab) ? 'tab tab--activa' : 'tab'"
       >
-        <span v-if="tab.glyph" class="num">{{ tab.glyph }}</span>
-        <span>{{ tab.etiqueta }}</span>
+        <span class="tab-nombre tab-nombre--larga">{{ tab.etiqueta }}</span>
+        <span class="tab-nombre tab-nombre--corta">{{ tab.corta || tab.etiqueta }}</span>
         <span v-if="contador(tab) !== null" class="tab-contador num">{{ contador(tab) }}</span>
       </RouterLink>
     </nav>
@@ -182,7 +175,7 @@ provide('mesaGestion', { mesa, cargando, sesionesCount, ocupacion, esGM })
 </template>
 
 <style scoped>
-.gestion-shell { max-width: var(--container); margin-inline: auto; padding: 112px var(--gutter) var(--space-lg); display: grid; gap: var(--space-md); align-items: start; }
+.gestion-shell { max-width: var(--container); margin-inline: auto; padding: 112px var(--gutter) var(--space-lg); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-md); align-items: start; }
 .miga { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; }
 .miga-ruta { display: flex; align-items: center; gap: var(--space-2xs); font-size: var(--text-sm); color: var(--color-muted); flex-wrap: wrap; }
 .cabecera { padding: var(--space-md); }
@@ -192,12 +185,12 @@ provide('mesaGestion', { mesa, cargando, sesionesCount, ocupacion, esGM })
 .titulo { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
 .lore { color: var(--color-ink-2); max-width: 60ch; }
 .cabecera-acciones { display: flex; gap: var(--space-2xs); align-items: center; flex-wrap: wrap; }
-.tabs { display: flex; gap: var(--space-2xs); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); padding: var(--space-2xs); overflow-x: auto; }
-.tab { display: inline-flex; align-items: center; gap: var(--space-2xs); white-space: nowrap; padding: var(--space-2xs) var(--space-sm); border-radius: var(--radius-card); color: var(--color-ink-2); font-weight: 700; font-size: var(--text-sm); text-decoration: none; }
-.tab--activa { background: var(--color-accent-2); color: var(--color-paper); }
-.tab-contador { background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); border-radius: 999px; padding: 0 var(--space-sm); font-size: var(--text-xs); }
-.tab--activa .tab-contador { background: var(--color-paper); color: var(--color-ink); border-color: transparent; }
+/* tabs y .tab son globales (app.css); aquí queda solo lo propio del shell */
 .punto { width: 8px; height: 8px; border-radius: 999px; background: currentColor; display: inline-block; }
+/* etiquetas dobles de pestaña: la corta solo entra en pantallas chicas para
+   no partir palabras ni arrastrar scroll innecesario */
+.tab-nombre--corta { display: none; }
+@media (max-width: 40rem) { .tab-nombre--larga { display: none; } .tab-nombre--corta { display: inline; } }
 .panel { padding: var(--space-md); min-height: 40vh; }
 .gestion-noencontrada { max-width: var(--container); margin: 0 auto; padding: 112px var(--gutter) var(--space-lg); text-align: center; display: grid; gap: var(--space-sm); }
 .gestion-cargando { max-width: var(--container); margin: 0 auto; padding: 112px var(--gutter) var(--space-lg); }

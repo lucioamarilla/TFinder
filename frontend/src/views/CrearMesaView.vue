@@ -4,7 +4,7 @@
       <form class="card form-grid" style="padding: var(--space-lg);" novalidate @submit.prevent="submit">
         <div>
           <h2>Publicá tu campaña</h2>
-          <p class="lead">Lo que escribís a la izquierda se ve como la mesa real a la derecha.</p>
+          <p class="lead">Cada campo define tu mesa: mirá cómo queda en la vista previa.</p>
         </div>
         <div class="field">
           <label class="label" for="f-nombre">Nombre de la mesa</label>
@@ -26,13 +26,19 @@
         <div class="field">
           <label class="label" for="f-lugar">Ambientación</label>
           <textarea class="input" id="f-lugar" data-test="input-ambientacion" v-model="lugar" rows="2" placeholder="Ej: Ustalav, un condado de fantasmas al este de Golarion…"></textarea>
-          <p class="label">Textira libre: región, ciudad o ambiente de tu campaña.</p>
+          <p class="label">Texto libre: región, ciudad o ambiente de tu campaña.</p>
         </div>
-        <div class="field">
-          <label class="label" for="f-horario">Horario</label>
-          <input class="input" id="f-horario" v-model="horario" placeholder="Jueves 21:00" />
-          <p class="label" :hidden="horario.trim() !== ''">Opcional: día y hora sugeridos.</p>
+        <div class="grid-2" style="gap: var(--space-md);">
+          <div class="field">
+            <label class="label" for="f-dia">Día</label>
+            <input class="input" type="date" id="f-dia" data-test="input-dia" v-model="dia" />
+          </div>
+          <div class="field">
+            <label class="label" for="f-hora">Hora</label>
+            <input class="input" type="time" id="f-hora" data-test="input-hora" v-model="hora" />
+          </div>
         </div>
+        <p class="label">Opcional: día y hora sugeridos.</p>
         <div class="field">
           <label class="label" for="f-desc">Descripción</label>
           <textarea class="input" id="f-desc" v-model="desc" placeholder="Contá el tono, la campaña y qué esperás de las fichas…"></textarea>
@@ -41,24 +47,24 @@
           <RouterLink class="btn btn--secondary" to="/mis-mesas">Cancelar</RouterLink>
           <button class="btn" type="submit" :disabled="ocupado">Publicar mesa</button>
         </div>
-        <p class="hint-error" v-if="errorForma" role="alert" data-test="error-mesa">{{ errorForma }}</p>
+        <Aviso v-if="errorForma" tipo="error" data-test="error-mesa">{{ errorForma }}</Aviso>
       </form>
     </main>
 
     <aside>
-      <p class="label" style="margin-bottom: var(--space-2xs);">Así la ve la gente</p>
       <article class="card mesa-card" style="padding: var(--space-md);">
+        <p class="label" style="margin-bottom: var(--space-2xs);">Así la ve la gente</p>
         <div class="crt-cover"><span class="figure-lg acid" style="font-size: 40px;">{{ nivelClamped }}</span></div>
         <div style="display: flex; gap: var(--space-2xs); flex-wrap: wrap; margin-bottom: var(--space-2xs);">
           <span class="tag tag--ink">PF1e, nivel {{ nivelClamped }}</span>
           <span class="tag tag--acid">Abierta</span>
-          <span class="tag tag--ink">{{ horario || 'Horario a definir' }}</span>
+          <span class="tag tag--ink">{{ horarioVista || 'Horario a definir' }}</span>
         </div>
         <h3>{{ nombre || 'Mesa sin nombre' }}</h3>
         <p style="font-size: var(--text-sm); color: var(--color-ink-2); margin-block: var(--space-2xs) var(--space-sm);">Dirigida por {{ user?.nombre || 'tu' }}, {{ lugar }}</p>
         <p style="font-size: var(--text-sm); color: var(--color-ink-2);">{{ desc || 'Todavía sin descripción.' }}</p>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-md);">
-          <span class="seats" :aria-label="'0 de ' + cuposClamped">
+          <span class="seats" role="img" :aria-label="'0 de ' + cuposClamped">
             <i class="off" v-for="i in cuposClamped" :key="i"></i>
           </span>
           <button class="btn btn--sm" type="button">Unirse</button>
@@ -73,7 +79,9 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { validarMesa } from '@/rules/mesas'
+import { componerHorario } from '@/rules/fechas'
 import { crearMesa as crearMesaApi } from '@/services/mesas'
+import Aviso from '@/components/Aviso.vue'
 // sin demo
 
 const { user, isAuthenticated } = useAuth()
@@ -83,7 +91,8 @@ const nombre = ref('')
 const nivel = ref(4)
 const cupos = ref(5)
 const lugar = ref('Ustalav')
-const horario = ref('')
+const dia = ref('')
+const hora = ref('')
 const desc = ref('')
 
 const ocupado = ref(false)
@@ -92,6 +101,8 @@ const errorForma = ref(null)
 
 const nivelClamped = computed(() => Math.min(20, Math.max(1, +nivel.value || 1)))
 const cuposClamped = computed(() => Math.max(1, +cupos.value || 1))
+// D-11: el horario se compone de los pickers día/hora (formato ISO del contrato).
+const horarioVista = computed(() => componerHorario(dia.value, hora.value))
 const errNombre = computed(() => touched.value && nombre.value.trim().length > 0 && nombre.value.trim().length < 4)
 const errNivel = computed(() => touched.value && nivel.value !== '' && !(nivel.value >= 1 && nivel.value <= 20))
 const errCupos = computed(() => touched.value && !(cupos.value > 0))
@@ -122,7 +133,7 @@ async function submit() {
       estado: 'abierta',
       nivel: nivelClamped.value,
       cupo: cuposClamped.value,
-      horario: horario.value.trim(),
+      horario: horarioVista.value,
       // D-06: la ambientación libre del GM se persiste en el campo tono del
       // contrato (MesaCreate no tiene 'lugar' y es extra="forbid").
       tono: lugar.value.trim(),

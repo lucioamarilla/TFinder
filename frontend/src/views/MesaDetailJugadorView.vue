@@ -22,13 +22,13 @@
               <span class="tag" :class="esMesaCerrada(mesa) ? 'tag--ember' : (mesaCompleta(mesa) ? 'tag--ink' : 'tag--acid')">{{ esMesaCerrada(mesa) ? 'Cerrada' : (mesaCompleta(mesa) ? 'Completa' : 'Abierta') }}</span>
               <span v-if="pendiente" class="tag tag--ink">Solicitud enviada</span>
               <span v-if="yaMiembro" class="tag tag--acid">Ya eres miembro</span>
-              <span class="tag tag--ink">{{ mesa.horario }}</span>
+              <span class="tag tag--ink">{{ mesa.horario || 'A coordinar' }}</span>
             </div>
             <h2>{{ mesa.nombre }}</h2>
-            <p class="lead" style="font-size: var(--text-md);">Dirigida por {{ mesa.gm }}, {{ mesa.ubicacion }}.</p>
+            <p class="lead" style="font-size: var(--text-md);">Dirigida por {{ mesa.gm }}{{ mesa.ubicacion ? ', ' + mesa.ubicacion : '' }}.</p>
             <p style="font-size: var(--text-sm); color: var(--color-ink-2); margin-top: var(--space-sm);">{{ mesa.descripcion }}</p>
             <div style="display: flex; align-items: center; gap: var(--space-md); margin-top: var(--space-md); flex-wrap: wrap;">
-              <span class="seats" :aria-label="ocupacionDe(mesa) + ' de ' + ((cupoDe(mesa)) ?? '∞') + ' asientos'">
+              <span class="seats" role="img" :aria-label="ocupacionDe(mesa) + ' de ' + ((cupoDe(mesa)) ?? '∞') + ' asientos'">
                 <i v-for="i in ocupacionDe(mesa)" :key="'on' + i"></i>
                 <i v-for="i in Math.max(0, ((cupoDe(mesa)) ?? 0) - ocupacionDe(mesa))" :key="'off' + i" class="off"></i>
               </span>
@@ -42,8 +42,21 @@
           </div>
         </article>
 
-        <div class="tabs" role="tablist" style="margin-top: var(--space-lg);">
-          <button v-for="t in tabs" :key="t.key" role="tab" :aria-selected="tab === t.key" @click="tab = t.key">{{ t.label }}</button>
+        <div class="tabs detail-tabs" role="tablist">
+          <button v-for="t in tabs" :key="t.key" class="tab" role="tab" :aria-selected="tab === t.key" @click="tab = t.key">{{ t.label }}</button>
+        </div>
+
+        <div v-if="tab === 'resumen'" class="panel card">
+          <h3>Resumen de la mesa</h3>
+          <div class="param-fila"><span class="clave">Sistema y nivel:</span><span>{{ mesa.sistema || 'PF1e' }}<template v-if="mesa.nivel != null">, nivel {{ mesa.nivel }}</template></span></div>
+          <div class="param-fila"><span class="clave">Ambientación:</span><span>{{ mesa.tono || '—' }}</span></div>
+          <div class="param-fila"><span class="clave">Frecuencia / Horario:</span><span>{{ mesa.horario || 'A coordinar' }}</span></div>
+          <div class="param-fila"><span class="clave">Ocupación de Mesa:</span><span>{{ ocupacionDe(mesa) }}/{{ cupoDe(mesa) ?? '∞' }}</span></div>
+          <div class="param-fila"><span class="clave">Dirigida por:</span><span>{{ mesa.gm || 'Por asignar' }}</span></div>
+          <div class="sinopsis-bloque">
+            <span class="clave">Sinopsis:</span>
+            <p class="sinopsis">«{{ mesa.descripcion || '—' }}»</p>
+          </div>
         </div>
 
         <div v-if="tab === 'personajes'" class="panel card">
@@ -130,13 +143,18 @@ async function unirse() {
 <style scoped>
 .app-grid { max-width: var(--container); margin-inline: auto; padding: 112px var(--gutter) var(--space-xl); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-md); align-items: start; }
 .cover { aspect-ratio: 16/9; background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); display: grid; place-items: center; margin-bottom: var(--space-2xs); }
+/* en móvil la tapa deja de comer tanta altura: 16/5 mantiene la franja identitaria */
+@media (max-width: 40rem) { .cover { aspect-ratio: 16/5; } }
+.param-fila { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-md); padding-block: var(--space-2xs); border-top: var(--rule-hair) solid var(--color-rule); }
+.param-fila:first-of-type { border-top: 0; }
+.clave { font-weight: 700; font-size: var(--text-xs); color: var(--color-muted); }
+.param-fila > span:last-child { font-size: var(--text-sm); color: var(--color-ink); text-align: right; overflow-wrap: break-word; min-width: 0; }
+.sinopsis-bloque { display: grid; gap: var(--space-2xs); padding-block: var(--space-xs); border-top: var(--rule-hair) solid var(--color-rule); }
+.sinopsis { margin: 0; font-size: var(--text-sm); color: var(--color-ink-2); }
+@media (max-width: 40rem) { .param-fila { flex-direction: column; align-items: flex-start; gap: 2px; } .param-fila > span:last-child { text-align: left; } }
 .miembro { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-2xs) 0; }
 .av { width: 34px; height: 34px; display: grid; place-items: center; background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); font-weight: 700; font-size: var(--text-xs); }
-.tabs { display: flex; gap: var(--space-2xs); margin-bottom: var(--space-md); }
-.tabs button { padding: var(--space-2xs) var(--space-md); border: var(--rule-hair) solid var(--color-rule); background: transparent; cursor: pointer; }
+.tabs { margin-block: var(--space-lg) var(--space-md); }
 .panel { padding: var(--space-md); }
-.seats { display: inline-flex; gap: 3px; }
-.seats i { width: 10px; height: 10px; background: var(--color-accent-2); display: block; }
-.seats i.off { background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); }
 @media (max-width: 60rem) { .app-grid { padding-top: 120px; } }
 </style>

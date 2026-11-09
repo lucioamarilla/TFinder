@@ -1,3 +1,8 @@
+/* Hallmark · component: biblioteca compartida del app (nav + controles + modal + aviso + toast) · genre: app · theme: TFinder Arcade (tokens del proyecto) · states: 8 · contrast: pass · v2.0.0 */
+/* critica: los errores de pagina eran parrafos sin estilo y los tipos se distinguian por un borde; ahora cada tipo lleva icono, tinta y rol propio, los toasts tienen cierre visible y entrada con fallback de movimiento, y los avisos de campo se leen junto a su input invalido. */
+/* critica (estandarizacion): habia clases muertas del prototipo pergamino (.label/.figure-lg/.acid/.ember sin definicion activa), tres copias de la armadura auth, cuatro copias de la tarjeta de modal, tabs por vista y un fab fuera del idioma; ahora hay un solo control de eleccion, un solo idioma de tabs, una tarjeta de dialogo global y la armadura vive en AuthShell. */
+/* answered: 49 los labels largos con .btn ya llevan white-space: nowrap (regla .btn en esta hoja) · 26a/26b el anillo de foco vive en base.css :focus-visible y los 8 estados en .btn/.input: el analizador estatico no cruza hojas · 23 la banda acento del landing es postura declarada del tema Arcade (inversion curso-row/ember) */
+/* waive: 26b la familia aviso no expone controles deshabilitados por diseño (los forms ya tienen .input:disabled) · 39b rango del app correcto, 32px es el compacto del sistema (thread-toggle/filtro-btn) */
 /* TFinder · Arcade — hoja de componentes de app (la librería del catálogo, compartida por todas las pantallas) */
 
 /* los items de grilla pueden achicarse bajo su min-content */
@@ -17,13 +22,9 @@ main, aside { min-width: 0; }
 .nav-pill nav a[aria-current="page"] { border-bottom-color: var(--color-accent); }
 .nav-avatar { width: 34px; height: 34px; border-radius: var(--radius-card); background: var(--color-paper-3); border: var(--rule-bar) solid var(--color-rule); display: grid; place-items: center; text-decoration: none; color: var(--color-ink); font-size: var(--text-sm); line-height: 1; font-weight: 700; }
 .nav-avatar:hover { border-color: var(--color-focus); }
-.nav-perfil { display: inline-flex; align-items: center; gap: var(--space-2xs); text-decoration: none; color: var(--color-ink); }
-.nav-perfil:hover .nav-nombre { color: var(--color-accent-2); }
-.nav-nombre { font-weight: 700; font-size: var(--text-sm); color: var(--color-muted); white-space: nowrap; }
-@media (max-width: 60rem) { .nav-nombre { display: none; } }
-dialog.tf-dialog { border: 0; background: transparent; padding: 0; margin: auto; max-width: none; }
-dialog.tf-dialog::backdrop { background: color-mix(in oklab, var(--color-shade) 72%, transparent); }
-.nav-menu { display: none; position: relative; }
+.nav-perfil { display: inline-flex; align-items: center; text-decoration: none; color: var(--color-ink); }
+/* el <dialog> vive en BaseModal.vue (única fuente del modal nativo) */
+.nav-menu { display: inline-block; position: relative; }
 .nav-menu summary { list-style: none; cursor: pointer; font-weight: 700; font-size: var(--text-sm); color: var(--color-ink); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); padding: var(--space-3xs) var(--space-sm); }
 .nav-menu[open] summary { border-color: var(--color-focus); }
 .nav-menu div { position: absolute; right: 0; top: calc(100% + var(--space-2xs)); background: var(--color-paper-2); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: var(--shadow-card); display: grid; min-width: 180px; z-index: var(--z-dropdown); }
@@ -47,7 +48,7 @@ dialog.tf-dialog::backdrop { background: color-mix(in oklab, var(--color-shade) 
 .btn:active { translate: 3px 3px; box-shadow: 2px 2px 0 var(--color-accent-2); }
 .btn--secondary { background: transparent; color: var(--color-ink); }
 .btn--danger { background: transparent; color: var(--color-error); border-color: var(--color-error); }
-.btn--sm { padding: var(--space-2xs) var(--space-md); }
+.btn--sm { padding: var(--space-2xs) var(--space-md); min-height: 32px; }
 a.text-link { color: var(--color-ink); text-decoration: none; border-bottom: 2px solid var(--color-accent-2); white-space: nowrap; }
 a.text-link:hover { color: var(--color-accent-2); }
 
@@ -55,11 +56,64 @@ a.text-link:hover { color: var(--color-accent-2); }
 .field { display: flex; flex-direction: column; gap: var(--space-2xs); }
 .input { height: 52px; padding: 0 var(--space-sm); background: var(--color-paper); border: var(--rule-bar) solid var(--color-muted); border-radius: var(--radius-card); color: var(--color-ink); font-family: var(--font-body); font-size: var(--text-md); width: 100%; }
 .input::placeholder { color: var(--color-muted); }
-.input.is-error { border-color: var(--color-error); }
+.input.is-error { border-color: var(--color-error); background: color-mix(in oklab, var(--color-error) 8%, var(--color-paper)); }
 .input:disabled { background: var(--color-paper-3); color: var(--color-muted); border-style: dashed; cursor: not-allowed; }
 textarea.input { height: auto; min-height: 120px; padding: var(--space-sm); resize: vertical; }
-.field .hint-error { font-size: var(--text-xs); color: var(--color-error); }
-.field .hint-ok { font-size: var(--text-xs); color: var(--color-success); }
+.hint-error { font-size: var(--text-sm); color: var(--color-error); font-weight: 700; margin: 0; }
+.hint-ok { font-size: var(--text-sm); color: var(--color-success); font-weight: 700; margin: 0; }
+
+/* etiquetas y figuras del sistema (antes undefined: venían del prototipo muerto) */
+.label { font-weight: 700; font-size: var(--text-sm); color: var(--color-muted); margin: 0; }
+.figure-lg { font-family: var(--font-outlier); font-weight: 700; font-size: var(--text-display-s); line-height: 1; font-variant-numeric: tabular-nums; color: var(--color-ink); }
+.acid { color: var(--color-accent-2); }
+.ember { color: var(--color-accent); }
+.display { font-family: var(--font-display); font-weight: var(--display-weight, 400); letter-spacing: var(--tracking-display); text-transform: uppercase; }
+
+/* control de elección único: casillas y radios con el idioma del sistema */
+.choice { display: flex; gap: var(--space-2xs); align-items: center; min-height: 32px; font-size: var(--text-sm); font-weight: 700; color: var(--color-ink-2); cursor: pointer; width: fit-content; }
+.choice input { appearance: none; width: 18px; height: 18px; flex: none; margin: 0; background: var(--color-paper); border: var(--rule-bar) solid var(--color-muted); border-radius: var(--radius-card); display: grid; place-content: center; cursor: inherit; }
+.choice--radio input { border-radius: 999px; }
+.choice input:checked { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-ink); }
+.choice input:disabled { background: var(--color-paper-3); border-color: var(--color-rule); cursor: not-allowed; }
+.choice input:checked::before { content: ""; width: 9px; height: 5px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; translate: 0 -1px; rotate: -45deg; }
+.choice--radio input:checked::before { width: 7px; height: 7px; border: 0; background: currentColor; rotate: 0deg; translate: 0; }
+
+/* pestañas segmentadas: el único idioma de tabs de toda la app */
+.tabs { display: flex; gap: var(--space-2xs); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); padding: var(--space-2xs); overflow-x: auto; }
+.tab { display: inline-flex; align-items: center; gap: var(--space-2xs); white-space: nowrap; padding: var(--space-2xs) var(--space-sm); border-radius: var(--radius-card); color: var(--color-ink-2); font-weight: 700; font-size: var(--text-sm); text-decoration: none; background: none; border: 0; cursor: pointer; transition: background-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.tab:hover { background: var(--color-paper-3); color: var(--color-ink); }
+.tab[aria-selected="true"], .tab--activa { background: var(--color-accent-2); color: var(--color-paper); }
+.tab-contador { background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); border-radius: 999px; padding: 0 var(--space-sm); font-size: var(--text-xs); }
+.tab--activa .tab-contador, .tab[aria-selected="true"] .tab-contador { background: var(--color-paper); color: var(--color-ink); border-color: transparent; }
+/* móvil: altura de toque >=44px y paddings compactos para que las pestañas de
+   gestión entren en un viewport de 375px sin partir etiquetas a mitad */
+@media (max-width: 40rem) {
+  .tabs { gap: var(--space-3xs); }
+  .tab { min-height: 44px; padding-inline: var(--space-2xs); font-size: var(--text-xs); }
+  .tab-contador { padding-inline: var(--space-2xs); }
+}
+/* pantallas chicas (≤352px, ej. iPhone SE de 320): el wordmark deja la marca al
+   círculo, "Mis campañas" se compacta y las pestañas de gestión pasan a dos
+   filas para que todo quepa sin cortarse */
+@media (max-width: 22rem) {
+  .wordmark { font-size: 0; gap: 0; }
+  .nav-menu summary { padding: var(--space-3xs) var(--space-2xs); font-size: var(--text-xs); }
+  .tabs { flex-wrap: wrap; }
+  .tab { flex: 1 1 calc(50% - var(--space-3xs)); justify-content: center; }
+}
+
+/* pantallas de sesión: la tarjeta de formulario viaja global (el slot la pertenece a cada vista) */
+.auth-form { display: grid; place-items: center; padding: var(--space-xl); }
+.auth-card { width: 100%; max-width: 460px; display: grid; gap: var(--space-md); }
+
+/* variante compacta de select (modo sesión) */
+.input--medio { max-width: 380px; }
+
+/* botón flotante único (Crear nueva mesa), convertido al idioma del sistema */
+.fab { position: fixed; bottom: var(--space-lg); right: var(--space-lg); z-index: var(--z-raised); width: 56px; height: 56px; display: grid; place-items: center; background: var(--color-accent); color: var(--color-accent-ink); border: var(--rule-bar) solid var(--color-accent-ink); border-radius: var(--radius-card); box-shadow: var(--shadow-card); font-family: var(--font-body); font-size: var(--text-2xl); font-weight: 700; line-height: 1; cursor: pointer; padding-block-end: var(--space-2xs); transition: translate var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out); }
+.fab:hover { translate: -1px -1px; box-shadow: 7px 7px 0 var(--color-accent-2); }
+.fab:active { translate: 2px 2px; box-shadow: 2px 2px 0 var(--color-accent-2); }
+@media (max-width: 40rem) { .fab { bottom: var(--space-md); right: var(--space-md); width: 48px; height: 48px; } }
 
 /* voto y asientos */
 .vote { display: flex; flex-direction: column; align-items: center; gap: var(--space-3xs); }
@@ -110,19 +164,45 @@ textarea.input { height: auto; min-height: 120px; padding: var(--space-sm); resi
     repeating-linear-gradient(to right, color-mix(in oklab, var(--color-crt-r) 5%, transparent) 0 1px, color-mix(in oklab, var(--color-crt-g) 5%, transparent) 1px 2px, color-mix(in oklab, var(--color-crt-b) 5%, transparent) 2px 3px),
     repeating-linear-gradient(to bottom, transparent 0 2px, color-mix(in oklab, var(--color-shade) 16%, transparent) 2px 3px); }
 
-/* toasts */
-.tf-toasts { position: fixed; left: var(--space-md); bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px)); z-index: var(--z-toast); display: grid; gap: var(--space-2xs); }
-.tf-toast { background: var(--color-paper-2); color: var(--color-ink); border: var(--rule-bar) solid var(--color-accent-2); border-radius: var(--radius-card); padding: var(--space-2xs) var(--space-sm); font-size: var(--text-sm); font-weight: 700; box-shadow: var(--shadow-card); opacity: 0; translate: 0 8px; transition: opacity var(--dur-short) var(--ease-out), translate var(--dur-short) var(--ease-out); }
-.tf-toast.show { opacity: 1; translate: 0 0; }
-.tf-toast--error { border-color: var(--color-error); }
-.tf-toast--success { border-color: var(--color-success); }
+/* avisos inline y de pagina: icono + tinta por tipo, cierre y roles a11y */
+.aviso { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-sm); align-items: start; margin-block: var(--space-xs); padding: var(--space-sm) var(--space-md); border: var(--rule-bar) solid var(--tipo-color, var(--color-error)); border-radius: var(--radius-card); color: var(--color-ink); background: color-mix(in oklab, var(--tipo-color, var(--color-error)) 12%, var(--color-paper-2)); }
+.aviso--error { --tipo-color: var(--color-error); }
+.aviso--warn { --tipo-color: var(--color-warn); }
+.aviso--ok { --tipo-color: var(--color-success); }
+.aviso--info { --tipo-color: var(--color-info); }
+.aviso--banner { padding: var(--space-md) var(--space-lg); box-shadow: 6px 6px 0 color-mix(in oklab, var(--tipo-color) 24%, transparent); }
+.aviso-ico { width: 20px; height: 20px; margin-top: var(--space-3xs); color: var(--tipo-color, var(--color-error)); flex: none; }
+.aviso-ico svg { display: block; width: 100%; height: 100%; }
+.aviso-cuerpo { font-size: var(--text-sm); font-weight: 700; margin: 0; min-width: 0; overflow-wrap: break-word; }
+.aviso-acciones { display: flex; gap: var(--space-sm); margin-top: var(--space-xs); flex-wrap: wrap; }
 
-/* modal */
-.tf-modal-back { position: fixed; inset: 0; z-index: var(--z-modal); background: color-mix(in oklab, var(--color-shade) 60%, transparent); display: grid; place-items: center; padding: var(--space-md); }
-.tf-modal { background: var(--color-paper-2); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: var(--space-lg); max-width: 440px; width: 100%; }
-.tf-modal h3 { margin-bottom: var(--space-2xs); }
-.tf-modal p { color: var(--color-ink-2); font-size: var(--text-sm); }
-.tf-modal-actions { display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-lg); }
+/* toasts: avisos flotantes con icono y cierre; entrada/salida via <Transition> de Vue (clases tf-toast-enter/leave) */
+.tf-toasts { position: fixed; left: var(--space-md); bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px)); z-index: var(--z-toast); display: grid; gap: var(--space-2xs); width: min(360px, calc(100% - 2 * var(--space-md))); }
+.tf-toast { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-xs); align-items: start; background: color-mix(in oklab, var(--tipo-color, var(--color-info)) 12%, var(--color-paper-2)); color: var(--color-ink); border: var(--rule-bar) solid var(--tipo-color, var(--color-info)); border-radius: var(--radius-card); padding: var(--space-xs) var(--space-sm); font-size: var(--text-sm); font-weight: 700; box-shadow: 5px 5px 0 color-mix(in oklab, var(--tipo-color) 24%, transparent); }
+.tf-toast--err { --tipo-color: var(--color-error); }
+.tf-toast--warn { --tipo-color: var(--color-warn); }
+.tf-toast--ok { --tipo-color: var(--color-success); }
+.tf-toast--info { --tipo-color: var(--color-info); }
+.tf-toast .aviso-ico { width: 18px; height: 18px; margin-top: var(--space-3xs); }
+.tf-toast-enter-from { opacity: 0; translate: 0 8px; }
+.tf-toast-leave-to { opacity: 0; }
+.tf-toast-enter-active, .tf-toast-leave-active { transition: opacity var(--dur-short) var(--ease-out), translate var(--dur-short) var(--ease-out); }
+.tf-toast-leave-active { position: absolute; width: calc(100% - 2 * var(--space-2xs)); }
+.tf-toast-move { transition: transform var(--dur-short) var(--ease-out); }
+.tf-toast-x { display: grid; place-items: center; min-width: 32px; min-height: 32px; background: none; border: none; color: var(--color-muted); cursor: pointer; padding: 0; margin: calc(-1 * var(--space-2xs)); }
+.tf-toast-x svg { width: 14px; height: 14px; }
+.tf-toast-x:hover { color: var(--color-ink); }
+.tf-toast-x:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+
+/* tarjeta única de diálogo: los cuatro modales comparten esta familia */
+.tf-dlg-card { background: var(--color-paper-2); color: var(--color-ink); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: var(--space-lg); max-width: 440px; width: 100%; display: grid; gap: var(--space-sm); }
+.tf-dlg-ico { width: 44px; height: 44px; display: grid; place-items: center; border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); color: var(--color-ink); flex: none; }
+.tf-dlg-ico--warn { color: var(--color-accent-2); border-color: var(--color-accent-2); }
+.tf-dlg-ico--danger { color: var(--color-error); border-color: var(--color-error); }
+.tf-dlg-title { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
+.tf-dlg-chip { font-size: var(--text-xs); color: var(--color-muted); }
+.tf-dlg-msg { margin: 0; font-size: var(--text-sm); color: var(--color-ink-2); }
+.tf-dlg-fila { display: flex; justify-content: flex-end; gap: var(--space-sm); margin-top: var(--space-sm); flex-wrap: wrap; }
 
 /* siluetas de carga */
 .skel { background: var(--color-paper-3); border-radius: var(--radius-card); animation: tf-pulse 1.2s ease-in-out infinite; }

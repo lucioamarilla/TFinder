@@ -36,7 +36,7 @@
             <span class="tag tag--ink">PF1e</span>
             <span class="tag" :class="etiquetaTono(m)">{{ etiquetaEstado(m) }}</span>
             <span v-if="m.estado === 'abierta' && mesaCompleta(m)" class="tag tag--ember">Completa</span>
-            <span class="tag tag--ink">{{ m.horario }}</span>
+            <span class="tag tag--ink">{{ m.horario || 'A coordinar' }}</span>
           </div>
           <h3 style="margin: 0;"><RouterLink class="mesa-link" :to="`/mesas/${m.id}`" data-test="mesa-link">{{ m.nombre }}</RouterLink></h3>
           <p style="font-size: var(--text-sm); color: var(--color-ink-2); margin-block: var(--space-2xs) var(--space-sm);">
@@ -44,13 +44,13 @@
           </p>
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: var(--space-2xs);">
-              <span class="seats" :aria-label="ocupacionNormalizada(m) + ' de ' + (cupoDe(m) ?? '∞') + ' asientos'">
+              <span class="seats" role="img" :aria-label="ocupacionNormalizada(m) + ' de ' + (cupoDe(m) ?? '∞') + ' asientos'">
                 <i v-for="i in ocupacionNormalizada(m)" :key="'on' + m.id + i"></i>
                 <i v-for="i in Math.max(0, (cupoDe(m) ?? 0) - ocupacionNormalizada(m))" :key="'off' + m.id + i" class="off"></i>
               </span>
               <span class="num" style="font-size: var(--text-sm);">{{ ocupacionNormalizada(m) }}/{{ cupoDe(m) ?? '∞' }}</span>
             </div>
-            <button v-if="!esMasterDe(m)" class="btn btn--sm" :disabled="!puedoPedir(m)" @click="unirse(m)">{{ etiquetaBoton(m) }}</button>
+            <button v-if="!esMasterDe(m)" class="btn btn--sm" :disabled="!puedoPedir(m) || postuladas.has(m.id) || postulandoId === m.id" @click="unirse(m)">{{ etiquetaBoton(m) }}</button>
           </div>
         </article>
       </div>
@@ -64,10 +64,14 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { getMesas } from '@/services/mesas'
 import { mesasApi } from '@/api/endpoints'
+import { useToast } from '@/composables/useToast'
 // sin demo
 
 const { user, isAuthenticated } = useAuth()
 const router = useRouter()
+const toast = useToast()
+const postuladas = ref(new Set())
+const postulandoId = ref(null)
 
 const q = ref('')
 const filtroEstado = ref('todas')
@@ -126,19 +130,26 @@ function puedoPedir(m) {
 }
 
 function etiquetaBoton(m) {
+  if (postuladas.value.has(m.id)) return 'Postulado ✓'
   if (!isAuthenticated.value) return 'Postularme'
   if (estadoCrudo(m) !== 'abierta') return 'Cerrada'
   if (completa(m)) return 'Completa'
+  if (postulandoId.value === m.id) return 'Enviando…'
   return 'Postularme'
 }
 
 async function unirse(m) {
   if (!isAuthenticated.value) { router.push({ path: '/login', query: { redirect: '/mesas' } }); return }
+  if (postuladas.value.has(m.id) || postulandoId.value === m.id) return
+  postulandoId.value = m.id
   try {
     await mesasApi.solicitarUnion(m.id, {})
-    // ok
+    postuladas.value = new Set([...postuladas.value, m.id])
+    toast.ok('Postulación enviada · el GM revisará tu solicitud.')
   } catch (e) {
-    // ok
+    toast.error(e?.message || 'No se pudo enviar la postulación. Intentá de nuevo.')
+  } finally {
+    postulandoId.value = null
   }
 }
 
@@ -153,8 +164,5 @@ function limpiar() { q.value = ''; filtroEstado.value = 'todas'; filtroNivel.val
 .crt-cover { aspect-ratio: 16/9; background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); display: grid; place-items: center; margin-bottom: var(--space-2xs); }
 .mesa-link { color: inherit; text-decoration: none; }
 .mesa-link:hover { color: var(--color-accent-2); }
-.seats { display: inline-flex; gap: 3px; }
-.seats i { width: 10px; height: 10px; background: var(--color-accent-2); display: block; }
-.seats i.off { background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); }
 @media (max-width: 60rem) { .app-grid { grid-template-columns: minmax(0, 1fr); } }
 </style>

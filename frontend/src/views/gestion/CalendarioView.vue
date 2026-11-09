@@ -8,13 +8,16 @@ import { useToast } from '@/composables/useToast.js'
 import { getMesa } from '@/services/mesas.js'
 import { getSesiones } from '@/services/sesiones.js'
 import { getVotaciones, votar, proponerFecha, confirmarFecha } from '@/services/votaciones.js'
+import Aviso from '@/components/Aviso.vue'
 
 const props = defineProps({ mesaId: { type: String, required: true } })
 
 const toast = useToast()
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-const DIAS = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO']
+const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+// versión abreviada para la cuadrícula en pantallas chicas (ver .dias-corto)
+const DIAS_CORTOS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const HOY = new Date()
 
 const anio = ref(HOY.getFullYear())
@@ -26,7 +29,7 @@ const abrirFormulario = ref(false)
 const nueva = ref({ fecha: '', hora: '' })
 const errorPropuesta = ref(null)
 
-const nombreMes = computed(() => `${MESES[mes.value].toUpperCase()} ${anio.value}`)
+const nombreMes = computed(() => `${MESES[mes.value]} ${anio.value}`)
 
 const capacidad = computed(() => capacidadRef.value)
 
@@ -57,15 +60,15 @@ function marcaDe(dia) {
   if (!dia) return null
   const sesionesDelDia = sesiones.value.filter((s) => diaDe(s.fecha) === dia)
   if (sesionesDelDia.length > 0) {
-    return { marcador: 'sesion', texto: 'SESIÓN', titulo: sesionesDelDia.map((s) => `${s.fecha}`).join(' | ') }
+    return { marcador: 'sesion', texto: 'Sesión', titulo: sesionesDelDia.map((s) => `${s.fecha}`).join(' | ') }
   }
   const propuestasDelDia = votaciones.value.filter((v) => diaDe(v.fecha) === dia)
   if (propuestasDelDia.length === 0) return null
   const principal = propuestasDelDia[0]
   if (principal.confirmada) {
-    return { marcador: 'sesion', texto: 'CONFIRMADA', titulo: principal.fecha }
+    return { marcador: 'sesion', texto: 'Confirmada', titulo: principal.fecha }
   }
-  return { marcador: 'propuesta', texto: 'PROPUESTA', titulo: principal.fecha }
+  return { marcador: 'propuesta', texto: 'Propuesta', titulo: principal.fecha }
 }
 
 function mesAnterior() {
@@ -155,14 +158,18 @@ async function confirmar(votacion) {
         <div class="cald-leyenda-flechas">
           <div class="leyenda">
             <span class="leyenda-aviso leyenda-aviso--sesion"></span>
-            <span class="label">SESIÓN / CONFIRMADA</span>
+            <span class="label">Sesión / Confirmada</span>
             <span class="leyenda-aviso leyenda-aviso--propuesta"></span>
-            <span class="label">PROPUESTA ACTIVA</span>
+            <span class="label">Propuesta activa</span>
           </div>
           <div class="flechas">
-            <button type="button" class="btn btn--secondary btn--sm" aria-label="Mes anterior" @click="mesAnterior">«</button>
+            <button type="button" class="flecha-btn" aria-label="Mes anterior" data-test="mes-anterior" @click="mesAnterior">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6" /></svg>
+            </button>
             <span class="num nombre-mes">{{ nombreMes }}</span>
-            <button type="button" class="btn btn--secondary btn--sm" aria-label="Mes siguiente" @click="mesSiguiente">»</button>
+            <button type="button" class="flecha-btn" aria-label="Mes siguiente" data-test="mes-siguiente" @click="mesSiguiente">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6" /></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -170,7 +177,10 @@ async function confirmar(votacion) {
       <!-- Cuadrícula del mes -->
       <div class="cuadricula">
         <div class="dias">
-          <div v-for="d in DIAS" :key="d" class="label">{{ d }}</div>
+          <div v-for="(d, i) in DIAS" :key="d" class="label">
+            <span class="dias-largo">{{ d }}</span>
+            <span class="dias-corto" :title="d">{{ DIAS_CORTOS[i] }}</span>
+          </div>
         </div>
         <div class="celdas">
           <div
@@ -188,7 +198,7 @@ async function confirmar(votacion) {
               <span class="label señal" :class="`señal--${marcaDe(celda.dia).marcador}`">{{ marcaDe(celda.dia).texto }}</span>
             </div>
             <template v-else-if="celda.hoy">
-              <span class="label señal señal--hoy">HOY</span>
+              <span class="label señal señal--hoy">Hoy</span>
             </template>
             <div v-else class="dia-vacio"></div>
           </div>
@@ -229,7 +239,7 @@ async function confirmar(votacion) {
             <label class="label" for="pro-hora">Hora</label>
             <input id="pro-hora" data-test="input-hora" v-model="nueva.hora" type="time" value="20:00" class="input" />
           </div>
-          <p v-if="errorPropuesta" class="hint-error" role="alert" data-test="error-proponer">{{ errorPropuesta }}</p>
+          <Aviso v-if="errorPropuesta" tipo="error" data-test="error-proponer">{{ errorPropuesta }}</Aviso>
           <div class="form-proponer-envio">
             <button type="submit" data-test="btn-proponer" class="btn">Convocar propuesta</button>
           </div>
@@ -248,7 +258,7 @@ async function confirmar(votacion) {
             </div>
             <p class="propuesta-resumen">
               <strong>Sesión {{ votacion.sesionNumero }}:</strong>
-              <em>{{ votacion.titulo }}</em> — {{ votacion.resumen }}
+              <em>{{ votacion.titulo }}</em> · {{ votacion.resumen }}
             </p>
             <div class="propuesta-votos-info">
               <span class="label">Votaron a favor: <span class="ok num">{{ textoVotos(votacion.favor) }}</span></span>
@@ -312,11 +322,19 @@ async function confirmar(votacion) {
 .leyenda-aviso--sesion { background: var(--color-accent-2); }
 .leyenda-aviso--propuesta { background: var(--color-accent); }
 .flechas { display: inline-flex; align-items: center; gap: var(--space-2xs); }
-.nombre-mes { font-size: var(--text-sm); color: var(--color-ink); }
+.flecha-btn { min-width: 32px; min-height: 32px; display: grid; place-items: center; background: var(--color-paper-2); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); color: var(--color-ink); cursor: pointer; transition: border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.flecha-btn:hover { border-color: var(--color-focus); color: var(--color-accent-2); }
+.nombre-mes { font-size: var(--text-sm); color: var(--color-ink); min-width: 12ch; text-align: center; }
 .cuadricula { border: var(--rule-hair) solid var(--color-rule); background: var(--color-paper-2); overflow: hidden; }
 .dias, .celdas { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .dias { border-bottom: var(--rule-hair) solid var(--color-rule); background: var(--color-paper-3); text-align: center; }
 .dias .label { padding-block: var(--space-2xs); }
+/* día de semana: nombre completo ≥40rem, abreviado debajo; a la vez se compacta
+   la celda y la marca queda solo como punto (el detalle sigue en la leyenda y
+   en la lista de propuestas de abajo) */
+.dias-largo { display: none; }
+.dias-corto { display: inline; }
+@media (min-width: 40rem) { .dias-largo { display: inline; } .dias-corto { display: none; } }
 .celdas { border-top: var(--rule-hair) solid var(--color-rule); }
 .celda { min-height: 5.5rem; padding: var(--space-2xs); border-right: var(--rule-hair) solid var(--color-rule); border-bottom: var(--rule-hair) solid var(--color-rule); display: flex; flex-direction: column; justify-content: space-between; align-items: center; gap: var(--space-3xs); }
 .celda--fuera { color: var(--color-muted); background: var(--color-paper-3); }
@@ -329,7 +347,7 @@ async function confirmar(votacion) {
 .punto { width: 10px; height: 10px; border-radius: 999px; display: inline-block; border: var(--rule-hair) solid var(--color-paper); }
 .punto--sesion { background: var(--color-accent-2); }
 .punto--propuesta { background: var(--color-accent); }
-.señal { font-size: 10px; font-weight: 700; letter-spacing: .06em; }
+.señal { font-size: 10px; font-weight: 700; }
 .señal--sesion { color: var(--color-accent-2); }
 .señal--propuesta { color: var(--color-accent); }
 .señal--hoy { color: var(--color-accent-2); }
@@ -347,8 +365,10 @@ async function confirmar(votacion) {
 .contra { color: var(--color-error); }
 .propuesta-acciones { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; }
 .votecell { display: flex; align-items: center; gap: var(--space-sm); }
-.voto-btn { background: var(--color-paper-3); border: var(--rule-hair) solid var(--color-rule); border-radius: 999px; padding: var(--space-2xs) var(--space-sm); display: inline-flex; align-items: center; gap: var(--space-2xs); cursor: pointer; font-weight: 700; color: var(--color-ink-2); }
-.voto-btn--activa { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent); background: var(--color-paper); }
+.voto-btn { background: var(--color-paper-3); border: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); padding: var(--space-2xs) var(--space-sm); display: inline-flex; align-items: center; gap: var(--space-2xs); cursor: pointer; font-weight: 700; color: var(--color-ink-2); transition: border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out); }
+.voto-btn:hover { color: var(--color-ink); border-color: var(--color-muted); }
+.voto-btn--activa { border-color: var(--color-accent); background: var(--color-paper); color: var(--color-ink); }
+@media (max-width: 40rem) { .celda { min-height: 4.25rem; } .señal { display: none; } .punto { width: 12px; height: 12px; } }
 .vacio { text-align: center; color: var(--color-ink-2); padding: var(--space-lg); }
 @media (max-width: 60rem) { .form-proponer { grid-template-columns: minmax(0, 1fr); } }
 </style>

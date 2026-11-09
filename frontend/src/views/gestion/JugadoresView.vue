@@ -2,7 +2,7 @@
 import { ref, computed, inject, onMounted, watch } from 'vue'
 import { useToast } from '@/composables/useToast.js'
 import ModalExpulsar from '@/components/modals/ModalExpulsar.vue'
-import { getMiembros, getSolicitudes, aceptarSolicitud, rechazarSolicitud, expulsarMiembro } from '@/services/jugadores.js'
+import { getMiembros, getSolicitudes, aceptarSolicitud, rechazarSolicitud, expulsarMiembro, contarJugadores } from '@/services/jugadores.js'
 
 const props = defineProps({ mesaId: { type: String, required: true } })
 
@@ -17,6 +17,9 @@ const candidatoExpulsar = ref(null)
 const procesando = ref(false)
 
 const nombreMesa = computed(() => gestion?.mesa.value?.nombre || 'la mesa')
+// El master figura en la tabla pero no ocupa plaza: el conteo solo suma
+// jugadores (rol 'Jugador'), igual que mesa.jugadores del buscador de mesas.
+const cantidadJugadores = computed(() => contarJugadores(miembros.value))
 const jugadorModal = computed(() => {
   if (!candidatoExpulsar.value) return { nombre: '', rol: '', chip: '' }
   const m = candidatoExpulsar.value
@@ -69,14 +72,13 @@ async function confirmarExpulsion() {
 <template>
       <div class="jugadores">
       <div class="cabecera-fila">
-        <h2 class="titulo-seccion">✦ Jugadores &amp; Solicitudes</h2>
-        <span class="tag tag--acid num">{{ miembros.length }}/{{ capacidad }}</span>
+        <h2 class="titulo-seccion">Jugadores &amp; Solicitudes</h2>
+        <span class="tag tag--acid num">{{ cantidadJugadores }}/{{ capacidad }}</span>
       </div>
 
       <!-- Solicitudes pendientes -->
       <section v-if="solicitudes.length" aria-labelledby="heading-solicitudes">
         <div class="subtitulo-fila">
-          <span class="num">◆</span>
           <h3 id="heading-solicitudes" class="rotulo">Solicitudes Pendientes de Ingreso ({{ solicitudes.length }})</h3>
         </div>
 
@@ -117,22 +119,22 @@ async function confirmarExpulsion() {
 
       <!-- Miembros -->
       <section aria-labelledby="heading-miembros">
-        <h3 id="heading-miembros" class="subtitulo">Mesa de Aventureros ({{ miembros.length }} de {{ capacidad }} plazas)</h3>
+        <h3 id="heading-miembros" class="subtitulo">Mesa de Aventureros ({{ cantidadJugadores }} de {{ capacidad }} plazas)</h3>
 
         <div class="datos">
           <table class="tf-table">
             <thead>
               <tr>
-                <th>MIEMBRO</th>
-                <th>PERSONAJE ACTIVO</th>
-                <th>ESTADO</th>
-                <th>INGRESO</th>
-                <th class="centrado">ACCIÓN</th>
+                <th>Miembro</th>
+                <th>Personaje activo</th>
+                <th>Estado</th>
+                <th>Ingreso</th>
+                <th class="centrado">Acción</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="miembro in miembros" :key="miembro.id">
-                <td>
+                <td data-label="Miembro">
                   <div class="miembro-ident">
                     <div class="crt avatar--chico">{{ miembro.avatar }}</div>
                     <div>
@@ -141,15 +143,22 @@ async function confirmarExpulsion() {
                     </div>
                   </div>
                 </td>
-                <td>
-                  <div class="valor">{{ miembro.personaje }}</div>
-                  <div class="label">{{ miembro.clase }} Nvl {{ miembro.nivel }}</div>
+                <td data-label="Personaje activo">
+                  <template v-if="miembro.rol === 'Master'">
+                    <div class="valor">Sin personaje</div>
+                    <div class="label">Dirige la mesa</div>
+                  </template>
+                  <template v-else>
+                    <div class="valor">{{ miembro.personaje }}</div>
+                    <div class="label">{{ miembro.clase }} Nvl {{ miembro.nivel }}</div>
+                  </template>
                 </td>
-                <td>
-                  <span class="tag tag--acid">{{ miembro.estado.toUpperCase() }}</span>
+                <td data-label="Estado">
+                  <span v-if="miembro.rol === 'Master'" class="tag tag--ink">Master</span>
+                  <span v-else class="tag tag--acid">{{ miembro.estado }}</span>
                 </td>
-                <td class="label">{{ miembro.fecha }}</td>
-                <td class="centrado">
+                <td class="label" data-label="Ingreso">{{ miembro.rol === 'Master' ? 'Dirige la mesa' : miembro.fecha }}</td>
+                <td class="centrado" data-label="Acción">
                   <button
                     v-if="miembro.rol !== 'Master'"
                     type="button"
@@ -181,7 +190,7 @@ async function confirmarExpulsion() {
 .titulo-seccion { margin: 0; font-size: var(--text-title); color: var(--color-ink); }
 .subtitulo { margin: 0 0 var(--space-sm); font-size: var(--text-md); color: var(--color-ink); }
 .subtitulo-fila { display: flex; align-items: center; gap: var(--space-2xs); margin-bottom: var(--space-sm); }
-.rotulo { margin: 0; font-size: var(--text-sm); color: var(--color-accent-2); text-transform: uppercase; letter-spacing: .06em; }
+.rotulo { margin: 0; font-size: var(--text-sm); color: var(--color-accent-2); }
 .tarjetas-solicitud { display: grid; gap: var(--space-sm); grid-template-columns: repeat(1, minmax(0, 1fr)); }
 @media (min-width: 60rem) { .tarjetas-solicitud { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .pedido { padding: var(--space-sm) var(--space-md); display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-sm); }
@@ -193,6 +202,25 @@ async function confirmarExpulsion() {
 .pedido-pie { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2xs); flex-wrap: wrap; }
 .pedido-botones { display: flex; align-items: center; gap: var(--space-2xs); }
 .datos { border: var(--rule-hair) solid var(--color-rule); overflow-x: auto; }
+/* móvil: la tabla de miembros colapsa a una tarjeta por miembro (el mismo
+   lenguaje de las tarjetas de solicitud); la etiqueta de cada dato viaja
+   inline sobre el valor via attr(data-label) */
+@media (max-width: 40rem) {
+  .datos { border: 0; overflow: visible; background: transparent; }
+  .tf-table { display: block; }
+  .tf-table thead { display: none; }
+  .tf-table tbody { display: grid; gap: var(--space-sm); }
+  .tf-table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-2xs) var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-top: var(--rule-bar) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); padding: var(--space-sm); }
+  .tf-table td { border-top: 0; padding: 0; }
+  .tf-table td::before { content: attr(data-label); display: block; font-size: var(--text-xs); font-weight: 700; color: var(--color-muted); }
+  .tf-table td:first-child { grid-column: 1 / -1; }
+  .tf-table td:first-child::before { content: none; }
+  .tf-table td:nth-child(2) { grid-column: 1; }
+  .tf-table td:nth-child(3) { grid-column: 2; justify-self: end; }
+  .tf-table td:nth-child(4) { grid-column: 1; }
+  .tf-table td:nth-child(5) { grid-column: 2; justify-self: end; }
+  .tf-table td:nth-child(5)::before { content: none; }
+}
 .centrado { text-align: center; }
 .miembro-ident { display: flex; align-items: center; gap: var(--space-2xs); }
 .nombre { font-weight: 700; color: var(--color-ink); }
